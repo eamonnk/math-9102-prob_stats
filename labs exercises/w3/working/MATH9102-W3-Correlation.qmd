@@ -1,0 +1,208 @@
+---
+title: "MATH9102-W3-Correlation"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+
+# 1. Install and Load Packages
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance tests
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Read in the dataset
+survey <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(survey) <- tolower(colnames(survey))
+
+```
+
+
+# 1. Introduction
+
+This statistical analysis was designed to investigate whether a range of psychological and demographic factors impact on a person's psychological well-being. 
+The dataset used in this analysis contains data collected from 439 respondents who completed a survey as part of a study to explore the factors that impact on respondents' psychological adjustment and wellbeing. The study was distributed to members of the general public in Melbourne, Australia and surrounding districts.   
+The survey contained a variety of validated scales measuring constructs that the extensive literature on stress and coping suggest influence people's experience of stress. The scales measured self-esteem, optimism, perceptions of control, perceived stress, positive and negative affect, and life satisfaction. A scale was also included that measured people's tendency to present themselves in a favourable or socially desirable manner. Summary variables were created for each psychological factor measured using these scales using dimension reduction. Details of the variables and the measurement instruments used to create these are included in Table 1 below.
+This research question was investigated through a series of hypotheses tests. Each set of hypotheses will be discussed separately in the following sub-sections. Each section will first present the outcomes of data inspection conducted to determine the suitability of the data and select the appropriate test. The results of the test will then be presented and interpreted before deriving conclusions from this for the research question.
+
+
+
+| Concept           | Measurement Instrument Used       | Variable Type |
+|-------------------|-------------------------------|---------------|
+| Perceived Control of Internal States | 18 item PCOISS test instrument developed by Pallant (2000)   |  Continuous    |
+| Stress            | 10 item Perceived Stress test developed by Cohen, Kamarck and Mermelstein (1983) | Continuous  |
+| Optimism          | 6 item Life Orientation Test instrument developed by Scheier and Carver (1985) | Continuous |
+| Mastery          | 7 item Master test instrument developed by Pearlin and Schooler (1978) | Continuous |
+| Positive and Negative Affect |  10 item PANAS test instrument developed by Watson, Clark & Tellegen (1988)| Continuous |
+| Life Satisfaction      | 5 item Satisfaction with Life instrument developed by Diener, Emmons, Larson and Griffin (1985)| Continuous |
+| Positive and Negative Affect        | 10 item PANAS test instrument developed by Watson, Clark & Tellegen (1988) | Continuous |
+| Self-esteem      | 10 item Self-esteem test instrument developed by Rosenberg  (1965)| Continuous |
+| Social Desirability | 10 item Social Desirability test instrument developed by Crowne & Marlowe (1960) | Continuous | 
+<p align="center">**Table 1: Pyschological Factors Included in Survey**<p>
+
+
+#2. Hypotheses
+## Hypotheses 1:
+H0: There is no relationship between a respondent’s perception of their ability to regulate and manage their internal state - perception of control of internal states (PCOISS) (i.e. emotions, thoughts, and physiological states) and their level of perceived stress.\
+Ha: There is a relationship between a respondent’s perception of their ability to regulate and manage their internal state - perception of control of internal states (PCOISS) (i.e. emotions, thoughts, and physiological states) and their level of perceived stress.\
+
+
+```{r assess-tpcoiss}
+#Create a histogram
+gg <- ggplot(survey, aes(x=tpcoiss)) + labs(caption="Figure 1: Histogram for Total Perception of Control")
+#Change the label of the x axis
+gg <- gg + labs(x="Total Perception of Control")
+#manage binwidth and colours
+gg <- gg + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+#A a density curve using a normal denisty function
+#Use stat_function to compute a normalised score for each value of tpcoiss
+#Pass the mean and standard deviation to this as parameters
+#use the na.rm parameter to say how missing values are handled
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(survey$tpcoiss, na.rm=TRUE), sd=sd(survey$tpcoiss, na.rm=TRUE)))
+#to display the graph request the contents of the variable be shown
+gg
+
+#Create a qqplot
+qqnorm(survey$tpcoiss, main="Figure 2: QQ Plot for Total Perception of Control") 
+qqline(survey$tpcoiss, col=2) #show a line on the plot
+
+#Generate summary statistics
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(survey$tpcoiss, basic=F)
+
+#We can make our decision based on the value of the standardised score for skew and kurtosis
+#We divide the skew statistic by the standard error to get the standardised score
+#This will indicate if we have a problem
+tpskew<-semTools::skew(survey$tpcoiss)
+tpkurt<-semTools::kurtosis(survey$tpcoiss)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+
+#And also by calculating the percentage of standardised scores for the variable itself that are outside our acceptable range
+#This will tell us how big a problem we have
+# Calculate the percentage of standardised scores that are greated than 1.96
+# the perc function which is part of the FSA package which calculate the percentage that are within a range - you can look for greater than "gt", greater than or equal "geq", "gt", less than or equal "leq",  or less than "lt"),
+# scale is a function that creates z scores, abs gets absolute value
+
+ztpcoiss<- abs(scale(survey$tpcoiss))
+
+FSA::perc(as.numeric(ztpcoiss), 1.96, "gt")
+FSA::perc(as.numeric(ztpcoiss), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+```
+
+<p style="text-align:justify">
+Total Perception of Control on Internal States scores were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) identified some issues with skewness and kurtosis. While the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) could be considered acceptable using the criteria proposed by Curran, West and Finch (1996), but the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`)  was outside the acceptable range.  However as over 99% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013), the data can be considered to approximate a normal distribution (m=`r round(mean(survey$tpcoiss, na.rm=TRUE),2)`, sd=`r round(sd(survey$tpcoiss, na.rm=TRUE),2)`, n=`r length(survey$tpcoiss)-sum(is.na(survey$tpcoiss))`).
+</p>
+
+
+```{r stats-tpstress}
+#Create histogram
+gs <- ggplot(survey, aes(x=tpstress)) + labs(caption="Figure 3: Histogram for Total Perceived Stress")
+gs <- gs + labs(x="Total Perceived Stress")
+gs <- gs + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gs <- gs + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(survey$tpstress, na.rm=TRUE), sd=sd(survey$tpstress, na.rm=TRUE)))
+gs
+
+
+#Create a qqplot
+qqnorm(survey$tpstress, main="Figure 4: QQPlot for Total Perceived Stress")
+qqline(survey$tpstress, col=2) #show a line on theplot
+
+
+#Generate regular summary statistics 
+pastecs::stat.desc(survey$tpstress, basic=F)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(survey$tpstress)
+tpkurt<-semTools::kurtosis(survey$tpstress)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+ztpstress<- abs(scale(survey$tpstress))
+
+FSA::perc(as.numeric(ztpstress), 1.96, "gt")
+FSA::perc(as.numeric(ztpstress), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+```
+
+
+<p style="text-align:justify">
+Total Perceived Stress were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. While the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) could be considered acceptable using the criteria proposed by  Curran, West and Finch (1996), but the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`)  was outside the acceptable range.  However as over 99% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution (m=`r round(mean(survey$tpstress, na.rm=TRUE),2)`, sd=`r round(sd(survey$tpstress, na.rm=TRUE),2)`, n=`r length(survey$tpstress)-sum(is.na(survey$tpstress))`).
+</p>
+
+
+```{r corr-controlstress}
+
+#Create a Simple scatterplot of feeling of control and perceived stress
+#aes(x,y)
+scatter <- ggplot(survey, aes(tpcoiss, tpstress))
+scatter + geom_point() + labs(x = "Total PCOISS", y = "Total Perceived Stress") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "Total PCOISS", y = "Total Perceived Stress") 
+
+
+#Pearson Correlation - this is the correct test for this data
+stats::cor.test(survey$tpcoiss, survey$tpstress, method='pearson')
+corstat=stats::cor.test(survey$tpcoiss, survey$tpstress, method='pearson')
+
+```
+<p style="text-align:justify">
+The relationship between perceived sense of being in control (Total PCOISS derived from the PCOISS questionnaire) and perceived stress (Total Perceived Stress derived from the perceived stress questionnaire) was investigated using a Pearson correlation. A strong, statistically significant, negative correlation was found (r =`r round(as.numeric(corstat[4]),2)`, n=`r as.numeric(corstat[2])`, p<.001). There is therefore evidence to reject the null hypothesis in favour of the alternate that there is a relationship between perceived sense of being in control and perceived stress.
+
+</p>
+# Appendix: How to conduct other types of correlation test
+Note: These are included for illustration only.
+If your data cannot be treated as approximately normal then you need to use a non-parametric test. You should choose either Spearman or Kendall.
+Either is fine. Some sources consider Kendall to be more robust than Spearman.
+
+```{r other-tests}
+#Spearman Correlation for illustration only - you SHOULD NOT do multiple tests
+#This test will give an error for our datasince this method uses ranking but cannot handle ties but that is ok with us - we consider this to be missing data
+cor.test(survey$tpcoiss, survey$tpstress, method = "spearman")
+#We can also use kendall's tau which does handle ties
+cor.test(survey$tpcoiss, survey$tpstress, method = "kendall")
+```
+
+# References
+Cohen, S., Kamarck, T. & Mermelstein, R. (1983).  A global measure of perceived stress. Journal of Health and Social Behavior, 24, 385–96.\
+Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillside, NJ: Lawrence Erlbaum Associates.\
+Crowne, D.P. & Marlowe, D. (1960). A new scale of social desirability independent of psychopathology. Journal of Consulting Psychology, 24, 349–54.\
+Curran, Patrick J., Stephen G. West, and John F. Finch. (1996). "The robustness of test statistics to nonnormality and specification error in confirmatory factor analysis." Psychological methods 1.1 (1996): 16.\Diener, E., Emmons, R.A., Larson, R.J. & Griffin, S. (1985). The Satisfaction with Life scale. Journal of Personality Assessment, 49, 71–6.\
+Field, A., Field Z. & Miles J.(2012).  Discovering statistics using IBM SPSS statistics. Sage publications limited, \
+Pallant, J. (2000). Development and validation of a scale to measure perceived control of internal states. Journal of Personality Assessment, 75, 2, 308–37.
+Pearlin, L. & Schooler, C. (1978). The structure of coping. Journal of Health and Social Behavior, 19, 2–21.\
+Rosenberg, M. (1965). Society and the adolescent self-image. Princeton, NJ: Princeton University Press.\
+Scheier, M.F. & Carver, C.S. (1985). Optimism, coping and health: An assessment and implications of generalized outcome expectancies. Health Psychology, 4, 219–47.\
+Watson, D., Clark, L.A. & Tellegen, A. (1988). Development and validation of brief measures of positive and negative affect: The PANAS scales. Journal of Personality and Social Psychology, 54, 1063–70.\
