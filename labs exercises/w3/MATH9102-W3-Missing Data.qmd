@@ -1,0 +1,203 @@
+---
+title: "MATH9102 Missing Data"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+editor: source
+---
+
+
+# 1. Install and Load Packages
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")
+quiet_library("VIM") # Visualization and Imputation of Missing Values
+quiet_library("naniar") #(naniar short for NA + naniar) - Missing data wrangling plus Little's test
+quiet_library("simputation") # For imputing variables
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Read in the dataset
+sdata <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(sdata) <- tolower(colnames(sdata))
+
+#Our variables of interest are the nine continuous variables reflecting the total 
+#for each of our pschological factors measured
+
+#We create a subset with just these variables
+varsint<-c("toptim", "tmast", "tposaff", "tnegaff", "tlifesat", "tpstress","tslfest", "tmarlow" , "tpcoiss" )
+
+
+# create a subset with only variables of interest
+sdatasubset <- sdata[varsint]
+
+# rename columns to human-friendly labels - we are restricted with the length we can use
+colnames(sdatasubset) <- c("Optimism", "Mastery", "Pos.Affect", "Neg.Affect", "LifeSat", "Stress", "SelfEst", "Soc.Des", "Perc.Ctrl")
+
+#Adjust the margins so that we can display the labels
+par(mar = c(10, 4, 4, 2))  # more space at bottom
+
+# run VIM::aggr
+res <- summary(VIM::aggr(sdatasubset, sortVar = TRUE, combined = FALSE))$combinations
+
+
+#Get our summary statistics - these are just for us not for publication
+summary(sdatasubset)
+```
+
+
+# 2. Visualise the missing data level and pattern
+## 2.1 Using functions from VIM
+
+Show number of rows of missing values for each and combinations across variables using VIM::aggr.
+Get levels of missingness using the aggr function from the VIM package.
+We summarise and store the results in a variable called res. 
+```{r}
+#| label: visualise-missing
+
+res<-summary(VIM::aggr(sdatasubset, sortVar=TRUE, combined=FALSE))$combinations
+
+# Show the number of rows missing values for each variable and combinations of variables
+#Red is missing, blue is not missing
+aggr(sdatasubset, combined = FALSE, numbers = TRUE, prop = c(TRUE, FALSE))
+```
+
+Blue means the variable has a value. In this case 421 rows are complete -  no missing data.
+Red means a variable has missing data.
+In this case there is 1 row missing values for all variables, 1 missing values for tslfest and tlifesat, 1 missing tslifesat, tslfest and tpcoiss, 5 missing values for just tpcoiss etc.
+
+
+Output of the most common combinations using the head function:
+```{r}
+head(res[rev(order(res[,2])),])
+```
+
+## 2.2 Summary of whether data is missing or not
+Use naniar::vis_miss to create a plot showing whether a variable is missing data and  showing the percentage missing:
+
+```{r}
+#| label: vis_miss
+
+naniar::vis_miss(sdatasubset)
+
+```
+This identifies key variables that are missing, but we need to explore the relationship between these variables and others. 
+
+
+
+Look at the number of cases and the combinations of missingness using naniar::gg_miss_upset:
+```{r}
+#| label: miss_upset
+
+naniar::gg_miss_upset(sdatasubset)
+```
+
+tpcoiss alone is missing - 5 cases/rows
+tpstress is missing - 3 cases/rows
+tmarlow is missing - 2 cases/rows
+There is 1 case/row where all variables are missing
+There are 2 cases/row where tnegaff, tpstress and toptim are missing 
+etc.
+** There is no real pattern to this missing data **
+
+We can use ggplot to generate a point plot showing how many missing combinations we have per pair of variables:
+
+```{r}
+#| label: ggplot-missing
+
+ggplot(sdata, 
+       aes(x = tpstress, 
+           y = toptim)) + 
+  geom_miss_point()
+```
+
+## 2.3 Look at patterns by group
+We need to include the grouping value as part of the sub-set dataframe we are using
+We can then look at the pattern using gg_mis_fct from naniar package.
+
+Explore missingness across a factor. In this case by whether respondents have children or not: 
+```{r}
+#| label: grouping-missing
+
+varsintgrp<-c("toptim",     "tmast", "tposaff", "tnegaff", "tlifesat", "tpstress","tslfest", "tmarlow" , "tpcoiss","child" )
+# Create a new subset
+sdatasubgroup<-sdata[varsintgrp]#create a subset of data with just the variables of interest
+
+naniar::gg_miss_fct(x = sdatasubgroup, fct = child)
+```
+
+
+We can look at a plot by group also for a pair of variables using ggplot:
+
+We can use ggplot to generate a point plot showing how many missing combinations we have per pair of variables for a factor by using facets:
+
+```{r}
+#| label: ggplot-bygroup
+
+ggplot(sdatasubgroup, 
+       aes(x = tpstress, 
+           y = toptim)) + 
+  geom_miss_point() +
+  facet_wrap(~child)
+```
+You can create tables to look at patterns of missing data in continuous for nominal
+Or use some of the packages available in  https://www.tidyverse.org/
+
+
+
+# 3. Mean Substitution Example
+You can substitute na values for the variable tpcoiss with the mean of tpcoiss:
+```{r}
+#| label: mean-subexample
+
+sdatasubgroup$tpcoiss[is.na(sdatasubgroup$tpcoiss)] <- mean(sdatasubgroup$tpcoiss, na.rm = TRUE)
+```
+
+
+To look at the number of cases and the combinations of missingness repeat the missingness assessment. 
+
+
+# 4. Imputation Example
+You can impute a value for na values for the variable tpstress with the impute_lm function tpstress, the variables used need to make sense. Here we impute tpstress from the values of perception of control and positive affect (we would need to be sure this is sensible for our conceptual framework):
+
+```{r}
+#| label: impute-example
+
+summary(sdatasubgroup$tpstress)
+sdatasubgroup <- simputation:: impute_lm(sdatasubgroup,tpstress ~ tpcoiss + tposaff)
+summary(sdatasubgroup$tpstress)
+```
+
+Note: We can see this has resolved only 3 na values - this is because tposaff has na's so we would need to address that before doing the imputation.
+
+
+
+# 5. Test for MCAR
+You can use Little's MCAR test. If the p value is > 0.05 then you fail to reject the null hypothesis that the data are MCAR → consistent with MCAR.
+If p < 0.05, the data are unlikely to be MCAR (they may be MAR or MNAR).
+Note: you must have inspect your variables and eliminate MNAR yourself before using this test.
+```{r}
+
+result <- naniar::mcar_test(sdatasubset)
+
+print(result)
+
+```
+
