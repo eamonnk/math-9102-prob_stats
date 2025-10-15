@@ -1,0 +1,183 @@
+---
+title: "MATH9102-W5-Kruskal"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+```{=html}
+<style>
+/* Center captions for figures and tables in Quarto HTML, make them black and bold, and place them below */
+.quarto-figure .figure-caption,
+figure > figcaption,
+.table-caption,
+table > caption {
+  text-align: center;
+  color: black;
+  font-weight: bold;
+  caption-side: bottom;  /*  this moves captions below tables */
+}
+</style>
+
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("psych")   # Descriptive statistics by group
+quiet_library("rstatix")   # Includes calculations for effectsize
+quiet_library("sjstats")    
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance test
+quiet_library("rstatix")   #Dunns test
+quiet_library("gt") # Formatting tables
+quiet_library("flextable") # Formatting tables
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'youthcohort.dat')
+
+#Read in the dataset
+ydata <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(ydata) <- tolower(colnames(ydata))
+```
+
+This analysis is being conducted using the Youth Cohort dataset taken from the datasets used in Quantitative Data Analysis in Education by Paul Connolly) available at https://www.routledge.com/Quantitative-Data-Analysis-in-Education-A-Critical-Introduction-Using-SPSS/Connolly/p/book/9780415372985. This dataset includes a small number of variables from the Youth Cohort Study of England and Wales that consisted of a random sample of young people who had reached their school leaving age in 2002 (n=13,201). The survey tracks young people over a number of years post leaving school and focuses on their education, training and career pathways. The variables included in the dataset used in this analysis focus on the performance of young people in the public examination (GCSE) at the end of their final compulsory year of schooling.
+
+
+“Is there a significant difference in students’ GCSE mathematics grades across different family social class groups ?
+H0: There is no significant difference in the GCSE Maths grades achieved by across different family social class groups.
+HA: There is no significant difference in the GCSE Maths grades achieved by across different family social class groups.
+
+
+
+
+```{r}
+#Variables: 'famsec' family social class, 'gradmath' grade achieved in maths
+#We know we are going to use non-parametric tests since the variable gradmath is ordinal
+#Get some descriptive statistics on the maths grade for each social class
+
+# Ensure 'gradmath' is ordered
+ydata$gradmath <- factor(
+  ydata$gradmath,
+  levels = c("A*", "A", "B", "C", "D", "E", "F", "G", "U"),
+  ordered = TRUE
+)
+
+# Summarise median and IQR
+summary_tbl <- ydata %>%
+  group_by(famsec) %>%
+  summarise(
+    `Median Maths Grade` = {
+      num <- as.numeric(gradmath)
+      med_num <- median(num, na.rm = TRUE)
+      levels(gradmath)[round(med_num)]
+    },
+    IQR = {
+      num <- as.numeric(gradmath)
+      q1 <- quantile(num, 0.25, na.rm = TRUE)
+      q3 <- quantile(num, 0.75, na.rm = TRUE)
+      paste0(levels(gradmath)[round(q1)], "–", levels(gradmath)[round(q3)])
+    },
+    .groups = "drop"
+  ) %>%
+  rename(`Family Social Class` = famsec)
+```
+
+
+```{r}
+#| tbl-cap: "Table 1: Median and IQR of Maths Grades by Family Social Class "
+# Format with gt
+summary_tbl %>%
+  gt() %>%
+  cols_align(align = "center", columns = everything()) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_column_labels(everything())
+  ) %>%
+  tab_options(
+    table.font.size = 14,
+    data_row.padding = px(4)
+  )
+
+
+```
+
+
+```{r}
+#run a kruskal wallis test - this is the omnibus stest
+stats::kruskal.test(gradmath~famsec,data=ydata)
+```
+
+
+
+```{r posthoc-approach1}
+#We need the as.numeric to make sure our gradmath variable is treated as a numeric variable 
+#and we are using the numerical categories for famsec so we use the factors
+tmp <- FSA::dunnTest(as.numeric(ydata$gradmath),ydata$famsec, method = "bonferroni")
+
+# Convert the Dunn's test result to a data frame
+dunn_test_df <- as.data.frame(tmp$res)
+
+# Filter for statistically significant comparisons (e.g., p < 0.05)
+significant_results <- dunn_test_df[dunn_test_df$P.adj < 0.05, ]
+
+# Round the p-values to 2 decimal places
+significant_results$P.adj <- round(significant_results$P.adj, 2)
+# Round the p-values to 2 decimal places
+significant_results$P.unadj <- round(significant_results$P.unadj, 2)
+
+# Create a flextable to display the statistically significant results
+ft <- flextable(significant_results) %>%
+  set_table_properties(width = 1, layout = "autofit") # Autofit to ensure all content is visible
+```
+
+
+```{r}
+#| tbl-cap: "Table 2: Post-hoc Results using Dunn's Test"
+ft
+```
+
+```{r post-hocapproach2}
+
+#Print the post hoc test results as a table- filtering out only the statistically significant results
+tmp2 <- rstatix::dunn_test(ydata, gradmath ~ famsec, p.adjust.method = "bonferroni", detailed = FALSE) %>%
+  dplyr::filter(p.adj < 0.05)
+tmp2
+
+```
+
+```{r calceffect}
+#calculate the effect size eta squared
+rstatix::kruskal_effsize(ydata, gradmath~famsec, ci = FALSE, conf.level = 0.95,
+  ci.type = "perc", nboot = 1000)#uses bootstrapping
+
+```
+
+### Reporting the results 
+
+
+A Kruskal–Wallis test was conducted to examine differences in mathematics grades  across family social class groups. The results indicated a statistically significant difference in median maths grades between groups, H(5) = , p < .001, suggesting that family social class is associated with student performance in mathematics. Post hoc pairwise comparisons using Dunn’s test with Bonferroni adjustment revealed that students from higher social class backgrounds (e.g., Large employers and higher professionals) achieved significantly higher maths grades than those from lower social class groups (e.g., Semi-routine and routine occupations, Lower supervisory occupations). Differences between adjacent middle groups (e.g., Intermediate occupations vs. Lower professional and higher technical occupations) were smaller but still significant (p < .001). Overall, the pattern of results suggests a social gradient in mathematics achievement, where students from families with higher occupational status tend to obtain higher grades.The effect size, calculated using eta squared was moderate at η² = 0.12. The median and IQR values for the GCSE Maths grades for all class categories are shown in Table 1.
+
+
+
+
+
+
+

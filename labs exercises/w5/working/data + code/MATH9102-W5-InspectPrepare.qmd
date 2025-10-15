@@ -1,0 +1,296 @@
+---
+title: "MATH9102-W5-Transformation"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+```{=html}
+<style>
+/* Center captions for figures and tables in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption,
+figure > figcaption,
+.table-caption,
+table > caption {
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("psych")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., describe)
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance test
+quiet_library("MASS")       # Includes function for Box-Cox transformation
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Read in the dataset
+survey <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(survey) <- tolower(colnames(survey))
+```
+
+
+This analysis is being conducted using data condensed from a postgraduate study conducted by Julie Pallant. The study was designed to explore the factors that impact on respondents’ psychological adjustment and wellbeing. The dataset is available at http://spss4.allenandunwin.com.s3-website-ap-southeast-2.amazonaws.com/data_files.html. The survey contained a variety of validated scales measuring constructs that the extensive literature on stress and coping suggest influence people’s experience of stress. The scales measured self-esteem, negative affect, perceptions of control, perceived stress, positive and negative affect, and life satisfaction. A scale was also included that measured people’s tendency to present themselves in a favourable or socially desirable manner. The survey was distributed to members of the general public in Melbourne, Australia and surrounding districts. This sample included 439 rows of data.
+
+Total negative affect scores have a standardised skewness score of 7.58. Over 5% of the scores are outside of +/-2 using Curran, West and Finch's guidelines. However 100% fall withing +/- 3.29. They can be treated as normal. But to illustrate the impact of transformation we will apply a log10 transformation
+
+
+
+```{r }
+#| label: hist-negaff
+#| fig.cap: "Figure 1: Histogram of Total Negative Affect Scores"
+#Create a histogram
+gg <- ggplot(survey, aes(x=tnegaff))
+gg <- gg + labs(x="Total Negative Affect Scores")
+gg <- gg + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(survey$tnegaff, na.rm=TRUE), sd=sd(survey$tnegaff, na.rm=TRUE)))
+gg
+```
+
+```{r }
+#| label: qq-negaff
+#| fig.cap: "Figure 2: QQ Plot of Total Negative Affect Scores"
+#Create a histogram
+#Create a qqplot
+qqnorm(survey$tnegaff)
+qqline(survey$tnegaff, col=2) #show a line on the plot
+```
+
+
+
+
+```{r }
+#| label: desc-negaff
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(survey$tnegaff, basic=F)
+psych::describe(survey$tnegaff)
+#Note: If min value was negative we would need to add something to all scores to make all values positive.
+
+#Standardised scores for skew and kutosis
+tpskew<-semTools::skew(survey$tnegaff)
+tpkurt<-semTools::kurtosis(survey$tnegaff)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate percentage of standardized scores for total negative affect outside ranges
+#+/- 1.96, +- 3.29
+ztnegaff<- abs(scale(survey$tnegaff))
+
+FSA::perc(as.numeric(ztnegaff), 1.96, "gt")
+FSA::perc(as.numeric(ztnegaff), 3.29, "gt")
+
+```
+
+
+## Untransformed - using all our heuristics
+
+Total negative affect scores data were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996), but the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) was outside the acceptable range. However over 99% of standardized scores for total negative affect fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the data can be considered to approximate a normal distribution (m=`r round(mean(survey$tnegaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$tnegaff, na.rm=TRUE),2)`, n=`r length(survey$tnegaff)-sum(is.na(survey$tnegaff))`).
+
+
+
+## Transforming data using log(10)
+
+```{r}
+# Transform the data and save as a column in the survey dataset
+survey$lognaff <- log10(survey$tnegaff)
+```
+
+
+```{r }
+#| label: hist-negafflog10
+#| fig.cap: "Figure 3: Histogram of Total Negative Affect Scores - Transformed using Log10"
+#Create a histogram
+gg <- ggplot(survey, aes(x=lognaff))
+gg <- gg + labs(x="Total Negative Affect Scores (Log10)")
+gg <- gg + geom_histogram(binwidth=.05, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(survey$lognaff, na.rm=TRUE), sd=sd(survey$lognaff, na.rm=TRUE)))
+gg
+```
+
+```{r }
+#| label: qq-lognegaff
+#| fig.cap: "Figure 3: QQ Plot of Total Negative Affect Scores - Transformed using Log10"
+#Create a histogram
+#Create a qqplot
+qqnorm(survey$lognaff)
+qqline(survey$lognaff, col=2) #show a line on the plot
+```
+
+
+
+
+```{r }
+#| label: desc-lognegaff
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(survey$lognaff, basic=F)
+
+#Standardised scores for skew and kutosis
+tpskew<-semTools::skew(survey$lognaff)
+tpkurt<-semTools::kurtosis(survey$lognaff)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate percentage of standardized scores for log10 total negative affect outside ranges
+#+/- 1.96, +- 3.29
+zlognegaff<- abs(scale(survey$lognaff))
+
+FSA::perc(as.numeric(zlognegaff), 1.96, "gt")
+FSA::perc(as.numeric(zlognegaff), 3.29, "gt")
+
+```
+
+Total negative affect scores data were transformed using logarithm base 10 transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. However, while the standardized score for  skewness  (`r round(tpskew[1]/tpskew[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$lognaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$lognaff, na.rm=TRUE),2)`, n=`r length(survey$lognaff)-sum(is.na(survey$lognaff))`).
+
+
+
+Note: All subsequent tests/models should use the transformed values not the raw.
+
+## Transforming data using sqrt
+
+```{r}
+# Transform and store as a column in the survey dataset
+survey$sqrtnaff <- sqrt(survey$tnegaff)
+```
+
+
+```{r }
+#| label: hist-negaffsqr
+#| fig.cap: "Figure 3: Histogram of Total Negative Affect Scores - Square Root Transformation"
+#Create a histogram
+gg <- ggplot(survey, aes(x=sqrtnaff))
+gg <- gg + labs(x="Total Negative Affect Scores (Square Root)")
+gg <- gg + geom_histogram(binwidth=.2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(survey$sqrtnaff, na.rm=TRUE), sd=sd(survey$sqrtnaff, na.rm=TRUE)))
+gg
+```
+
+```{r }
+#| label: qq-sqrnegaff
+#| fig.cap: "Figure 3: QQ Plot of Total Negative Affect Scores - Square Root Transformation"
+#Create a histogram
+#Create a qqplot
+qqnorm(survey$sqrtnaff)
+qqline(survey$sqrtnaff, col=2) #show a line on the plot
+```
+
+
+
+
+```{r }
+#| label: desc-sqrnegaff
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(survey$sqrtnaff, basic=F)
+
+#Standardised scores for skew and kutosis
+tpskew<-semTools::skew(survey$sqrtnaff)
+tpkurt<-semTools::kurtosis(survey$sqrtnaff)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate percentage of standardized scores for square root total negative affect outside ranges
+#+/- 1.96, +- 3.29
+zsqrnegaff<- abs(scale(survey$sqrtnaff))
+
+FSA::perc(as.numeric(zsqrnegaff), 1.96, "gt")
+FSA::perc(as.numeric(zsqrnegaff), 3.29, "gt")
+
+```
+
+Total negative affect scores data were transformed using a square root transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. However, while the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`)  can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for skewness  (`r round(tpskew[1]/tpskew[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$sqrtnaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$sqrtnaff, na.rm=TRUE),2)`, n=`r length(survey$sqrtnaff)-sum(is.na(survey$sqrtnaff))`).
+
+Note: All subsequent tests/models should use the transformed values not the raw.
+
+
+## Transforming data using Box Cox transformation
+
+```{r}
+# Transform and store as a column in the survey dataset
+
+# Box–Cox transformation for tnegaff
+bc <- MASS::boxcox(lm(tnegaff ~ 1, data = survey))   # inspect profile
+lambda <- bc$x[which.max(bc$y)]                # extract optimal lambda
+
+# Apply the transformation
+survey$bcnegaff <- if (abs(lambda) < 1e-6) {
+  log(survey$tnegaff)
+} else {
+  (survey$tnegaff^lambda - 1) / lambda
+}
+```
+
+
+```{r }
+#| label: hist-negaffbc
+#| fig.cap: "Figure 5: Histogram of Total Negative Affect Scores - Box-Cox Transformation"
+#Create a histogram
+gg <- ggplot(survey, aes(x=bcnegaff))
+gg <- gg + labs(x="Total Negative Affect Scores (Log10)")
+gg <- gg + geom_histogram(binwidth=.03, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(survey$bcnegaff, na.rm=TRUE), sd=sd(survey$bcnegaff, na.rm=TRUE)))
+gg
+```
+
+```{r }
+#| label: qq-bcnegaff
+#| fig.cap: "Figure 6: QQ Plot of Total Negative Affect Scores - Box-Cox Transformation"
+#Create a histogram
+#Create a qqplot
+qqnorm(survey$bcnegaff)
+qqline(survey$bcnegaff, col=2) #show a line on the plot
+```
+
+
+
+
+```{r }
+#| label: desc-bcnegaff
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(survey$bcnegaff, basic=F)
+
+#Standardised scores for skew and kutosis
+tpskew<-semTools::skew(survey$bcnegaff)
+tpkurt<-semTools::kurtosis(survey$bcnegaff)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate percentage of standardized scores for square root total negative affect outside ranges
+#+/- 1.96, +- 3.29
+zbcnegaff<- abs(scale(survey$bcnegaff))
+
+FSA::perc(as.numeric(zbcnegaff), 1.96, "gt")
+FSA::perc(as.numeric(zbcnegaff), 3.29, "gt")
+
+```
+
+Total negative affect scores data were transformed using a square root transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 5 and Figure 6) identified some issues with skewness and kurtosis. However, while the standardized score for  skewness  (`r round(tpskew[1]/tpskew[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$bcnegaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$bcnegaff, na.rm=TRUE),2)`, n=`r length(survey$bcnegaff)-sum(is.na(survey$bcnegaff))`).
+
+Note: All subsequent tests/models should use the transformed values not the raw.
+

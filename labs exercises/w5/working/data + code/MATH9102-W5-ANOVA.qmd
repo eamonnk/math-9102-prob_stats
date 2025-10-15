@@ -1,0 +1,256 @@
+---
+title: "MATH9102-W5-ANOVA"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+```{=html}
+<style>
+/* Center captions for figures and tables in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption,
+figure > figcaption,
+.table-caption,
+table > caption {
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("psych")   # Descriptive statistics by group
+quiet_library("rstatix")   # Includes calculations for effectsize
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance test
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Read in the dataset
+survey <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(survey) <- tolower(colnames(survey))
+```
+
+# ANOVA - Survey Data
+
+This analysis is being conducted using data condensed from a postgraduate study conducted by Julie Pallant. The study was designed to explore the factors that impact on respondents’ psychological adjustment and wellbeing. The dataset is available at http://spss4.allenandunwin.com.s3-website-ap-southeast-2.amazonaws.com/data_files.html. The survey contained a variety of validated scales measuring constructs that the extensive literature on stress and coping suggest influence people’s experience of stress. The scales measured self-esteem, optimism, perceptions of control, perceived stress, positive and negative affect, and life satisfaction. A scale was also included that measured people’s tendency to present themselves in a favourable or socially desirable manner. The survey was distributed to members of the general public in Melbourne, Australia and surrounding districts. This sample included 439 rows of data.
+
+Question: Do respondents from different age groups experience different levels of optimism?
+
+H0: There are no differences between total optimism scores for respondents from age groups 18-29, 30-44 and 45+. HA: There are a differences between total optimism scores for respondents from age groups 18-29, 30-44 and 45+.
+
+```{r }
+#| label: hist-optim
+#| fig.cap: "Figure 1: Histogram of Total Optimism Scores"
+#Create a histogram
+gg <- ggplot(survey, aes(x=toptim))
+gg <- gg + labs(x="Total Optimism Scores")
+gg <- gg + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(survey$toptim, na.rm=TRUE), sd=sd(survey$toptim, na.rm=TRUE)))
+gg
+```
+
+```{r }
+#| label: qq-optim
+#| fig.cap: "Figure 2: QQ Plot of Total Optimism Scores"
+#Create a histogram
+#Create a qqplot
+qqnorm(survey$toptim)
+qqline(survey$toptim, col=2) #show a line on the plot
+```
+
+```{r }
+#| label: desc-optim
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(survey$toptim, basic=F)
+
+#Standardised scores for skew and kutosis
+tpskew<-semTools::skew(survey$toptim)
+tpkurt<-semTools::kurtosis(survey$toptim)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate percentage of standardized scores for total optimism outside ranges
+#+/- 1.96, +- 3.29
+ztoptim<- abs(scale(survey$toptim))
+
+FSA::perc(as.numeric(ztoptim), 1.96, "gt")
+FSA::perc(as.numeric(ztoptim), 3.29, "gt")
+
+```
+
+Total optimism scores data were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996), but the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) was outside the acceptable range. However over 99% of standardized scores for total optimism fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the data can be considered to approximate a normal distribution (m=`r round(mean(survey$toptim, na.rm=TRUE),2)`, sd=`r round(sd(survey$toptim, na.rm=TRUE),2)`, n=`r length(survey$toptim)-sum(is.na(survey$toptim))`).
+
+## Differences more than 2 groups - Parametric Tests
+
+```{r}
+#Get descriptive statistics by group - output as a matrix
+psych::describeBy(survey$toptim, survey$agegp3, mat=TRUE)
+#Store the output to use in our final reporting of the outcomes of ANOVA
+
+optdesc<-psych::describeBy(survey$toptim,survey$agegp3,mat=TRUE)
+```
+
+```{r}
+#| label: ANOVA-optagegp3
+#Conduct Bartlett's test for homogeneity of variance  - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+stats::bartlett.test(toptim~ agegp3, data=survey)
+#p value is > 0.05 so the result is not statistically significant so we can assume homogeneity
+
+#Conduct ANOVA using the one-way ANOVA from the stats package
+
+# Compute the analysis of variance using the oneway.test from the stats package- we set VAR.equal to be true because we have homogeneity
+res <- stats::oneway.test(toptim ~ as.factor(agegp3), data = survey, var.equal = TRUE)
+# Summary of the analysis
+res
+
+#We use Tukey for post-hoc testing
+rstatix::tukey_hsd(survey, toptim ~ agegp3)
+
+#Compute our Eta squared
+effes=effectsize::effectsize(res)
+effes
+
+#Store the relevant pieces of the output from ANOVA in variables to use for reporting
+#Degrees of freedom
+df1=res$parameter[1]
+df2=res$parameter[2]
+#F statistic
+Fstat=round(res$statistic, 3)
+#Pvalue
+pval=round(res$p.value,2)
+
+
+#A statistically significant difference was found so we need to examine and report the post-hoc results also.
+```
+
+### Reporting the results with eta squared effect
+
+A one-way between-groups analysis of variance (ANOVA) was conducted to explore the impact of age on levels of optimism, as measured by the Life orientation Test (LOT). Participants were divided into three groups according to their age (Group 1: 29 yrs or less; Group 2: 30 to 44 yrs; Group 3: 45yrs and above). There was a statistically significant difference in LOT scores for the three age groups: (F(`r df1`, `r df2`)= `r Fstat`, p<0.05. Despite reaching statistical significance, the actual difference in mean scores between groups was quite small. The effect size, calculated using eta squared was (η² = `r round(effes$Eta2,2)`), indicated a small effect. 
+Post-hoc comparisons using the Tukey HSD test indicated that the mean score for Group 1 (M=`r round(optdesc$mean[1],2)`,SD=`r round(optdesc$sd[1],2)`) was significantly different to that for Group 3 (M=`r round(optdesc$mean[3],2)`,SD=`r round(optdesc$sd[3],2)`). Group 2 (M=`r round(optdesc$mean[2],2)`,SD=`r round(optdesc$sd[2],2)`) did not differ significantly from Group 1 or Group3. 
+Therefore, while the null hypothesis can be rejected in favour of the alternative hypothesis that optimism levels differ across age groups, this difference was found only between the youngest and oldest groups and was relatively small.
+
+# ANOVA - Sleep
+
+This analaysis is being conducted using a real data file condensed from a study conducted to explore the prevalence and impact of sleep problems on various aspects of people’s lives conducted by Julie Pallant. It is available for download from http://spss4.allenandunwin.com.s3-website-ap-southeast-2.amazonaws.com/data_files.html. Staff from a university in Melbourne, Australia were invited to complete a questionnaire containing questions about their sleep behaviour (e.g. hours slept per night), sleep problems (e.g. difficulty getting to sleep) and the impact that these problems have on aspects of their lives (work, driving, relationships). The sample consisted of 271 respondents ranging in age from 18 to 84 years.
+
+H0: There is no difference in Total Sleepiness and associated sensation scale scores for respondents who can be considered young, middle-aged or old.\
+HA: There is a difference in Total Sleepiness and associated sensation scale scores for respondents who can be considered young, middle-aged or old.
+
+```{r}
+datapath <- file.path(datalocation,'sleep.rdata')
+
+#Read in the dataset
+sleep <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset
+colnames(sleep) <- tolower(colnames(sleep))
+
+```
+
+```{r}
+#| label: hist-totsas
+#| fig-cap: "Figure 3: Histogram of Total Sleepiness and Associated Sensation Scores"
+
+#Generate the histogram
+gg <- ggplot(sleep, aes(x=totsas), labs.caption="Figure 1: Histogram for Total Sleepiness and associated sensation scale scores")
+gg <- gg + labs(x="Total Sleepiness and associated sensation scale score")
+gg <- gg + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(sleep$totsas, na.rm=TRUE), sd=sd(sleep$totsas, na.rm=TRUE)))
+
+gg
+```
+
+```{r}
+#| label: qq-totsas
+#| fig-cap: "Figure 4: QQ Plot Total Sleepiness and Associated Sensation Scores"
+
+#Create a qqplot
+qqnorm(sleep$totsas)
+qqline(sleep$totsas, col=2)
+```
+
+```{r}
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(sleep$totsas, basic=F)
+
+#Standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(sleep$totsas)
+tpkurt<-semTools::kurtosis(sleep$totsas)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate percentage of standardized scores for total sleep satisfcation
+# are within our limits of +/- 1.96, +/- 3.29
+ztotsas<- abs(scale(sleep$totsas))
+FSA::perc(as.numeric(ztotsas), 1.96, "gt")
+FSA::perc(as.numeric(ztotsas), 3.29, "gt")
+
+```
+
+Total sleepiness and associated sensation scores were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 2 and Figure 3) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996), but the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) was outside the acceptable range. However over 99% of standardized scores for total sleepiness and associated sensation fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the data can be considered to approximate a normal distribution (m=`r round(mean(sleep$totsas, na.rm=TRUE),2)`, sd=`r round(sd(sleep$totsas, na.rm=TRUE),2)`, n=`r length(sleep$totsas)-sum(is.na(sleep$totsas))`).
+
+```{r}
+#Get descriptive statistics by group - output as a matrix
+psych::describeBy(sleep$totsas, sleep$agegp3, mat=TRUE)
+#Store the output to use in our final reporting of the outcomes of ANOVA
+sasdescrip<-psych::describeBy(sleep$totsas, sleep$agegp3, mat=TRUE)
+
+#Conduct Bartlett's test for homogeneity of variance in library car - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+stats::bartlett.test(totsas~ agegp3, data=sleep)
+#p value is > 0.05 so the result is not statistically significant so we can assume homogeneity
+
+
+# Compute the analysis of variance using the oneway.test from the stats package- we set VAR.equal to be true because we have homogeneity
+res <- stats::oneway.test(sleep$totsas ~ as.factor(sleep$agegp3), data = sleep, var.equal = TRUE)
+# Summary of the analysis
+res
+
+
+#No statistically significant difference was found, p=0.29
+#We don't need the post-hoc testing
+
+#Compute our Eta squared
+effes=effectsize::effectsize(res)
+effes
+
+#Store the relevant pieces of the output from ANOVA in variables to use for reporting
+#Degrees of freedom
+df1=res$parameter[1]
+df2=res$parameter[2]
+#F statistic
+Fstat=round(res$statistic, 3)
+#Pvalue
+pval=round(res$p.value,2)
+
+```
+
+### Reporting the results with eta squared effect
+
+A one way ANOVA test was conducted to compare Total Sleepiness and associated sensation scale score for respondents who are young (18 to 37), middle-aged (38 to 50) and older (over 50). No statistically significant difference in the scores was found between age groups, (F(2, `r df1`, `r df2`) = `r round(res$statistic,2)`, p=`r Fstat`), ((M=`r round(sasdescrip$mean[1],2)`, SD=`r round(sasdescrip$sd[1],2)`) for respondents who are aged 37 and under, (M=`r round(sasdescrip$mean[2],2)`, SD=`r round(sasdescrip$sd[2],2)`) for respondents who are aged between 38 and 50, M=`r round(sasdescrip$mean[3],2)`, SD=`r round(sasdescrip$sd[3],2)`) for respondents who are aged 50+). A small effect size was indicated by the eta squared value (η² = .01). Therefore, there is no evidence to reject the null hypothesis that Total Sleepiness and associated sensation scores differ by age group.
