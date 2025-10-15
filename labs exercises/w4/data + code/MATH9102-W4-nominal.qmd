@@ -1,0 +1,109 @@
+---
+title: "MATH9102-W4-Nominal"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+
+This analysis is being conducted on a dataset accompanying Quantiative Data Analysis in Education a Critical Introduction Using SPSS by Paul Connolly available at https://www.routledge.com/Quantitative-Data-Analysis-in-Education-A-Critical-Introduction-Using-SPSS/Connolly/p/book/9780415372985. The dataset consists of a small number of variables selected from the Young Life and Times Survey (2005) that consisted of a random sample of 16 year olds in Northern Ireland (n=819). The survey runs annually and covers a wide variety of topics related to young people's attitudes and social activities. The variables selected for this dataset focus specifically on the young people's experiences of bullying in school.
+
+This analysis investigates the question: “Is there a relationship between being bullied in school and participating in bullying of others in school?”. The associated hypothesis pair to be tested is:
+H0: There is no relationship between being a victim of bullying in school and participating in bullying others in school.
+HA: There is a relationship between being a victim of bullying in school and participating in bullying others in school.
+ 
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+quiet_library("tidyverse") 
+quiet_library("sjstats")  
+quiet_library("gmodels")
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'bullying.dat')
+
+#Load the data into a dataframe
+bully<-read.table(datapath, header=TRUE)
+```
+
+
+## Approach 1 - use the Crosstable function from gmodels
+```{r}
+#CrossTable(predictor, outcome, fisher = TRUE, chisq = TRUE, expected = TRUE)
+#Note: for this approach there must be the same number of values for both variables so
+#missing data is important. 
+
+# Remove rows where either variable is NA
+bully_clean <- bully %>%
+  filter(!is.na(ubullsch) & !is.na(ubulloth))
+
+# Now run CrossTable requesting both Fisher and Chi Square so we have full information
+# We request the format in SPSS to make it easier to interpret.
+gmodels::CrossTable(
+  bully_clean$ubullsch,
+  bully_clean$ubulloth,
+  fisher = TRUE,
+  chisq = TRUE,
+  expected = TRUE,
+  sresid = TRUE,
+  format = "SPSS"
+)
+
+```
+
+## Approach 2: Create your own contingency table and use the chi square test from the stats package
+```{r}
+#Alternate approach: Create your own contingency table
+mytable<-xtabs(~ubullsch+ubulloth, data=bully)
+#You can use the chisq.test function in the stats package to do the test
+#set the flag correct=TRUE to get Yates correction needed for 2x2 table
+ctest<-stats::chisq.test(mytable, correct=TRUE)#chi square test
+
+ctest#will give you the details of the test statistic and p-value
+ctest$expected#expected frequencies
+ctest$observed#observed frequencies
+ctest$p.value
+#Calculate effect sizes
+sjstats::phi(mytable)
+sjstats::cramer(mytable)
+
+```
+# Report your findings
+
+A Chi-square test of independence was conducted to examine the relationship between being bullied in school and bullying others. The association was statistically significant (χ²(1, N = 799) = 22.23, p < .001). Students who reported being bullied were significantly more likely to report bullying others (14.3%) than those who were not bullied (4.5%). The effect size, measured by Phi (φ = 0.17), indicates a small association. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis.
+
+```{r}
+# We report phi here becasue we are looking at a 2x 2 comparison
+```
+
+
+
+### For repeated measures for categorical variables use McNemars test mcnemars.test 
