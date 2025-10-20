@@ -1,0 +1,416 @@
+---
+title: "MATH9102-W4-Difference-2Groups-Lab"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+# Install and Load Packages
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement in variance tests
+quiet_library("sjstats")  
+quiet_library("gmodels")
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Read in the dataset
+survey <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(survey) <- tolower(colnames(survey))
+
+# Setup the youthcohort dataset for Step 4
+datapath <- file.path(datalocation,'youthcohort.dat')
+
+#Load the data into a dataframe
+youth<-read.table(datapath, header=TRUE)
+```
+
+# Step 3
+
+o Investigate whether there is a difference in Life Satisfaction scores for respondents who said they had children and those who said they did not o Investigate whether there is a difference in Self Esteem scores for respondents who said they had children and those who said they did not
+
+The data for the concepts of interest were inspected to assess the level and pattern of missing data. No missing data was found, see Figure 1.
+
+```{r}
+#| label: hist-tslfest
+#| fig.cap: "Figure 1: Histogram of Total Self Esteem Scores"
+#Create histogram
+ggplot(survey, aes(x = tslfest)) +
+  geom_histogram(
+    binwidth = 2,
+    colour = "black",
+    aes(y = ..density.., fill = ..count..)
+  ) +
+  scale_fill_gradient("Count", low = "#DCDCDC", high = "#7C7C7C") +
+  stat_function(
+    fun = dnorm,
+    color = "red",
+    args = list(
+      mean = mean(survey$tslfest, na.rm = TRUE),
+      sd = sd(survey$tslfest, na.rm = TRUE)
+    )
+  )  +
+   labs(
+    x = "Total Self Esteem"
+  ) + 
+  theme(
+    plot.caption = element_text(
+      hjust = 0.5,   # center
+      face = "bold", # bold
+      size = 14      # adjust size
+    )
+  )
+```
+
+```{r}
+
+#| fig.cap: "Figure 2: QQ Plot of Total Self Esteem Scores"
+#Create a qqplot
+qqnorm(survey$tslfest) 
+qqline(survey$tslfest, col=2) #show a line on the plot
+```
+
+```{r}
+#| label: desc-tslfest
+#| #Generate summary statistics
+pastecs::stat.desc(survey$tslfest, basic=F)
+
+#Calculate the standardized score for skew and kurtosis
+tpskew<-semTools::skew(survey$tslfest)
+tpkurt<-semTools::kurtosis(survey$tslfest)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+
+#Calculate the percentage of standardized scores for the variable itself that are outside our acceptable range
+ztslfest<- abs(scale(survey$tslfest))
+FSA::perc(as.numeric(ztslfest), 1.96, "gt")
+FSA::perc(as.numeric(ztslfest), 3.29, "gt")
+
+```
+
+Total self-esteem scores were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) identified some issues with skewness and kurtosis. While the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) could be considered acceptable using the criteria proposed by Curran, West and Finch (1996), the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) was outside the acceptable range. However as 100% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013), the data can be considered to approximate a normal distribution (m=`r round(mean(survey$tslfest, na.rm=TRUE),2)`, sd=`r round(sd(survey$tslfest, na.rm=TRUE),2)`, n=`r length(survey$tslfest)-sum(is.na(survey$tslfest))`).
+
+```{r}
+#| label: hist-lifesat
+#| fig.cap: "Figure 3: Histogram of Total Life Satisfaction Scores"
+
+#Create histogram
+ggplot(survey, aes(x = tlifesat)) +
+  geom_histogram(
+    binwidth = 2,
+    colour = "black",
+    aes(y = ..density.., fill = ..count..)
+  ) +
+  scale_fill_gradient("Count", low = "#DCDCDC", high = "#7C7C7C") +
+  stat_function(
+    fun = dnorm,
+    color = "red",
+    args = list(
+      mean = mean(survey$tlifesat, na.rm = TRUE),
+      sd = sd(survey$tlifesat, na.rm = TRUE)
+    )
+  ) +
+  labs(
+    x = "Total Life Satisfaction"
+  ) +
+  theme(
+    plot.caption = element_text(
+      hjust = 0.5,   # center
+      face = "bold", # bold
+      size = 14      # adjust size
+    )
+  )
+```
+
+```{r}
+#| label: qq-lifesat
+#| fig.cap: "Figure 4: QQ Plot Total Life Satisfaction Scores"
+#Create a qqplot
+qqnorm(survey$tlifesat) 
+qqline(survey$tlifesat, col=2) #show a line on the plot
+```
+
+```{r}
+#| label: desc-lifesat
+#| #Generate summary statistics
+pastecs::stat.desc(survey$tlifesat, basic=F)
+
+#Calculate the standardized score for skew and kurtosis
+tpskew<-semTools::skew(survey$tlifesat)
+tpkurt<-semTools::kurtosis(survey$tlifesat)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+
+#Calculate the percentage of standardized scores for the variable itself that are outside our acceptable range
+ztlifesat<- abs(scale(survey$tlifesat))
+FSA::perc(as.numeric(ztlifesat), 1.96, "gt")
+FSA::perc(as.numeric(ztlifesat), 3.29, "gt")
+```
+
+Total life satisfaction scores were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 7 and Figure 8) identified some issues with skewness and kurtosis. While the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) could be considered acceptable using the criteria proposed by Curran, West and Finch (1996), the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) was outside the acceptable range. However as 100% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013), the data can be considered to approximate a normal distribution (m=`r round(mean(survey$tlifesat, na.rm=TRUE),2)`, sd=`r round(sd(survey$tlifesat, na.rm=TRUE),2)`, n=`r length(survey$tlifesat)-sum(is.na(survey$tlifesat))`).
+
+The sample consisted of respondents who either had children or did not. Out of the total sample, 42.24% reported having children, while 57.76% did not have children, see Table 1 and Figure 1.
+
+```{r}
+#| label: tbl-child
+# Create a frequency table for the numbers in each group 
+child_freq <- table(survey$child)
+
+# Percentage table
+child_perc <- prop.table(child_freq) * 100
+
+# Combine frequencies and percentages
+child_summary <- cbind(Frequency = child_freq, Percentage = round(child_perc, 2))
+```
+
+```{r}
+#| tbl-cap: "Table 1: Frequency of Respondents' Children Status"
+
+knitr::kable(child_summary, caption = NULL)
+```
+
+```{r}
+# Filter out NA values from the 'child' variable only
+cleaned_survey <- survey %>%
+  filter(!is.na(child))
+```
+
+```{r}
+#| label: barchart-child
+#| fig.cap: "Figure 5: Bar Chart Showing Number of Respondents By Children Status"
+# Base R bar chart
+barplot(table(survey$child), 
+        main = "Distribution Children Status", 
+        xlab = "Children (YES/NO)", 
+        ylab = "Count", 
+        col = c("skyblue", "orange"))
+```
+
+## Difference in Self-Esteem scores for respondents who said they had children and those who said they did not
+
+```{r}
+#| label: hist-slfe-grouped
+#| fig.cap: "Figure 6: Histogram of Total Self-Esteem Scores Grouped by Respondent's Children Status"
+
+# Create a separate histogram showing the distribution for the two (potentially) separate populations (the groups)
+# Create the plot with both histogram and density plot
+ggplot(cleaned_survey, aes(x=tslfest, color=child, fill=child))  + 
+  labs(x="Total Self Esteem") + 
+  # Histogram with alpha for transparency
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5, binwidth=1, color="black") +
+  # Density plot with transparency for overlapping curves
+  geom_density(alpha=0.4) +
+  # Customize the color and fill scales
+  scale_color_manual(values=c("blue", "red"), labels=c("No Children", "Children")) +
+  scale_fill_manual(values=c("lightblue", "lightcoral"), labels=c("No Children", "Children"))
+
+```
+
+```{r}
+#| label: desc-slfe-bygroup
+#| tbl-cap: "Table 2: Descriptive Statistics of Total Self-Esteem Scores Grouped by Respndent's Children Status"
+# Get descriptive statistics by group
+desc_stats <- psych::describeBy(survey$tslfest, survey$child, mat = TRUE)
+
+# Display as a formatted table
+knitr::kable(desc_stats, digits = 2)
+
+```
+
+```{r}
+#| label: ttest-selfesteem
+#Conduct Levene's test for homogeneity of variance in library car - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+car::leveneTest(tslfest ~ child, data=survey)
+#Pr(>F) is your probability - in this case it is not statistically significant so we can assume homogeneity
+
+
+#Conduct the t-test from package stats - basic r package. Prefixing it to make sure that is the one used rather than t-test from another package.
+
+#In this case we can use the var.equal = TRUE option to specify equal variances and a pooled variance estimate
+stats::t.test(tslfest~child,var.equal=TRUE,data=survey)
+#No statistically significant difference was found
+
+res <- stats::t.test(tslfest~child,var.equal=TRUE,data=survey)
+#Calculate Cohen's d
+#arithmetically
+effcd=round((2*res$statistic)/sqrt(res$parameter),2)
+
+#Alternate approach -Using function from effectsize package to convert t to Cohen's d
+effectsize::t_to_d(t = res$statistic, res$parameter)
+
+#Calculate eta squared
+effes=round((res$statistic*res$statistic)/((res$statistic*res$statistic)+(res$parameter)),3)
+effes
+
+```
+
+### Reporting the results with Cohen's d effect
+
+A Welch's independent-samples t-test was conducted to compare total self esteem scores for respondents who have children and those who do not. Levene’s test for equality of variances was statistically significant, indicating that the assumption of homogeneity of variance was not met (p \<0.01). A statistically significant difference in the scores for self-esteem was found (M=34.21, SD= 4.93, n=183 for respondents who have children, M=33.01, SD= 5.67, n=225 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p < 0.05. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting a difference in self-esteem between respondents who have and do not have children. However, as Cohen's d indicated a small effect size, (`r effcd`), this result should be treated with caution.
+
+### Reporting the results with eta squared effect
+
+A Welch's independent-samples t-test was conducted to compare total self esteem scores for respondents who have children and those who do not. Levene’s test for equality of variances was statistically significant, indicating that the assumption of homogeneity of variance was not met (p \<0.01). A statistically significant difference in the scores for self-esteem was found (M=34.21, SD= 4.93, n=183 for respondents who have children, M=33.01, SD= 5.67, n=225 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p < 0.05. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting a difference in self-esteem between respondents who have and do not have children. However, as the eta square indicated a small effect size, (`r effes`), this result should be treated with caution.
+
+## Difference in Life Satisfaction scores for respondents who said they had children and those who said they did not
+
+```{r}
+#| label: hist-grouped
+#| fig.cap: "Figure 7: Histogram of Total Life Satisfaction Scores Grouped by Respondent's Children Status"
+
+# Create a separate histogram showing the distribution for the two (potentially) separate populations (the groups)
+# Create the plot with both histogram and density plot
+ggplot(cleaned_survey, aes(x=tlifesat, color=child, fill=child))  + 
+  labs(x="Total Life Satisfaction") + 
+  # Histogram with alpha for transparency
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5, binwidth=1, color="black") +
+  # Density plot with transparency for overlapping curves
+  geom_density(alpha=0.4) +
+  # Customize the color and fill scales
+  scale_color_manual(values=c("blue", "red"), labels=c("No Children", "Children")) +
+  scale_fill_manual(values=c("lightblue", "lightcoral"), labels=c("No Children", "Children"))
+
+```
+
+```{r}
+#| label: desc-bygroup
+#| fig.cap: "Table 3: Descriptive Statistics of Total Life Satisfaction Scores Grouped by Respndent's Children Status"
+#Get descriptive statistics by group - output as a matrix
+desc_stats <- psych::describeBy(survey$tlifesat, survey$child, mat=TRUE)
+
+# Display as a formatted table
+knitr::kable(desc_stats, digits = 2)
+
+```
+
+```{r}
+#| label: ttest-lifesat
+#Conduct Levene's test for homogeneity of variance in library car - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+car::leveneTest(tlifesat ~ child, data=survey)
+#Pr(>F) is your probability - in this case it is not statistically significant so we can assume homogeneity
+
+
+#Conduct the t-test from package stats - basic r package. Prefixing it to make sure that is the one used rather than t-test from another package.
+
+#In this case we can use the var.equal = TRUE option to specify unequal variances 
+stats::t.test(tlifesat~child,var.equal=TRUE,data=survey)
+#No statistically significant difference was found
+
+res <- stats::t.test(tlifesat~child,var.equal=TRUE,data=survey)
+#Calculate Cohen's d
+#arithmetically
+effcd=round((2*res$statistic)/sqrt(res$parameter),2)
+
+#Alternate approach -Using function from effectsize package to convert t to Cohen's d
+effectsize::t_to_d(t = res$statistic, res$parameter)
+
+#Calculate eta squared
+effes=round((res$statistic*res$statistic)/((res$statistic*res$statistic)+(res$parameter)),3)
+effes
+
+```
+
+### Reporting the results with Cohen's d effect
+
+An independent-samples t-test was conducted to compare total life satisfaction scores for respondents who have children and those who do not. Levene’s test for equality of variances was not statistically significant, indicating that the assumption of homogeneity of variance was met (p \> 0.05). No significant difference in the scores for total life satisfaction was found (M=23.00, SD=6.64, n=184 for respondents who have children, M=21.91, SD= 6.86, n=251 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p = `r round(res$p.value,2)`. Cohen's d also indicated a very small effect size (`r effcd`). There is therefore no evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting that there is no difference between total life satisfaction scores for respondents who have children and those who do not.
+
+### Reporting the results with eta squared effect
+
+An independent-samples t-test was conducted to compare total life satisfaction for respondents who had children and those who do not. Levene’s test for equality of variances was not statistically significant, indicating that the assumption of homogeneity of variance was met (p \> .05). No significant difference in the scores for total life satisfaction was found (M=23.00, SD=6.64, n=184 for respondents who have children, M=21.91, SD= 6.86, n=251 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p = `r round(res$p.value,2)`. A very small effect size was also indicted by the eta squared value (`r effes`). There is therefore no evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting that there is no difference between total life satisfaction scores for respondents who have children and those who do not.
+
+# Step 4 Does a parent’s educational attainment impact on whether student sat GCSE maths? (variables: s1pared, satmath)
+
+```{r}
+# Create the basic contingency table
+contingency_table <- table(youth$s1pared, youth$satmath)
+
+# Add row and column totals
+contingency_with_totals <- addmargins(contingency_table)
+```
+
+```{r}
+#| tbl-cap: "Table 3: Frequency of Respondents' Children Status"
+
+
+# Display as a formatted table
+knitr::kable(contingency_with_totals, digits = 2)
+
+```
+
+```{r}
+#CrossTable(predictor, outcome, fisher = TRUE, chisq = TRUE, expected = TRUE)
+#Note: for this approach there must be the same number of values for both variables so
+#missing data is important. 
+
+# Remove rows where either variable is NA
+youth_clean <- youth %>%
+  filter(!is.na(s1pared) & !is.na(satmath))
+
+
+# Now run CrossTable requesting both Fisher and Chi Square so we have full information
+# We request the format in SPSS to make it easier to interpret.
+gmodels::CrossTable(
+  youth_clean$s1pared,
+  youth_clean$satmath,
+  fisher = TRUE,
+  chisq = TRUE,
+  expected = TRUE,
+  sresid = TRUE,
+  format = "SPSS"
+)
+
+
+mytable<-xtabs(~s1pared+satmath, data=youth)
+#You can use the chisq.test function in the stats package to do the test
+#set the flag correct=TRUE to get Yates correction needed for 2x2 table
+ctest<-stats::chisq.test(mytable, correct=TRUE)#chi square test
+
+#Calculate effect sizes
+sjstats::phi(mytable)
+sjstats::cramer(mytable)
+```
+
+A Chi-square test of independence was conducted to examine the relationship between parental education and whether a child sat GCSE maths. The association was statistically significant, χ²(2, N = 13,201) = 36.23, p < .001. Only 1.07% of students with degree-educated parents did not take GCSE maths, compared to 1.31% of those with at least one parent educated to A-level, and 2.57% of those whose parents had no A-level qualifications. There is therefore evidence to reject the null hypothesis in favour of the alternate hypothesis, indicating a relationship between parental education and GCSE maths participation. However, the effect size, Φ = 0.05, indicates a very small association, so this result should be interpreted with caution.

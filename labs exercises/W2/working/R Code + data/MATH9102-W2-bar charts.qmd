@@ -1,0 +1,93 @@
+---
+title: "Bar Charts"
+author: "Deirdre Lawless"
+format: html
+editor: visual
+---
+
+
+# 1. Install and load packages
+
+This first bit of code installs all the packages needed to run the various functions within this file.
+We define a helper `quiet_library()` that installs (if needed) and loads a package quietly.
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")    # includes ggplot2, readr, dplyr, etc.
+quiet_library("readr")        # explicit (for read_delim), though also in tidyverse
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+#On Mac this would be datalocation <- file.path("/Users", "deirdre.lawless", "datafiles")
+
+```
+
+# 2. Bar Charts
+Using the dataset RomCom.dat. This contains data from a study of 20 students living in the city and 20 living in a rural area who watched two movies. 
+Half the sample watched Bridget Jones Diary, half watched Memento. 
+Their interest in the movie was measured. 
+
+```{r}
+
+datapath <- file.path(datalocation,'RomCom-UrbanRural.dat')
+
+RomCom <- read.delim(datapath, header=TRUE)
+
+#| label: load-data
+#| message: false
+#| warning: false
+
+# Peek at columns available (uncomment if needed)
+# names(RomCom)
+
+```
+
+
+## 2.1 Create a basic bar chart of levels of interest in each film
+This is simply showing a frequency count
+```{r}
+#Load the ggplot into a variable bar, and display it by echoing it to the screen
+bar<-ggplot(RomCom, aes(x=interest)) + geom_bar()
+bar
+```
+
+
+
+
+## 2.2 Create a bar chart of the mean level of interest for each film 
+```{r}
+#We use the mean level of interest in each film
+#We are using the stat_summary function to calculate and then plot the mean values for each film
+bar <- ggplot(RomCom, aes(film, interest))
+bar + stat_summary(fun.y=mean, geom="bar")
+
+```
+
+
+
+## 2.3 Adding location where student lives to the mix
+
+```{r}
+bar <- ggplot(RomCom, aes(film, interest, fill = location ))
+bar + stat_summary(fun.y = mean, geom = "bar", position="dodge") + labs(x="Film") + labs(y="Mean interest") + scale_fill_manual("Living Location", values=c("Rural" = "#008000", "City" = "#0000FF"))
+
+#We use the labs command to set the labels for the x and y axes
+#The scale_fill_manual function is used to change the colours
+#position="dodge" adjusts horizontal positioning while maintaining vertical positions - to handle overlaps
+
+```
+
+
+## +--------------- END OF FILE -------------+

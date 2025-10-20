@@ -1,0 +1,402 @@
+---
+title: "Title"
+subtitle: "Include module code"
+author: "Include your student ID and name"
+format:
+  html:
+    self-contained: true
+    code-fold: true
+    code-tools: true
+    toc: true
+editor: source
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("psych")   # Descriptive statistics by group
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance tests
+quiet_library("VIM") # Visualization and Imputation of Missing Values
+quiet_library("naniar") #(naniar short for NA + naniar) - Missing data wrangling plus Little's test
+quiet_library("simputation") # For imputing variables
+
+quiet_library("sjstats")  # Provides convenient functions for effect sizes
+quiet_library("gmodels")  # Includes 'CrossTable()' for contingency tables.
+
+quiet_library("car")   # Includes Levene's test for homogeneity
+quiet_library("effectsize")   # Includes calculations for effectsize
+quiet_library("rstatix")   # Includes calculations for effectsize and Dunn's test
+
+quiet_library("gt") # Formatting tables
+quiet_library("flextable") # Formatting tables
+
+```
+
+
+```{r}
+#| label: loaddata
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'experim_clean.dat')
+
+#Read in the dataset
+experim <- read.table(datapath, header=TRUE)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(experim) <- tolower(colnames(experim))
+
+```
+
+```{r}
+#| label: add-agegrp
+#| output: false
+
+
+#The goal of this code is to divide participants into three age groups (Low, Mid, High) based on the distribution of ages in the dataset. This is purely for illustration purposes - it is not something you should do in the real world.
+
+# Calculate quantile-based breaks including min and max
+q_breaks <- quantile(experim$age, probs = seq(0, 1, length.out = 4), na.rm = TRUE)
+#quantile(experim$age, probs = seq(0, 1, length.out = 4)) calculates the boundaries that divide the age distribution into three equal parts.
+
+#The first value (0%) is the minimum age,
+#the second (33%) is the first tertile,
+#the third (67%) is the second tertile,
+#and the last (100%) is the maximum age.
+
+# Create age groups
+experim$age_group <- cut(
+  experim$age,
+  breaks = q_breaks,
+  include.lowest = TRUE,
+  labels = c("Undergraduate", "Postgraduate", "Mature Student")
+)
+
+# cut() then uses these boundaries to categorize each age into:
+#"Low" for the youngest third; "Mid" for the middle third; "High" for the oldest third
+#include.lowest = TRUE ensures the smallest age value is included in the first group.
+```
+
+# 1. Introduction
+* Include in this section:
+* **Context and rationale:** Some background
+* **Research aim:** One or two sentences summarising what the report investigates.
+* **Research question and hypotheses:**
+
+* Example:
+
+This analysis uses data from a study investigating the impact of two different types of interventions designed to help students cope with anxiety about an upcoming statistics course.
+
+Students were randomly assigned to one of two equal groups and asked to complete several psychological scales at **Time 1 (pre-intervention)**. These included:
+
+- *Fear of Statistics Test*  
+- *Confidence in Coping with Statistics Scale*  
+- *Depression Scale (Measured using the Beck Depression Inventory (BDI) (Beck, Steer, & Brown, 1996)*
+
+Following this baseline measurement:
+
+- **Group 1:** participated in sessions designed to *improve mathematical skills*  
+- **Group 2:** participated in a program designed to *build confidence* in coping with statistics  
+
+After the intervention (**Time 2**) and again at a three-month follow-up (**Time 3**), students completed the same scales. Their **performance on a statistics exam** was also recorded as a measure of learning outcome.
+
+The purpose of this analysis is to explore the extent to which **type of support** (maths skills vs. confidence-building), **age group**, and **students’ depression levels at the end of the course** can be considered predictors of **exam performance**.
+
+Before developing a predictive model, a series of preliminary analyses were conducted to establish statistical evidence supporting the inclusion of these variables as potential predictors. A set of hypotheses were derived which together test whether each potential predictor (depression, type of support, and age group) shows a meaningful association with exam performance (see Table 1). Evidence from the analysis of these hypotheses will provide the basis for including these variables in a subsequent **multiple linear regression model** predicting exam outcomes.
+
+
+```{=html}
+<table style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr style="background-color:#f2f2f2;">
+      <th style="text-align:left; padding:8px;">Analysis Focus</th>
+      <th style="text-align:left; padding:8px;">Null Hypothesis (H₀)</th>
+      <th style="text-align:left; padding:8px;">Alternative Hypothesis (H₁)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding:8px;"><strong>Depression and Exam Performance</strong></td>
+      <td style="padding:8px;">A student’s level of depression at the end of the course (Time 3) is <strong>not related</strong> to their final exam performance.</td>
+      <td style="padding:8px;">A student’s level of depression at the end of the course (Time 3) <strong>is related</strong> to their final exam performance.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Type of Support and Exam Performance</strong></td>
+      <td style="padding:8px;">The type of support provided (maths skills vs. confidence-building) <strong>does not affect</strong> students’ final exam performance.</td>
+      <td style="padding:8px;">The type of support provided (maths skills vs. confidence-building) <strong>does affect</strong> students’ final exam performance.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Age Group and Type of Support</strong></td>
+      <td style="padding:8px;">A student’s age group and the type of support provided are <strong>independent</strong> (unrelated).</td>
+      <td style="padding:8px;">A student’s age group and the type of support provided are <strong>associated</strong>.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Age Group and Exam Performance</strong></td>
+      <td style="padding:8px;">Students’ exam performance <strong>does not differ</strong> across age groups.</td>
+      <td style="padding:8px;">Students’ exam performance <strong>differs</strong> across age groups.</td>
+    </tr>
+  </tbody>
+</table>
+
+  <div style="text-align:center; font-weight:bold; padding-top:8px;">
+  Table 1. Hypotheses for Planned Analysis.
+  
+</div>
+  
+```
+
+In the remainder of this report, Section 2 describes the dataset used for the analysis, including participant demographics, variable descriptions, and data preparation steps. Section 3 outlines the analytical approach, detailing the statistical methods and rationale for their selection. Section 4 presents the results of the analyses, organised by hypothesis. Section 5 discusses the main findings in the context of the research aims, highlighting their implications and limitations. Finally, Section 6 provides a concise conclusion, summarising the key insights and potential directions for future research. References and any supplementary materials are provided in Section 7 and the Appendix, respectively.
+
+
+
+# 2. Dataset
+
+* **Participants:** number of cases, key demographics.
+* **Missing data / cleaning:** discuss levels of missingness and implications; mention if any cases or variables were removed or recoded or imputed.
+* **Amendments:** discuss any recoding of variables e.g. in this case age group was created
+* ** Describe the variables relevant to the analysis **
+  * **Continuous variables** this would include your normality assessment
+  * **Grouping variables** 
+  * **Include visuals**
+
+Divide into sub-sections as you wish.
+This section can include a small table summarising variable names, types, and ranges.
+You can include the visuals in your main report or in an appendix as you prefer.
+
+* Example:
+
+The dataset used in this study consists of 300 observations. The concepts of interest are outlined in Table 2. Each associated variable was examined to determine whether the level of missing data could introduce bias. No missing data were identified.
+
+Of the participants, 51.33% identified as male and 48.67% as female. Regarding the support groups, 50% of students were assigned to the maths skills group and 50% to the confidence skills groups. A new variable was created to recode students’ ages into categorical age groups. In this classification, 36.67% of the students were identified as undergraduates (19–22 years), 33.67% as postgraduates (23–30 years), and 29.66% as mature students (30+ years).
+
+```{=html}
+<table style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr style="background-color:#f2f2f2;">
+      <th style="text-align:left; padding:8px;">Concept</th>
+      <th style="text-align:left; padding:8px;">Statistical Type</th>
+      <th style="text-align:left; padding:8px;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding:8px;"><strong>Depression</strong></td>
+      <td style="padding:8px;">Continuous (Ratio)</td>
+      <td style="padding:8px;">A student’s level of depression at the end of the course. Single measure calculated from student anwsers to Beck Depression Inventory.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong> Exam Performance</strong></td>
+      <td style="padding:8px;"> Continuous (Ratio)</td>
+      <td style="padding:8px;">The student's numerical result on their final examination.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;">Type of Support</strong></td>
+      <td style="padding:8px;">Nominal (Binary).</td>
+      <td style="padding:8px;">A grouping variable to indicate the type of support provided: maths skills or condfidence skills.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Age Group</strong></td>
+      <td style="padding:8px;">Nominal (Multi-category).</td>
+      <td style="padding:8px;">A categorisation of students age: Undergraduate (19-22), Postgraduate (23-25), Mature Student(25+)) </td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="text-align:center; font-weight:bold; padding-top:8px;">
+  Table 2. Concepts of Interest for Planned Analysis.
+  
+</div>
+
+```
+
+Before statistical tests were conducted, the data representing the relevant concepts was inspected to determine the correct test to be used. 
+
+
+
+
+```{r}
+#| fig-cap: "Figure 1: Histogram of Depression at the end of the Course"
+#Create histogram
+ggplot(experim, aes(x = depress3)) +
+  labs(x = "Depression at the end of the Course") +
+  geom_histogram(
+    binwidth = 2,
+    colour = "black",
+    aes(y = after_stat(density), fill = after_stat(count))
+  ) +
+  scale_fill_gradient("Count", low = "#DCDCDC", high = "#7C7C7C") +
+  stat_function(
+    fun = dnorm,
+    color = "red",
+    args = list(
+      mean = mean(experim$depress3, na.rm = TRUE),
+      sd = sd(experim$depress3, na.rm = TRUE)
+    )
+  )
+```
+```{r}
+#| fig.cap: "Figure 2: QQPlot for Depression at the end of the Course"
+#Create a qqplot
+qqnorm(experim$depress3)
+qqline(experim$depress3, col=2) #show a line on the plot
+```
+
+Students' level of depression at the end of the course were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) suggested some potential deviations due to skewness and kurtosis.. However, the standardized score for skewness (0.66) and for kurtosis (-2.47) can be considered acceptable using the criteria proposed by Curran, West and Finch (1996). Further as  as over 95% of standardized scores fall within the bounds of +/-1.96 and 100% within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), there are insufficient outliers to be considered problematic. Therefore the data for depression can be considered to approximate a normal distribution (m=11.48, sd=6.23,n=300).
+
+--- We will complete this section during class --
+
+# 3. Analysis Approach
+
+Explain what you did statistically:
+
+* State the cut-off level you are working with for statistical significance
+* State the types of tests and why they’re appropriate:
+
+  * Correlation (for continuous–continuous relationships)
+  * Independent samples *t*-test/Mann-Whitney (for two groups)
+  * Chi-square test (for two categorical variables)
+  * One-way ANOVA/Kruskal Wallis (for differences across three groups)
+  
+* State the effect size conventions you will be using.
+
+* Example:
+An alpha level of .05 was used as the threshold for statistical significance, consistent with conventional standards in psychological and behavioural research. Results with p values less than .05 were considered statistically significant. To evaluate the practical significance of findings, effect sizes were reported alongside p values. For parametric and non-parametric difference tests, eta squared (η²) was used as the measure of effect size, interpreted according to Cohen’s (1988) conventions, where values of approximately .01, .06, and .14 indicate small, medium, and large effects, respectively. For correlational analyses, Pearson’s r (or its non-parametric equivalent, Spearman’s rho/Kendall's tau) was reported, with effect sizes interpreted using Cohen’s benchmarks of .10, .30, and .50 for small, medium, and large associations, respectively. Reporting both statistical significance and effect size facilitates a more comprehensive interpretation of the data’s substantive importance.
+
+
+-- We will complete this section during class --
+
+# 4. Results
+
+Organise by  hypothesis- a sub-section for each. For each:
+
+1. Briefly restate the hypothesis
+2. Present the inferential test result (test statistic, df, *p*-value, and effect size)
+3. Interpret in plain language
+
+
+-- We will complete this section during class --
+
+# 5. Discussion
+
+* **Summarise findings:** What patterns emerged?
+* **Interpret results:** Why might these differences or relationships exist?
+* **Discuss limitations:** small sample, sources of bias, etc.
+* **Implications:** 
+
+# 6. Conclusion
+
+A concise paragraph that brings everything together — what was learned overall, and what it suggests for future work.
+
+
+# 7. References
+List any articles, books or sources cited.
+
+Beck, A. T., Steer, R. A., & Brown, G. K. (1996). Manual for the Beck Depression Inventory–II. San Antonio, TX: Psychological Corporation.
+Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillside, NJ: Lawrence Erlbaum Associates.
+Curran, Patrick J., Stephen G. West, and John F. Finch. (1996). "The robustness of test statistics to nonnormality and specification error in confirmatory factor analysis."
+Field, A., Field Z. & Miles J.(2012).  Discovering statistics using IBM SPSS statistics. Sage publications limited.
+
+# Appendix
+Optional
+If you choose to include your visuals in the appendix.
+
+* Example:
+## General Descriptives
+
+### Gender Proportions:
+```{r}
+#| label: desc-gender
+# Proportions of gender
+prop.table(table(experim$sex))
+```
+### Age Group Proportions:
+```{r}
+#| label: desc-age
+
+#Get the numbers in each age group
+table(experim$age_group)
+
+# Show the range of ages in each group
+prop.table(table(experim$age_group))
+```
+
+### Group Proportions:
+```{r}
+#| label: desc-group
+
+#Get the numbers in group
+table(experim$group)
+
+# Show the range of ages in each group
+prop.table(table(experim$group))
+```
+
+
+## Missing Data
+
+```{r}
+#| label: missing
+varsint<-c("depress3", "exam", "group", "age_group")
+esub<-experim[varsint]
+#Adjust the margins so that we can display the labels
+par(mar = c(10, 4, 4, 2))  # more space at bottom
+# rename columns to human-friendly labels - we are restricted with the length we can use
+colnames(esub) <- c("Depression", "Exam", "Group", "AgeGrp")
+# run VIM::aggr
+res <- summary(VIM::aggr(esub, sortVar = TRUE, combined = FALSE))$combinations
+
+# Include Little's MCAR if you have data missing
+```
+
+## Normality
+
+```{r}
+#|label: desc-depress
+#Generate regular summary statistics 
+psych::describe(experim$depress3)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(experim$depress3)
+tpkurt<-semTools::kurtosis(experim$depress3)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+zdepress3<- abs(scale(experim$depress3))
+
+FSA::perc(as.numeric(zdepress3), 1.96, "gt")
+FSA::perc(as.numeric(zdepress3), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+```
+
+
+
+
+

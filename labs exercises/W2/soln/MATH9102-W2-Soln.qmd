@@ -1,0 +1,145 @@
+---
+title: "MATH9102-W2-Soln"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true   # Embed images rather than create sub-folder
+    code-fold: true         # Fold code blocks, user can click to expand
+    code-tools: true        # Show copy/download buttons for code
+editor: visual
+---
+
+#TU059/TU060/TU256/PhD School of Computer Science, TU Dublin
+#MATH9102 - Week Two Solutions
+
+## 1. Install and load packages and Load Data
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'experim.dat')
+
+#Read in the dataset
+exper <- read.table(datapath, header=TRUE)
+names(exper)
+
+```
+
+
+
+# HISTOGRAMS Fear of Statistics (fost1, fost2)
+
+```{r}
+ggplot(exper, aes(fost1)) +
+  geom_histogram(binwidth = 0.4, fill="red") +
+  labs(x = "Fear of Statistics (Time 1)", y = "Frequency")
+
+
+ggplot(exper, aes(fost2)) +
+  geom_histogram(binwidth = 0.4, fill="red") +
+  labs(x = "Fear of Statistics (Time 2)", y = "Frequency")
+
+
+```
+
+# BAR CHARTS (mean scores Fear of Statistics by gender)
+
+```{r}
+ggplot(exper, aes(sex, fost1)) +
+  stat_summary(fun = mean, geom="bar") +
+  labs(x = "Gender", y = "Mean Fear of Statistics (Time 1)")
+
+    
+ggplot(exper, aes(sex, fost2)) +
+  stat_summary(fun = mean, geom="bar") +
+  labs(x = "Gender", y = "Mean Fear of Statistics (Time 2)")
+```
+
+
+# STEM AND LEAF Confidence in Coping with Statistics
+
+```{r}
+stem(exper$confid1)
+stem(exper$confid2)
+```
+
+
+
+
+# BOXPLOTS Depression
+
+## by time only
+```{r}
+ggplot(exper, aes(y = depress1)) +
+  geom_boxplot() + labs(y = "Depression (Time 1)")
+
+
+ggplot(exper, aes(y = depress2)) +
+  geom_boxplot() + labs(y = "Depression (Time 2)")
+```
+
+## by gender
+```{r}
+
+ggplot(exper, aes(sex, depress1)) +
+  geom_boxplot() + labs(x = "Gender", y = "Depression (Time 1)")
+
+
+ggplot(exper, aes(sex, depress2)) +
+  geom_boxplot() + labs(x = "Gender", y = "Depression (Time 2)")
+```
+
+
+
+
+# DENSITY PLOTS Fear of Statistics
+
+## overall
+```{r}
+ggplot(exper, aes(fost1)) +
+  geom_density(fill="blue", alpha=0.4) +
+  labs(x = "Fear of Statistics (Time 1)", y = "Density")
+
+  
+ggplot(exper, aes(fost2)) +
+  geom_density(fill="blue", alpha=0.4) +
+  labs(x = "Fear of Statistics (Time 2)", y = "Density")
+```
+
+## by gender
+```{r}
+ggplot(exper, aes(fost1, fill = sex)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Fear of Statistics (Time 1)", y = "Density")
+
+
+ggplot(exper, aes(fost2, fill = sex)) +
+  geom_density(alpha = 0.5) +
+  labs(x = "Fear of Statistics (Time 2)", y = "Density")
+
+```
+
+
+
+
+# EXAM RESULTS
+
+```{r}
+summary(exper$exam)
+hist(exper$exam, main="Distribution of Exam Results",
+     xlab="Exam Score", col="lightgreen", border="white")
+```
+
