@@ -62,17 +62,14 @@ colnames(experim) <- tolower(colnames(experim))
 This statistical analysis was designed to investigate students fear of statistics based on responses to a psychological questionnaire designed to measure extroversion and primacy of traits in individuals. The dataset used was constructed for use by Julie Pallant and contains scores on personality-related scales, as well as demographic information such as age and gender. The concepts of interest to this data analysis include repeated measures of three psychological constructs: Fear of Statistics, Coping with Confidence, and Depression. Each construct was assessed at two time points (Time 1 and Time 2), allowing for the examination of changes over time. These are identified in Table 1.
 
 | Concept | Measurement Instrument Used | Variable Type |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | Fear of Statistics at Time 1 and Time 2 | Scores reflect levels of anxiety and apprehension associated with learning or applying statistics. Measured using the Statistics Anxiety Rating Scale (STARS) or an adapted sub-scale. | Continuous |
 | Confidence in Coping at Time 1 and Time 2 | Scores represent self-perceived confidence in coping with challenges, particularly within an academic context. Assessed with items drawn from a coping/self-efficacy scale. Derived from a questionnaire taken at the start of the module | Continuous |
 | Fear of Statistics at Time 1 and Time 2 | Scores indicate the presence and severity of depressive symptoms. Measured with a short-form depression inventory (such as items adapted from the DASS – Depression Anxiety Stress Scales. Derived from a questionnaire taken at the start of the module | Continuous |
 
-         
 ::: {style="text-align: center;"}
 **Table 1: Concepts of Interest**
 :::
-
-
 
 The data for the concepts of interest were inspected to assess the level and pattern of missing data. No missing data was found, see Figure 1.
 
@@ -126,7 +123,6 @@ gs
 qqnorm(experim$confid1)
 qqline(experim$confid1, col=2) #show a line on the plot
 ```
-
 
 ```{r assessconfid1}
 #Generate regular summary statistics 

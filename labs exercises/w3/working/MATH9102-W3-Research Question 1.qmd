@@ -32,7 +32,7 @@ quiet_library("VIM") # Visualization and Imputation of Missing Values
 quiet_library("naniar") #(naniar short for NA + naniar) - Missing data wrangling plus Little's test
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'survey.dat')
 
 #Read in the dataset
@@ -99,7 +99,6 @@ naniar::mcar_test(sdatasubset)
 
 survey <- na.omit(survey)
 ```
-
 
 ```{r}
 #| label: describe-toptim
@@ -330,8 +329,7 @@ Total life satisfaction scores were assessed for normality. Visual inspection of
 
 ## 3.1 Relationship between level of optimism and level of life satisfaction
 
-H0: There is no relationship between a respondent’s level of optimism and their level of life satisfaction. 
-Ha: There is a relationship between a respondent’s level of optimism and their level of life satisfaction.
+H0: There is no relationship between a respondent’s level of optimism and their level of life satisfaction. Ha: There is a relationship between a respondent’s level of optimism and their level of life satisfaction.
 
 ```{r}
 #| label: corr-optlifesat
@@ -354,8 +352,7 @@ The relationship between total optimism and life satisfaction was investigated u
 
 ## 3.2 Relationship between level of perceived stress and level of life satisfaction
 
-H0: There is no relationship between a respondent’s level of perceived stress and their level of life satisfaction. 
-Ha: There is a relationship between a respondent’s level of perceived stress and their level of life satisfaction.
+H0: There is no relationship between a respondent’s level of perceived stress and their level of life satisfaction. Ha: There is a relationship between a respondent’s level of perceived stress and their level of life satisfaction.
 
 ```{r}
 #| label: corr-stresslifesat
@@ -379,8 +376,7 @@ The relationship between total perceived stress and total life satisfaction was 
 
 ## 3.3 Relationship between level of self-esteem and level of life satisfaction
 
-H0: There is no relationship between a respondent’s level of self-esteem and their level of life satisfaction. 
-Ha: There is a relationship between a respondent’s level of self-esteem and their level of life satisfaction.
+H0: There is no relationship between a respondent’s level of self-esteem and their level of life satisfaction. Ha: There is a relationship between a respondent’s level of self-esteem and their level of life satisfaction.
 
 ```{r}
 #| label: corr-slfestlifesat

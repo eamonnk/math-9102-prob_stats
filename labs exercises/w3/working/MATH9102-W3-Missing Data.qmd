@@ -29,7 +29,7 @@ quiet_library("naniar") #(naniar short for NA + naniar) - Missing data wrangling
 quiet_library("simputation") # For imputing variables
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'survey.dat')
 
 #Read in the dataset
@@ -49,6 +49,8 @@ varsint<-c("toptim", "tmast", "tposaff", "tnegaff", "tlifesat", "tpstress","tslf
 sdatasubset <- sdata[varsint]
 
 # rename columns to human-friendly labels - we are restricted with the length we can use
+# ask 'vim' to get  missingnes and percenatage of missing ness per variable
+# just get human friendly labels
 colnames(sdatasubset) <- c("Optimism", "Mastery", "Pos.Affect", "Neg.Affect", "LifeSat", "Stress", "SelfEst", "Soc.Des", "Perc.Ctrl")
 
 #Adjust the margins so that we can display the labels

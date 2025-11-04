@@ -1,0 +1,237 @@
+---
+title: "MATH9102-W3-Correlation"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+# 1. Install and Load Packages
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance tests
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("./")
+datapath <- file.path(datalocation,'experim.dat')
+
+#Read in the dataset
+experim <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(experim) <- tolower(colnames(experim))
+
+```
+
+# 1. Introduction
+
+This statistical analysis was designed to investigate students fear of statistics as part of an experimental stud involving interventions to help students decrease their fear and incldued additional measures which might impact this fear such as confidence in coping and depression.
+
+| Concept | Measurement Instrument Used | Variable Type |
+|----|----|----|
+| Fear of Statistics at Time 1 | Derived from a questionnaire at the start of the module) | Continuous |
+
+.....
+
+<p align="center">
+
+**Table 1: Concepts of Interest**
+
+<p>
+
+#2. Hypotheses \## Hypotheses 1: H0: There is no relationship between a students fear of statistics at the start of the module and their confidence in coping measured at the start of the module..\
+
+Ha: There is a relationship between a students fear of statistics at the start of the module and their confidence in coping measured at the start of the module\
+
+```{r assess-fost1}
+#Create a histogram
+gg <- ggplot(experim, aes(x=fost1)) + labs(caption="Figure 1: Histogram -  Fear of Statisics at the start of the module.")
+#Change the label of the x axis
+gg <- gg + labs(x="Fear of Statistics")
+#manage binwidth and colours
+gg <- gg + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+#A a density curve using a normal denisty function
+#Use stat_function to compute a normalised score for each value of fost1
+#Pass the mean and standard deviation to this as parameters
+#use the na.rm parameter to say how missing values are handled
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(experim$fost1, na.rm=TRUE), sd=sd(experim$fost1, na.rm=TRUE)))
+#to display the graph request the contents of the variable be shown
+gg
+
+#Create a qqplot
+qqnorm(experim$fost1, main="Figure 2: QQ Plot for Fear of Statistics") 
+qqline(experim$fost1, col=2) #show a line on the plot
+
+#Generate summary statistics
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(experim$fost1, basic=F)
+
+#We can make our decision based on the value of the standardised score for skew and kurtosis
+#We divide the skew statistic by the standard error to get the standardised score
+#This will indicate if we have a problem
+tpskew<-semTools::skew(experim$fost1)
+tpkurt<-semTools::kurtosis(experim$fost1)
+# 1st item is measure of skewness
+# second item is standard error
+# skew statistics divided by standardised error  = standardised scores
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+
+#And also by calculating the percentage of standardised scores for the variable itself that are outside our acceptable range
+#This will tell us how big a problem we have
+# Calculate the percentage of standardised scores that are greated than 1.96
+# the perc function which is part of the FSA package which calculate the percentage that are within a range - you can look for greater than "gt", greater than or equal "geq", "gt", less than or equal "leq",  or less than "lt"),
+# scale is a function that creates z scores, abs gets absolute value
+
+# have absolute values of fear statstic
+zfost1<- abs(scale(experim$fost1))
+
+
+# decide how many of them are ourside of range
+FSA::perc(as.numeric(zfost1), 1.96, "gt")
+FSA::perc(as.numeric(zfost1), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+# can see from pastec stats we have a problem - 
+# histogram is missing data for two  columns
+# QQ-plot  - problem  -  not filly linear at start and end
+
+# run 
+# get standarised score = -.0424 --- within  + or - 2
+# kurtosis = -0.643 >> so thats OK
+
+# so lets have a look now at % of standardised score that fall in between + or - 1.96
+# =  3% outside of the range
+# use bigger statistics - as have a full data set >> get 0  =>> 100% within 3.29...
+
+# NOTE - even tho histogram and QQ plot looks like they have problems
+# we are looking to see if population they come from can be considered approx normal 
+```
+
+<p style="text-align:justify">
+
+Fear of Statistics at time one scores were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) and skewness (`r round(tpskew[1]/tpskew[2],2)`) could be considered acceptable according to the advie of Curran , west and Finch. using the criteria proposed by Curran, West and Finch (CITE....). As 100% of the standardised scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013), the data can be considered to approximate a normal distribution (m=`r round(mean(experim$fost1, na.rm=TRUE),2)`, sd=`r round(sd(experim$fost1, na.rm=TRUE),2)`, n=`r length(experim$fost1)-sum(is.na(experim$fost1))`).
+
+</p>
+
+```{r stats-confid1}
+#Create histogram
+gs <- ggplot(experim, aes(x=confid1)) + labs(caption="Figure 3: Histogram for Confidence in coping at the start of the module")
+gs <- gs + labs(x="Confidence in coping at te start of the module")
+gs <- gs + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gs <- gs + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(experim$confid1, na.rm=TRUE), sd=sd(experim$confid1, na.rm=TRUE)))
+gs
+
+
+#Create a qqplot
+qqnorm(experim$confid1, main="Figure 4: QQPlot for Confidence in coping at the start of the module")
+qqline(experim$confid1, col=2) #show a line on theplot
+
+
+#Generate regular summary statistics 
+pastecs::stat.desc(experim$confid1, basic=F)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(experim$confid1)
+tpkurt<-semTools::kurtosis(experim$confid1)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+zconfid1<- abs(scale(experim$confid1))
+
+FSA::perc(as.numeric(zconfid1), 1.96, "gt")
+FSA::perc(as.numeric(zconfid1), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+# as with earlier boock - look at skew and kurtosis - run just seleted lines
+# standardised skewness = 0.8166
+# standardised kurtosis = - 0.91
+# both within range...
+
+# look at % scores, ahgai as with previus chunk....between 1.96 and 3.29
+# + or - 1.96 = 0
+# + or - 3.29 = 0
+# 100% fall within the ranges above
+#  can treat it as population being approximately normal
+
+```
+
+<p style="text-align:justify">
+
+Total Perceived Stress were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. While the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) could be considered acceptable using the criteria proposed by Curran, West and Finch (1996), but the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) was outside the acceptable range. However as over 99% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution (m=`r round(mean(experim$confid1, na.rm=TRUE),2)`, sd=`r round(sd(experim$confid1, na.rm=TRUE),2)`, n=`r length(experim$confid1)-sum(is.na(experim$confid1))`).
+
+</p>
+
+```{r corr-fostconfid}
+
+#Create a Simple scatterplot of fear of statistics abd confidence
+#aes(x,y)
+scatter <- ggplot(experim, aes(fost1, confid1))
+scatter + geom_point() + labs(x = "fear of Statistics", y = "Confidence in coping") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = experim$confid1)
+
+
+#Pearson Correlation - this is the correct test for this data
+stats::cor.test(experim$fost1, experim$confid1, method='pearson')
+corstat=stats::cor.test(experim$fost1, experim$confid1, method='pearson')
+
+# when run this correlation test get the below...
+# correlation is in moderate range
+# p-value is 0.016 which is less than 0.05 (working at that level) => and it is statistically significant!
+
+```
+
+<p style="text-align:justify">
+
+The relationship between perceived sense of being in control (Total PCOISS derived from the PCOISS questionnaire) and perceived stress (Total Perceived Stress derived from the perceived stress questionnaire) was investigated using a Pearson correlation. A strong, statistically significant, negative correlation was found (r =`r round(as.numeric(corstat[4]),2)`, n=`r as.numeric(corstat[2])`, p\<.001). There is therefore evidence to reject the null hypothesis in favour of the alternate that there is a relationship between perceived sense of being in control and perceived stress.
+
+</p>
+
+# Appendix: How to conduct other types of correlation test
+
+Note: These are included for illustration only. If your data cannot be treated as approximately normal then you need to use a non-parametric test. You should choose either Spearman or Kendall. Either is fine. Some sources consider Kendall to be more robust than Spearman.
+
+```{r other-tests}
+#Spearman Correlation for illustration only - you SHOULD NOT do multiple tests
+#This test will give an error for our datasince this method uses ranking but cannot handle ties but that is ok with us - we consider this to be missing data
+cor.test(experim$fost1, experim$confid1, method = "spearman")
+#We can also use kendall's tau which does handle ties
+cor.test(experim$fost1, experim$confid1, method = "kendall")
+```
+
+# References
+
+Cohen, S., Kamarck, T. & Mermelstein, R. (1983). A global measure of perceived stress. Journal of Health and Social Behavior, 24, 385–96.\
+Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillside, NJ: Lawrence Erlbaum Associates.\
+Crowne, D.P. & Marlowe, D. (1960). A new scale of social desirability independent of psychopathology. Journal of Consulting Psychology, 24, 349–54.\
+Curran, Patrick J., Stephen G. West, and John F. Finch. (1996). "The robustness of test statistics to nonnormality and specification error in confirmatory factor analysis." Psychological methods 1.1 (1996): 16.\Diener, E., Emmons, R.A., Larson, R.J. & Griffin, S. (1985). The Satisfaction with Life scale. Journal of Personality Assessment, 49, 71–6.\
+Field, A., Field Z. & Miles J.(2012). Discovering statistics using IBM SPSS statistics. Sage publications limited,\
+Pallant, J. (2000). Development and validation of a scale to measure perceived control of internal states. Journal of Personality Assessment, 75, 2, 308–37. Pearlin, L. & Schooler, C. (1978). The structure of coping. Journal of Health and Social Behavior, 19, 2–21.\
+Rosenberg, M. (1965). Society and the adolescent self-image. Princeton, NJ: Princeton University Press.\
+Scheier, M.F. & Carver, C.S. (1985). Optimism, coping and health: An assessment and implications of generalized outcome expectancies. Health Psychology, 4, 219–47.\
+Watson, D., Clark, L.A. & Tellegen, A. (1988). Development and validation of brief measures of positive and negative affect: The PANAS scales. Journal of Personality and Social Psychology, 54, 1063–70.\

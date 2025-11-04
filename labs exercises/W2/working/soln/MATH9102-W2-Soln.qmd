@@ -9,10 +9,10 @@ format:
 editor: visual
 ---
 
-#TU059/TU060/TU256/PhD School of Computer Science, TU Dublin
-#MATH9102 - Week Two Solutions
+#TU059/TU060/TU256/PhD School of Computer Science, TU Dublin #MATH9102 - Week Two Solutions
 
 ## 1. Install and load packages and Load Data
+
 ```{r}
 #| label: install-and-load
 #| message: false
@@ -29,7 +29,7 @@ quiet_library <- function(pkg) {
 
 quiet_library("tidyverse")
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'experim.dat')
 
 #Read in the dataset
@@ -37,8 +37,6 @@ exper <- read.table(datapath, header=TRUE)
 names(exper)
 
 ```
-
-
 
 # HISTOGRAMS Fear of Statistics (fost1, fost2)
 
@@ -68,7 +66,6 @@ ggplot(exper, aes(sex, fost2)) +
   labs(x = "Gender", y = "Mean Fear of Statistics (Time 2)")
 ```
 
-
 # STEM AND LEAF Confidence in Coping with Statistics
 
 ```{r}
@@ -76,12 +73,10 @@ stem(exper$confid1)
 stem(exper$confid2)
 ```
 
-
-
-
 # BOXPLOTS Depression
 
 ## by time only
+
 ```{r}
 ggplot(exper, aes(y = depress1)) +
   geom_boxplot() + labs(y = "Depression (Time 1)")
@@ -92,6 +87,7 @@ ggplot(exper, aes(y = depress2)) +
 ```
 
 ## by gender
+
 ```{r}
 
 ggplot(exper, aes(sex, depress1)) +
@@ -102,12 +98,10 @@ ggplot(exper, aes(sex, depress2)) +
   geom_boxplot() + labs(x = "Gender", y = "Depression (Time 2)")
 ```
 
-
-
-
 # DENSITY PLOTS Fear of Statistics
 
 ## overall
+
 ```{r}
 ggplot(exper, aes(fost1)) +
   geom_density(fill="blue", alpha=0.4) +
@@ -120,6 +114,7 @@ ggplot(exper, aes(fost2)) +
 ```
 
 ## by gender
+
 ```{r}
 ggplot(exper, aes(fost1, fill = sex)) +
   geom_density(alpha = 0.5) +
@@ -132,9 +127,6 @@ ggplot(exper, aes(fost2, fill = sex)) +
 
 ```
 
-
-
-
 # EXAM RESULTS
 
 ```{r}
@@ -142,4 +134,3 @@ summary(exper$exam)
 hist(exper$exam, main="Distribution of Exam Results",
      xlab="Exam Score", col="lightgreen", border="white")
 ```
-

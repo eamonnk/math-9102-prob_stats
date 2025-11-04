@@ -8,6 +8,7 @@ editor: visual
 #| label: load-packages
 #| include: false
 
+# install.packages("palmerpenguins")
 library(tidyverse)
 library(palmerpenguins)
 ```

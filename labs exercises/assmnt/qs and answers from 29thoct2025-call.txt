@@ -1,0 +1,107 @@
+Victor Hugo Cavichiolli Prado - Hi Deirdre, Victor Prado, my question:, I have a question about testing my non-parametric continuous variable vs nominal binary; I will need to use mann whitney u test, my question is, should I divide in 2 groups and test is twice as the example with drinking y and drinking x, on sunday and wednesday, I can test the binary variable against the continuous directly, something like this -> stats::wilcox.test(systolic_bp_avg~smoked_at_least_100_cigarettes, data=n
+
+D - No - that test was looking at difference on two separate days, Sunday and Wednesday. The data was collected twice. If you are only looking a one variable and one binary and you only have one collection of the data then just one test is fine
+
+
+
+Victor Hugo Cavichiolli Prado - okay understood, so I will then apply the stats::wilcox.test(blood_pressure~smoking, data=nhanes) this one to get U, then coin::wilcox_test to get the z and do a wilcox_effsize for r, (got a bit confused because on the slide mann whitney u, use wilcox...
+
+
+D - yes that is correct
+
+vi
+Victor Hugo Cavichiolli Prado
+6:54 PM
+
+okay, thanks
+
+--------
+
+Victor Hugo Cavichiolli Prado - I have more one or two questions about writing, on my normally check (since my variables are non-normal) 1- Is it important to mention if the skewness was positive or negative?
+de
+Deirdre Lawless
+7:01 PM
+
+yes you need to report all the statistics we used in the normality assessment - that is what you used to make the judgement
+vi
+Victor Hugo Cavichiolli Prado
+7:02 PM
+
+I will then write the stats and also mention that because the skewness was + or - I did the transformation x or y to try to bring it closer to normal.
+de
+Deirdre Lawless
+7:03 PM
+
+You don't have to mention the transformation unless you intend to use the transformed variables
+vi
+Victor Hugo Cavichiolli Prado
+7:03 PM
+
+ah ok
+--------
+
+now I have a question, about how we classify the result, I was questioning myself yesterday if is correct to report, for whitney for example... how big was the R, and then I found this https://rcompanion.org/handbook/F_04.html
+vi
+Victor Hugo Cavichiolli Prado
+7:05 PM
+
+ - my like r 0.10 is small
+de
+Deirdre Lawless
+7:06 PM
+
+D  - that's fine - just include that refernece *reference
+vi
+Victor Hugo Cavichiolli Prado  - do we have in any place those classifications.. so I can I say like, the effect 0.11 is small... or the tau 0.30 is medium...
+vi
+Victor Hugo Cavichiolli Prado -  ah ok, I will use this reference..
+-------
+
+vi
+Victor Hugo Cavichiolli Prado
+7:32 PM
+
+deirdre, when the p is super small like (9.295404e-18) should I just report it as 0? or there is a correct way to do it?
+de
+Deirdre Lawless
+7:32 PM
+
+AS I have in the notes - if it is really small < 0.001
+vi
+Victor Hugo Cavichiolli Prado
+7:33 PM
+
+ok, thanks
+de
+Deirdre Lawless = - check the cheatsheet
+
+
+
+------
+
+Cormac Lyons - 
+I am looking at using the Cybersecurity: Suspicious Web Threat Interactions and trying to figure out which hypothesis make sense
+
+D - OK - can you give me a link to the dataset?
+
+https://www.kaggle.com/datasets/jancsg/cybersecurity-suspicious-web-threat-interactions
+
+D - OK Cormac - you could look at bytes in and bytes out for this data which represent suspicious interactions
+
+de
+Deirdre Lawless
+6:49 PM
+
+Then you can use your bytes in and byes out in the other tests using the nominal variables e.g. country code
+de
+Deirdre Lawless
+6:49 PM
+
+You can also use the connection duration as a continuous variable
+
+you have detection type to use also
+
+OK, thanks
+
+Thats great, Just trying to get a start. Many thanks for your help
+------

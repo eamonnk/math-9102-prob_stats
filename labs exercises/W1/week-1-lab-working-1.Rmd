@@ -1,0 +1,465 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+#SECTION ONE: INSTALL AND LOAD packages
+
+# Define a helper function `quiet_library`:
+# - Takes a package name as input
+# - Installs the package if it is not already installed
+# - Loads the package while suppressing warnings and messages
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE) # Install without messages
+    }
+    library(pkg, character.only = TRUE) # Load silently
+  }))
+}
+
+# Load required packages (install if missing)
+quiet_library("tidyverse")   # for data wrangling and visualization
+quiet_library("carData")     # companion datasets for the 'car' package
+quiet_library("gtsummary")   # for creating publication-ready summary tables
+quiet_library("flextable")   # for customizable tables in reports
+quiet_library("officer")     # needed for flextable advanced customization
+
+```
+
+
+```{r}
+#Load it into a dataframe 
+msleepdata<-ggplot2::msleep
+
+# Get the names of the variables in the dataset
+names(msleepdata)
+```
+```{r}
+#b.	Try out exploring the data using some of the functions covered in SECTION THREE in  MATH9102W1.R (names, str, summary)
+summary(msleepdata)
+str(msleepdata)
+spec(msleepdata)
+head(msleepdata)
+tail(msleepdata)
+nrow(msleepdata)
+ncol(msleepdata)
+
+```
+
+
+
+#-----------------------------------------------------------------------------------------------
+
+```{r}
+
+#=-=============SECTION THREE: LOOK AT THE DATA=================
+
+#Get a list of all variables in the dataset using colnames
+names(msleepdata)
+
+#You can look at the data in a variable by entering its name at the command prompt
+msleepdata$sleep_total #total amount of sleep in hours
+
+#You can use the str function to get an overview of the variable
+str(msleepdata$brainwt) #brain weight
+str(msleepdata$bodywt) #body weight
+
+#Use summary to get a relevant statistical summary for a variable
+summary(msleepdata$vore) #carnivore,herbivore etc
+
+#For numerical data - this will give use median, mean, IQR, max and min for the salary as it is a scale
+summary (msleepdata$brainwt)
+
+#Or get a summary of all the variables in the dataset
+summary(msleepdata)
+
+
+#The distribution of observations across mammalian foraging types
+table(msleepdata$vore)
+
+#To see investigate the conservation status by vore type 
+
+#We start by creating a table
+table(msleepdata$conservation, msleepdata$vore)
+
+#Then we can look at the proportions
+proportions(table(msleepdata$conservation, msleepdata$vore))
+
+# Show the proportion of each conservation status for each vore type (Row wise proportions)
+# e.g. Critically Endagered Carnivore: 50%, Domesticated Herbivore: 70%
+proportions(table(msleepdata$conservation, msleepdata$vore),margin = 1)
+
+# Columnwise proportions
+proportions(table(msleepdata$vore, msleepdata$conservation),margin = 1)
+
+
+#Using the gtsummary package using pipes to create a prettier version of the table
+msleepdata |>
+  select(conservation, vore) |>
+  gtsummary::tbl_summary()
+
+#Showing proportions
+msleepdata |>
+  select(conservation, vore) |>
+  gtsummary::tbl_summary(
+    statistic = list(all_categorical() ~ "{n} ({p}%)") # Show counts and proportions
+  )
+
+#Using flextable to create a version that can be saved to a file
+msleepdata |>
+  select(conservation, vore) |>
+  gtsummary::tbl_summary(
+    by = conservation, # Group by conservation
+    statistic = list(all_categorical() ~ "{n} ({p}%)")) |> # Show counts and proportions 
+  gtsummary::as_flex_table() |> # Convert the table to a format that can be exported
+  flextable::save_as_docx(path = "my_table.docx") # Save the file
+#By default this will be saved in your default working directory
+#To check where this is in the Console pane enter the command getwd()
+
+
+
+
+# Create styled flextable
+msleepdata |>
+  select(conservation, vore) |>
+  tbl_summary(
+    by = vore, # group by vore type
+    statistic = list(all_categorical() ~ "{n} ({p}%)")
+  ) |>
+  as_flex_table() |>
+  theme_vanilla() |> # start with a clean theme
+  border_outer(part = "all", border = fp_border(color = "black", width = 2)) |> # thick outer border
+  border_inner_h(part = "all", border = fp_border(color = "darkblue", width = 1)) |> # horizontal lines
+  border_inner_v(part = "all", border = fp_border(color = "darkblue", width = 1)) |> # vertical lines
+  color(color = "white", part = "header") |> # white text in header
+  bg(bg = "darkblue", part = "header") |> # dark blue header background
+  bold(part = "header") |> # bold header text
+  autofit() |> 
+  save_as_docx(path = "my_fancy_table.docx")
+#By default this will be saved in your default working directory
+#To check where this is in the Console pane enter the command getwd()
+
+#------------
+```
+
+
+```{r}
+# --categorical summaries and table creation--
+#c.	Try out creating tables using some of the functions covered in SECTION THREE in  MATH9102W1.R (table, proportions, gtsummary::tblsummary, flextable)
+# i.	Potential variables to use  genus and vore, vore and conservation e.g. conservation and vore, sleep_total
+
+# Frequency table of vore (diet type)
+table(msleepdata$vore)
+
+# Cross-tabulation of vore and conservation
+table(msleepdata$vore, msleepdata$conservation)
+
+```{r}
+# 📊 2. Using prop.table()
+# prop.table() converts a frequency table into proportions (i.e., percentages).
+
+# Overall proportions
+prop.table(table(msleepdata$vore))
+
+# Proportion by row or column
+prop.table(table(msleepdata$vore, msleepdata$conservation), margin = 1)  # by vore
+prop.table(table(msleepdata$vore, msleepdata$conservation), margin = 2)  # by conservation
+```
+
+
+
+```{r}
+# 📋 3. Using gtsummary::tbl_summary()
+# 
+# This produces publication-quality summary tables — especially great for reports.
+# Install if needed
+# install.packages("gtsummary")
+library(gtsummary)
+
+# Summary of categorical variables
+msleepdata %>%
+  select(vore, conservation) %>%
+  tbl_summary()
+
+
+# you cna add continuous variables too
+# This gives you mean, median, and IQR of sleep_total grouped by diet type (vore).
+msleepdata %>%
+  select(vore, sleep_total) %>%
+  tbl_summary(by = vore)
+
+
+
+```
+
+
+```{r}
+#🪶 4. Using flextable
+#To turn a simple table into a nicely formatted one for Word, PowerPoint, or HTML reports:
+  
+# install.packages("flextable")
+library(flextable)
+
+# Create a table of vore vs conservation
+tab <- table(msleepdata$vore, msleepdata$conservation)
+
+# Convert it to a flextable
+ft <- flextable::qflextable(as.data.frame(tab))
+ft
+
+#or directly
+ft <- flextable(as.data.frame(tab))
+ft <- autofit(ft)
+ft
+
+
+```
+
+
+```{r}
+<!-- 🧠 Summary of Each Approach -->
+
+  
+  | Function                   | Purpose             | Output Type                           |
+| -------------------------- | ------------------- | ------------------------------------- |
+| `table()`                  | Counts              | Basic R table                         |
+| `prop.table()`             | Percentages         | Numeric matrix                        |
+| `gtsummary::tbl_summary()` | Descriptive summary | Publication-style table               |
+| `flextable()`              | Nicely formatted    | Report-ready table (Word, HTML, etc.) |
+
+```
+
+```{R}
+-------------------------------------------------------------------------------
+  # =========SECTION FOUR: MEASURES OF CENTRAL TENDENCY==========
+  #Median
+  
+  median(msleepdata$sleep_total) #total hours sleep
+
+#Mean
+mean(msleepdata$sleep_total)
+
+#You can assign the outcome to a variable
+meansal <- mean(msleepdata$sleep_total)
+
+#and then display it on screen
+meansal
+
+
+
+#Mode
+#R doesn't have a built in function to compute the mode but there is a simple function which you can write and include in your code  that will do it for you")
+
+getmode <- function(v)
+{
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v,uniqv)))]
+}
+
+
+#Use the function to get the mode of total sleep hours
+getmode(msleepdata$sleep_total)
+
+#---------------------------------
+```
+
+
+```{r}
+
+# >>>>>> Central Tendency functions- <<<< below -- next 5 below
+# 1️⃣ Mean
+# 
+# The mean (average) is calculated using mean().
+# Mean total sleep (in hours)
+mean(msleepdata$sleep_total, na.rm = TRUE)
+```
+
+```{r}
+# 2️⃣ Median
+# 
+# The median is the middle value when data are sorted.
+
+median(msleepdata$sleep_total, na.rm = TRUE)
+```
+
+```{r}
+# 3️⃣ Mode
+# 
+# R doesn’t have a built-in mode function, but you can find the most frequent value using:
+
+
+# Simple custom mode function
+mode_func <- function(x) {
+  ux <- na.omit(unique(x))
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+# Example: mode of vore (diet type)
+mode_func(msleepdata$vore)
+```
+```{r}
+# 4️⃣ Summary of a Variable
+# 
+# You can quickly view several central tendency stats at once with:
+
+summary(msleepdata$sleep_total)
+```
+```{r}
+# 5️⃣ Grouped Central Tendency (using tidyverse)
+# 
+# You can calculate central tendency by category — e.g., average sleep by diet type (vore):
+
+library(dplyr)
+
+msleepdata %>%
+  group_by(vore) %>%
+  summarise(
+    mean_sleep = mean(sleep_total, na.rm = TRUE),
+    median_sleep = median(sleep_total, na.rm = TRUE),
+    count = n()
+  )
+```
+
+```{r}
+#========== Solution============================
+# ----- SECTION FOUR: MEASURES OF DISPERSION---- 
+#Range
+range(msleepdata$sleep_total)
+
+
+#Quantiles
+quantile(msleepdata$sleep_total)
+
+#to get 1st quantile
+x=quantile(msleepdata$sleep_total); x[1] 
+
+#Interquartile Range
+IQR(msleepdata$sleep_total)
+
+#Variance
+var(msleepdata$sleep_total)
+
+
+#Standard deviation
+sd(msleepdata$sleep_total)
+#Rounded
+round(sd(msleepdata$sleep_total,2)) #rounded to 2 decimal places
+```
+
+```{r}
+# 📊 Dispersion Functions in R
+# 
+# Dispersion (or variability) measures how consistent or variable your data values are.
+# 
+# Common dispersion measures:
+# 
+# Range
+# 
+# Variance
+# 
+# Standard deviation
+# 
+# Interquartile range (IQR)
+# 
+# Minimum / Maximum
+
+```
+
+
+
+
+```{r}
+1️⃣ Range
+
+The range is the difference between the maximum and minimum values.
+
+# Range of total sleep
+range(msleepdata$sleep_total, na.rm = TRUE)
+
+# Difference between max and min
+diff(range(msleepdata$sleep_total, na.rm = TRUE))
+```
+
+```{r}
+2️⃣ Variance
+
+Variance measures the average squared deviation from the mean.
+
+var(msleepdata$sleep_total, na.rm = TRUE)
+```
+
+
+```{r}
+3️⃣ Standard Deviation
+
+Standard deviation is the square root of variance, measuring spread in the same units as your data.
+
+sd(msleepdata$sleep_total, na.rm = TRUE)
+```
+
+```
+4️⃣ Interquartile Range (IQR)
+
+IQR = difference between the 75th percentile (Q3) and 25th percentile (Q1).
+It’s a measure of the middle 50% of your data
+
+IQR(msleepdata$sleep_total, na.rm = TRUE)
+```
+
+```{r}
+5️⃣ Five-Number Summary
+
+You can get a quick summary of spread with summary():
+
+summary(msleepdata$sleep_total)
+```
+
+
+```{r}
+
+
+6️⃣ Grouped Dispersion (using tidyverse)
+
+You can calculate measures of spread by group (e.g., by diet type):
+
+library(dplyr)
+
+msleepdata %>%
+  group_by(vore) %>%
+  summarise(
+    mean_sleep = mean(sleep_total, na.rm = TRUE),
+    sd_sleep = sd(sleep_total, na.rm = TRUE),
+    var_sleep = var(sleep_total, na.rm = TRUE),
+    iqr_sleep = IQR(sleep_total, na.rm = TRUE),
+    range_sleep = diff(range(sleep_total, na.rm = TRUE))
+  )
+```
+
+```{r}
+
+| Function        | Measure                 | Description                    |
+| --------------- | ----------------------- | ------------------------------ |
+| `range()`       | Range                   | Min and max values             |
+| `diff(range())` | Range width             | Max − Min                      |
+| `var()`         | Variance                | Average squared deviation      |
+| `sd()`          | Standard deviation      | Square root of variance        |
+| `IQR()`         | Interquartile range     | Q3 − Q1                        |
+| `summary()`     | Quick descriptive stats | Min, Q1, Median, Mean, Q3, Max |
+
+```

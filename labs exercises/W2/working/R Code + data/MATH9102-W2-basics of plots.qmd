@@ -13,6 +13,10 @@ This first bit of code installs all the packages needed to run the various funct
 We define a helper `quiet_library()` that installs (if needed) and loads a package quietly.
 
 ```{r}
+# label: install-and-load — assigns a label to the code chunk so it can be referenced later.
+# message: false — suppresses messages that might appear (e.g., package startup messages).
+# warning: false — suppresses warnings from appearing in the rendered document.
+
 #| label: install-and-load
 #| message: false
 #| warning: false
@@ -30,7 +34,7 @@ quiet_library("tidyverse")    # includes ggplot2, readr, dplyr, etc.
 quiet_library("readr")        # explicit (for read_delim), though also in tidyverse
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 #On Mac this would be datalocation <- file.path("/Users", "deirdre.lawless", "datafiles")
 
 ```
@@ -59,7 +63,26 @@ facebookData <- read.delim(datapath, header=TRUE)
 #| warning: false
 
 # Peek at columns available (uncomment if needed)
-# names(facebookData)
+names(facebookData)
+
+```
+
+```{r}
+# Peek at columns available (uncomment if needed)
+library(tibble)
+
+# facebookData <- as_tibble(facebookData)
+# spec(facebookData)
+
+facebookData <- as.data.frame(facebookData)
+#spec(facebookData)
+
+#wine_tbl <- as.data.frame(wine_tbl)
+head(facebookData)
+
+
+
+# spec(facebookData)
 
 ```
 

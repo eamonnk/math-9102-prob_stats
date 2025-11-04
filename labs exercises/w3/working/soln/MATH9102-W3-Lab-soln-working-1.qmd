@@ -1,0 +1,354 @@
+---
+title: "MATH9102-W3-Correlation - Lab"
+author: "Deirdre Lawless"
+format: 
+  html:
+      self-contained: true
+      code-fold: true
+editor: visual
+---
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+# 1. Install and Load Packages
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance tests
+quiet_library("VIM") # Visualization and Imputation of Missing Values
+quiet_library("naniar") #(naniar short for NA + naniar) - Missing data wrangling plus Little's test
+quiet_library("simputation") # For imputing variables
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("./")
+datapath <- file.path(datalocation,'experim.dat')
+
+#Read in the dataset
+experim <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(experim) <- tolower(colnames(experim))
+
+```
+
+# 1. Introduction
+
+This statistical analysis was designed to investigate students fear of statistics based on responses to a psychological questionnaire designed to measure extroversion and primacy of traits in individuals. The dataset used was constructed for use by Julie Pallant and contains scores on personality-related scales, as well as demographic information such as age and gender. The concepts of interest to this data analysis include repeated measures of three psychological constructs: Fear of Statistics, Coping with Confidence, and Depression. Each construct was assessed at two time points (Time 1 and Time 2), allowing for the examination of changes over time. These are identified in Table 1.
+
+| Concept | Measurement Instrument Used | Variable Type |
+|------------------------|------------------------|------------------------|
+| Fear of Statistics at Time 1 and Time 2 | Scores reflect levels of anxiety and apprehension associated with learning or applying statistics. Measured using the Statistics Anxiety Rating Scale (STARS) or an adapted sub-scale. | Continuous |
+| Confidence in Coping at Time 1 and Time 2 | Scores represent self-perceived confidence in coping with challenges, particularly within an academic context. Assessed with items drawn from a coping/self-efficacy scale. Derived from a questionnaire taken at the start of the module | Continuous |
+| Fear of Statistics at Time 1 and Time 2 | Scores indicate the presence and severity of depressive symptoms. Measured with a short-form depression inventory (such as items adapted from the DASS – Depression Anxiety Stress Scales. Derived from a questionnaire taken at the start of the module | Continuous |
+
+::: {style="text-align: center;"}
+**Table 1: Concepts of Interest**
+:::
+
+The data for the concepts of interest were inspected to assess the level and pattern of missing data. No missing data was found, see Figure 1.
+
+All analysis was conducted using a significance level of p \< .05 as the cut-off for statistical significance. Effect sizes are reported in accordance with Cohen’s (1988) conventions, with values of correlation ≈ 0.1, 0.3, and 0.5 interpreted as weak, moderate, and strong effects respectively (or equivalent thresholds for other effect size measures).
+
+```{r}
+#We create a subset with just these variables
+varsint<-c("fost1", "fost2", "confid1", "depress2")
+
+# create a subset with only variables of interest
+esub <- experim[varsint]
+
+# rename columns to human-friendly labels - we are restricted with the length we can use
+colnames(esub) <- c("FearTime1", "FearTime2", "ConfidTime1", "DepressTime1")
+
+```
+
+```{r}
+#| fig-cap: "Figure 1: Missing data patterns for the concepts of interest"
+#| fig-align: center
+#Adjust the margins so that we can display the labels
+par(mar = c(10, 4, 4, 2))  # more space at bottom
+
+VIM::aggr(esub, sortVar = TRUE, combined = FALSE)
+```
+
+# 2. Hypotheses
+
+## 2.1 Confidence in Coping and Fear of Statistics
+
+H0: There is no relationship between a student's confidence in coping and their fear of statistics at the start of the module measured at the start of the module.
+
+Ha: There is a relationship between a student's confidence in coping and their fear of statistics at the start of the module measured at the start of the module..
+
+```{r histconfid1}
+#| fig-cap: "Figure 2: Histogram for Confidence in Coping at Time 1"
+#| fig-align: center
+#Create histogram
+gs <- ggplot(experim, aes(x=confid1)) 
+gs <- gs + labs(x="Confidence in Coping at the Start of the module")
+gs <- gs + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gs <- gs + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(experim$confid1, na.rm=TRUE), sd=sd(experim$confid1, na.rm=TRUE)))
+gs
+```
+
+```{r qqconfid1}
+#| fig-cap: "Figure 3: QQPlot for Confidence in Coping at Time 1"
+#| fig-align: center
+#Create a qqplot
+qqnorm(experim$confid1)
+qqline(experim$confid1, col=2) #show a line on the plot
+```
+
+```{r assessconfid1}
+#Generate regular summary statistics 
+pastecs::stat.desc(experim$confid1, basic=F)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(experim$confid1)
+tpkurt<-semTools::kurtosis(experim$confid1)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+zconfid1<- abs(scale(experim$confid1))
+
+FSA::perc(as.numeric(zconfid1), 1.96, "gt")
+FSA::perc(as.numeric(zconfid1), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+```
+
+Confidence in coping skills at time 1 were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 2 and Figure 3) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) and the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) could be considered acceptable using the criteria proposed by Curran, West and Finch (1996). As 100% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution (m=`r round(mean(experim$confid1, na.rm=TRUE),2)`, sd=`r round(sd(experim$confid1, na.rm=TRUE),2)`, n=`r length(experim$confid1)-sum(is.na(experim$confid1))`).
+
+```{r histfost1}
+#| fig-cap: "Figure 4: Histogram Fear of Statistics at Time 1"
+#| fig-align: center
+#| #Create a histogram
+gg <- ggplot(experim, aes(x=fost1)) 
+#Change the label of the x axis
+gg <- gg + labs(x="Fear of Statistics")
+#manage binwidth and colours
+gg <- gg + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+#A a density curve using a normal density function
+#Use stat_function to compute a normalised score for each value of fost1
+#Pass the mean and standard deviation to this as parameters
+#use the na.rm parameter to say how missing values are handled
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(experim$fost1, na.rm=TRUE), sd=sd(experim$fost1, na.rm=TRUE)))
+#to display the graph request the contents of the variable be shown
+gg
+```
+
+```{r qplotfost1}
+#| fig-cap: "Figure 5: QQ Plot for Fear of Statistics at Time 1"
+#| fig-align: center
+#Create a qqplot
+qqnorm(experim$fost1) 
+qqline(experim$fost1, col=2) #show a line on the plot
+```
+
+```{r assessfost1}
+#Generate summary statistics
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(experim$fost1, basic=F)
+
+#We can make our decision based on the value of the standardised score for skew and kurtosis
+#We divide the skew statistic by the standard error to get the standardised score
+#This will indicate if we have a problem
+tpskew<-semTools::skew(experim$fost1)
+tpkurt<-semTools::kurtosis(experim$fost1)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+
+#And also by calculating the percentage of standardised scores for the variable itself that are outside our acceptable range
+#This will tell us how big a problem we have
+# Calculate the percentage of standardised scores that are greater than 1.96
+# the perc function which is part of the FSA package which calculate the percentage that are within a range - you can look for greater than "gt", greater than or equal "geq", "gt", less than or equal "leq",  or less than "lt"),
+# scale is a function that creates z scores, abs gets absolute value
+
+zfost1<- abs(scale(experim$fost1))
+
+FSA::perc(as.numeric(zfost1), 1.96, "gt")
+FSA::perc(as.numeric(zfost1), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+```
+
+Fear of Statistics at time 1 scores were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 4 and Figure 5) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) and skewness (`r round(tpskew[1]/tpskew[2],2)`) could be considered accepted according to the advice of Curran, West and Finch (1996). As 100% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013), the data can be considered to approximate a normal distribution (m=`r round(mean(experim$fost1, na.rm=TRUE),2)`, sd=`r round(sd(experim$fost1, na.rm=TRUE),2)`, n=`r length(experim$fost1)-sum(is.na(experim$fost1))`).
+
+```{r corr-fostconfid}
+#| fig-cap: "Figure 6: Scatterplot Confidence in Coping and Fear of Statistics Time 1"
+#| fig-align: center
+
+ggplot(experim, aes(x = confid1, y = fost1)) +
+  geom_point() +
+  geom_smooth(method = "lm", colour = "red", se = FALSE) +
+  labs(
+    x = "Confidence in Coping",
+    y = "Fear of Statistics"
+  )
+
+
+#Pearson Correlation 
+stats::cor.test(experim$confid1, experim$fost1, method='pearson')
+corstat=stats::cor.test(experim$confid1,experim$fost1, method='pearson')
+
+```
+
+The relationship between fear of statistics and confidence in coping at time 1 was investigated using a Pearson correlation. A moderate, statistically significant, negative correlation was found (r =`r round(as.numeric(corstat[4]),2)`, n=`r as.numeric(corstat[2])`, p\<.05). There is therefore evidence to reject the null hypothesis in favour of the alternate that there is a relationship between perceived sense of being in control and perceived stress.
+
+## 2.2 Depression and Fear of Statistics
+
+H0: There is no relationship between a student's fear of statistics at the start of the module and their level of depression measured mid-way through the module.
+
+Ha: There is a relationship between a student's fear of statistics at the start of the module and their level of depression measured mid-way through the module.
+
+```{r histdepress2}
+#| fig-cap: "Figure 7: Histogram of Depression at Time 2"
+#| fig-align: center
+#| #Create histogram
+gs <- ggplot(experim, aes(x=depress2)) 
+gs <- gs + labs(x="Depression at Time 2")
+gs <- gs + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gs <- gs + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(experim$depress2, na.rm=TRUE), sd=sd(experim$depress2, na.rm=TRUE)))
+gs
+```
+
+```{r qqplotdepress2}
+#| fig-cap: "Figure 8: QQ Plot for Depression at Time 2"
+#| fig-align: center
+#Create a qqplot
+qqnorm(experim$depress2)
+qqline(experim$depress2, col=2) #show a line on the plot
+```
+
+```{r stats-depress2}
+#Generate regular summary statistics 
+pastecs::stat.desc(experim$depress2, basic=F)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(experim$depress2)
+tpkurt<-semTools::kurtosis(experim$depress2)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+zdepress2<- abs(scale(experim$depress2))
+
+FSA::perc(as.numeric(zdepress2), 1.96, "gt")
+FSA::perc(as.numeric(zdepress2), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+```
+
+Depression levels at time 2 were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 7 and Figure 8) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) and the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) could be considered acceptable using the criteria proposed by Curran, West and Finch (1996). As 100% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution (m=`r round(mean(experim$depress2, na.rm=TRUE),2)`, sd=`r round(sd(experim$depress2, na.rm=TRUE),2)`, n=`r length(experim$depress2)-sum(is.na(experim$depress2))`).
+
+```{r histfost2}
+#| fig-cap: "Figure 9: Histogram of Fear of Statistics at Time 2"
+#| fig-align: center
+#Create a histogram
+gg <- ggplot(experim, aes(x=fost2)) 
+#Change the label of the x axis
+gg <- gg + labs(x="Fear of Statistics")
+#manage binwidth and colours
+gg <- gg + geom_histogram(binwidth=2, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+#A a density curve using a normal density function
+#Use stat_function to compute a normalised score for each value of fost2
+#Pass the mean and standard deviation to this as parameters
+#use the na.rm parameter to say how missing values are handled
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(experim$fost2, na.rm=TRUE), sd=sd(experim$fost2, na.rm=TRUE)))
+#to display the graph request the contents of the variable be shown
+gg
+```
+
+```{r qqfost2}
+#| fig-cap: "Figure 10: QQPlot for Fear of Statistics at Time 2"
+#| fig-align: center
+#Create a qqplot
+qqnorm(experim$fost2) 
+qqline(experim$fost2, col=2) #show a line on the plot
+```
+
+```{r assessfost2}
+#Generate summary statistics
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
+pastecs::stat.desc(experim$fost2, basic=F)
+
+#We can make our decision based on the value of the standardised score for skew and kurtosis
+#We divide the skew statistic by the standard error to get the standardised score
+#This will indicate if we have a problem
+tpskew<-semTools::skew(experim$fost2)
+tpkurt<-semTools::kurtosis(experim$fost2)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+
+#And also by calculating the percentage of standardised scores for the variable itself that are outside our acceptable range
+#This will tell us how big a problem we have
+# Calculate the percentage of standardised scores that are greater than 1.96
+# the perc function which is part of the FSA package which calculate the percentage that are within a range - you can look for greater than "gt", greater than or equal "geq", "gt", less than or equal "leq",  or less than "lt"),
+# scale is a function that creates z scores, abs gets absolute value
+
+zfost2<- abs(scale(experim$fost2))
+
+FSA::perc(as.numeric(zfost2), 1.96, "gt")
+FSA::perc(as.numeric(zfost2), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+```
+
+Fear of Statistics at time 2 scores were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 9 and Figure 10) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) and skewness (`r round(tpskew[1]/tpskew[2],2)`) could be considered accepted according to the advice of Curran, West and Finch (1996). As 100% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013), the data can be considered to approximate a normal distribution (m=`r round(mean(experim$fost2, na.rm=TRUE),2)`, sd=`r round(sd(experim$fost2, na.rm=TRUE),2)`, n=`r length(experim$fost2)-sum(is.na(experim$fost2))`).
+
+```{r corr-fostdepress}
+#| fig-cap: "Figure 11: Scatterplot for Depression and Fear of Statistics at Time 2"
+#| fig-align: center
+ggplot(experim, aes(x = depress2, y = fost2)) +
+  geom_point() +
+  geom_smooth(method = "lm", colour = "red", se = FALSE) +
+  labs(
+    x = "Depression",
+    y = "Fear of Statistics"
+  ) 
+
+
+#Pearson Correlation 
+stats::cor.test( experim$depress2, experim$fost2, method='pearson')
+corstat=stats::cor.test( experim$depress2, experim$fost2, method='pearson')
+
+```
+
+The relationship between fear of statistics and depression at time 2 was investigated using a Pearson correlation. No statistically, significant correlation was found (r =`r round(as.numeric(corstat[4]),2)`, n=`r as.numeric(corstat[2])`, p\<.05). There is therefore evidence no evidence reject the null hypothesis that there is no relationship between fear of statistics and depression at time 2.
+
+# 3. Conclusion
+
+These results suggest that students who reported lower confidence in coping also tended to report greater fear of statistics at Time 1. The moderate negative correlation indicates that as coping confidence increases, fear of statistics decreases. In contrast, there was no evidence of a meaningful relationship between depression and fear of statistics at Time 2. Overall, these findings support the theoretical expectation that confidence in coping is closely related to anxiety about academic tasks, whereas depression appears to be less strongly associated in this context.
+
+# References
+
+Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Lawrence Erlbaum Associates. Curran, Patrick J., West, Stephen G., and Finch., John F. (1996). "The robustness of test statistics to nonnormality and specification error in confirmatory factor analysis. Field, A., Field Z. & Miles J.(2012). Discovering statistics using IBM SPSS statistics. Sage publications limited.

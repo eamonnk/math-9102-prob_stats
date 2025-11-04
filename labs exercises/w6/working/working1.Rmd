@@ -1,0 +1,294 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+unzip ("bank.zip", exdir="./bankData")
+#library(readr)
+#bankdata <- read_delim(‘/bankData/bank-fuill.csv’ delim=’;’, na=c(‘unknown’), col_types=’nccccnccccnccccccc’)
+bankdata <- read_delim("./bankData/bank-fuill.csv", delim=";", na=c("unknown"), guess_max=50000)
+
+# library(readr)
+# 
+# bankdata <- read_delim(
+#   "./bankData/bank-full.csv",
+#   delim = ";",
+#   na = c("unknown"),
+#   guess_max = 50000
+# )
+
+
+
+```
+```{r}
+# url <- "https://archive.ics.uci.edu/ml/machine-learning-databases/00222/bank.zip"
+# download.file(url, destfile = "bank.zip", mode = "wb")
+# unzip("bank.zip", exdir = "./bankData")
+# list.files("./bankData")
+
+list.files("./bankData")
+list.files()
+
+bankdata <- read_delim(
+  "./bankData/bank-full.csv",
+  delim = ";",
+  na = c("unknown"),
+  guess_max = 50000
+)
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+```{r}
+# basic checks
+
+head(bankdata)
+
+```
+
+text
+```{r}
+# NAs
+
+bankdata[[2]] <- as.factor(bankdata[[2]])
+bankdata[[3]] <- as.factor(bankdata[[3]])
+bankdata[[4]] <- as.factor(bankdata[[4]])
+bankdata[[5]] <- as.factor(bankdata[[5]])
+
+head(bankdata)
+
+```
+
+```{R}
+
+# ask R
+
+missing <- is.na(bankdata$education)
+#print(missing)
+# count them
+count <- sum(missing)
+print(count)
+total <- nrow(bankdata)
+print(total)
+napercent <- round(100 * count / total, 2)
+print(napercent)
+
+
+```
+
+
+```{r}
+allMissing <- is.na(bankdata)
+# get a count for eacjh column
+counts <- colSums(allMissing)
+# only the columnsthat have missing NAs
+print(round(counts/nrow(bankdata)*100, 2))
+
+
+```
+
+
+```{r}
+
+fix1 <- bankdata
+
+# get the index of every row with a value of -1 [True, Fale, False, True] etc
+Indices <- (fix1$pdays == -1)
+countNoContact <- sum (indices)
+percent <- (100* countNoContact)/nrow(bankdata) # calculate the % which are -1
+# its a lot
+print(paste("Percent Nas: " , round(percent), ""))
+# replace them with an NA value
+# set the value of pdays to NA on each row that had a value of -1
+fix1$pdays[indices] <- NA
+# re-calculate but not using NAs
+# exclude Nas when calculating the mean
+avgPdays <- mean(fix1$pdays, na.rm = T)
+
+print(paste("Avg Pdays", round(avgPdays),  ""))
+## comment need to eb careful with pecial values in the data
+#i.e. -1  / 999s etc
+
+
+
+# # Option 2 -  keep them and exclude them in the calculations
+# # Manually select and don’t’ use for average
+# # get the index of every customer who was contacted ( i.e. not  = -1
+# indices <- (bankdata$pdays != -1)
+# head(indices)
+# # Sum the values to get the total number contacted  (T=1, F = 0)
+# countContacted <- sum(indices)
+# countContacted
+# 
+# # only select those who have been contacted to send to our mean() function
+# avgPdays <- mean(bankdata$pdays[indices])
+# round(avgPdays) 
+# 
+
+
+
+
+
+```
+
+
+```{r}
+# omitting rows containing nas
+# percentage list when delete nas... get percentage value.. see how much dta we lose....if we delet all rows woth NA
+no.nas <- na.omit(bankdata)
+percentage.left <- nrow(no.nas) / nrow(bankdata) * 100
+round(100 - percentage.left, 2)
+
+
+```
+
+
+```{r}
+allMissing <- is.na(bankdata)
+# get a count for eacjh column
+counts <- colSums(allMissing)
+# only the columnsthat have missing NAs
+print(round(counts/nrow(bankdata)*100, 2))
+```
+```{r}
+
+vector <- c(14, 15, 9, 8, 9, 6, 7, 8, 12)
+
+```
+
+
+
+
+```{r}
+summary(bankdata)
+
+```
+
+```{r}
+
+vector <- c(14, 15, 9, 8, 9, 6, 7, 8, 12)
+
+median1 <- median(vector)
+
+mean_vector <- mean(vector)
+print(mean_vector)
+
+sorted_vector <- sort(vector)
+print(sorted_vector)
+
+median_index <- ceiling(length(sorted_vector) * 0.5)
+print(median)
+
+```
+
+
+```{r}
+
+vector <- c(14, 15, 9, 8, 9, 6, 7, 8, 12)
+
+median1 <- median(vector)
+print(median1)
+```
+```{r}
+
+for (i in c(0.3, 0.5, 0.75, .9)) {
+  index <- ceiling(length(sorted_vector) * i)
+  value <- sorted_vector[[index]]
+  print(paste0("The ", i * 100, "th percentile is ", value))
+}
+
+```
+```{r}
+
+
+for (i in c(0.3, 0.5, 0.75)) {
+    print(paste0("The ", i * 100, "th percentile is ", quantile(sorted_vector, i)))
+  
+}
+
+
+```
+
+
+
+
+```{r}
+for (i in c(0.3, 0.5, 0.75)){
+    print(paste0("The ", i * 100, "th percentile is ", quantile(sorted_vector, i), type = 1))
+  
+}
+```
+```{r}
+fivenum(bankdata$a)
+
+
+
+```
+
+```{r}
+# get trimmed mean()
+raw_mean <- mean(bankdata$balance)
+raw_median <- median(bankdata$balance)
+raw_mean 
+raw_median
+
+mean_med_diff = raw_mean - raw_median
+mean_med_diff
+
+tenth.percentile <- quantile(bankdata$balance, 0.1)
+ninetieth.percentile <-quantile(bankdata$balance, 0.9)
+
+print(paste0("The 10th percentile is ", tenth.percentile))
+print(paste0("The 90th percentile is ", ninetieth.percentile))
+
+trimmed <- bankdata[bankdata$balance > tenth.percentile & bankdata$balance < ninetieth.percentile, ]
+trimmed.mean <- round(mean(trimmed$balance), 2)
+print(paste0("The trimmed mean is ", trimmed.mean))
+
+raw.difference <- abs(raw_median - raw_mean)
+trimmed.difference <- abs(raw_median - trimmed.mean)
+
+print(paste("Raw difference is ", raw.difference))
+print(paste(" Trimmed difference is ", trimmed.difference))
+
+
+```
+
+```{r}
+
+# 10 random integers between 1 and 100
+random_integers <- sample(1:100, 10)
+random_integers
+
+randata_mean <- mean(random_integers)
+randata_median <- median(random_integers)
+print(paste("mean is", randata_mean))
+print(paste("median is", randata_median)) 
+
+iqr <- IQR(random_integers)
+print(paste("iqr is", iqr)) 
+
+range <- max(random_integers) - min(random_integers)
+print(paste("range is ", range))
+```
+
+```{r}
+standard.deviation <- sd(bankdata$age)
+round(standard.deviation, 2)
+
+variance <- var(bankdata$age)
+round(variance)
+
+```
+
+
