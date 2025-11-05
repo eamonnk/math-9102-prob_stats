@@ -1,0 +1,67 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement in variance tests
+quiet_library("sjstats")  
+quiet_library("gmodels")
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("./")
+
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("./")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Read in the dataset
+survey <- read.table(datapath)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(survey) <- tolower(colnames(survey))
+
+# Setup the youthcohort dataset for Step 4
+datapath <- file.path(datalocation,'youthcohort.dat')
+
+#Load the data into a dataframe
+youth<-read.table(datapath, header=TRUE)
+
+```
+
+```{r}
+library(car)
+leveneTest(continuousvariable ~ categoricalvariable, data=dataframename)
+‘’’
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

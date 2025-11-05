@@ -1,0 +1,737 @@
+MATH9102
+
+LINEAR REGRESSION
+Sources used in creation of  this lecture: 
+Statistics and Data Analysis, Peck, Olsen and Devore; Discovering Statistics Using R, Field, Miles and Field; Understanding Basic Statistics, Brase and Brase;SPSS Survival Manual, Julie Pallant
+
+
+
+
+
+
+
+
+
+
+
+
+Regression Model
+
+Explanatory (independent/predictors) variables are used to model the behaviour of a response 
+(outcome/dependent) variable
+
+
+Predictive model – what does it allow you do?
+
+Prediction 
+? Really what we are looking at is the variance in the outcome variable and how much of the variance could be considered to be explained by the predictor variables
+Questions it allows you to answer:
+? How well a set of variables can predict an outcome variable
+? Which variable in a set is the best predictor
+? Whether a variable is still able to predict an outcome when controlling for other variables 
+Predictive model – what does it allow you do?
+
+The same model structure can be used to explore differences between groups or conditions — this is often called testing for group effects.
+Here, we use categorical predictors (e.g. gender, region, treatment type) to ask whether belonging to one group leads to a statistically significant difference in the outcome variable compared to another group.
+Questions it allows you to answer:
+Do different groups (e.g. treatment vs. control) show significant differences in the outcome variable?
+How large is the difference between these groups, after accounting for other predictors?
+Before Regression
+
+
+
+
+
+
+
+
+Causal Relationship – Nonspuriousness
+
+A spurious relationship exists when two variables appear to be causally related but are not
+? Any observed dependencies between variables are due to chance or are both related to some unseen confounding factor
+E.g. 
+? Ice cream consumption causing drowning deaths
+? There is an association between ice cream consumption and drowning (more people die during times when a lot of ice cream is being consumed) 
+? Time order can also be satisfied – increase in ice cream sales precede increase in drowning deaths
+? However,  the unmeasured factor here is seasonal temperature
+? In warm weather more people consume ice cream and swim 
+Spurious Correlations
+
+https://www.tylervigen.com/spurious-correlations
+
+Relationships and Causality
+
+Causality
+? Determining how particular sets of conditions (represented by variables) lead to outcomes (also represented by variables)
+Seldom are relationships deterministic
+? Everyone completing a university degree will have a higher income than those who do not 
+(unlikely to be true)
+Most are probabilistic 
+? i.e. factors increase or decrease tendency towards particular outcomes
+? Those with a university degree tend to earn more than those who do not
+? University education is a factor that pushes another factor (income) in a predictable direction
+Correlation and Causality
+
+The third-variable problem:
+? Causality between two variables cannot be assumed because there may be other measured or unmeasured variables affecting the results.
+In our example 
+? Perceived stress does relate significantly to perception of control.
+? There may be other factors that are influencing perception of control. 
+? Some of these variables will have been measured by the researcher.
+? Some may not
+Correlation and Causality
+
+Direction of causality:
+? Correlation coefficients say nothing about which variable causes the other to change.
+? The correlation coefficient doesn’t indicate in which direction causality operates. 
+? So, although it is intuitively appealing to conclude that perceived stress causes  perceived control to change, there is no statistical reason why perceived control cannot cause perceived stress.
+? This is where your knowledge of the constructs and existing theories in your area come in to play 
+? You interpret your statistical findings through the lens of your subject area
+? Why including relevant background and related research is important in your reporting
+Partial Correlations
+
+Measures the relationship between two variables, controlling for the effect that a third variable 
+? Usually, a variable you suspect is influencing your two variables of interest
+? This can artificially inflate the correlation co-efficient found
+
+Partial Correlation
+
+Using survey.dat
+? Julie Pallant
+Interested in exploring the relationship between scores on the 
+Perceived Control of Internal States Scale (tpcoiss) and scores on the Perceived Stress Scale (tpstress) but controlling for what is known as socially desirable responding bias (tendency to present yourself in a socially desirable way)
+? This tendency is measured using Marlowe-Crowne Social Desirability Scale (tmarlow)
+
+Partial Correlation
+
+
+
+
+Reporting Results
+
+Partial correlation was used to explore the relationship between perceived control of internal states (as measured by PCOISS) and perceived stress (measured by the Perceived Stress Scale), while controlling for scores on the Marlowe-Crowne Social Desirability Scale. Preliminary analyses were performed to ensure no violation of the assumption of normality, linearity and homoscedasticity. There was a strong, negative partial correlation between perceived control of internal states and perceived stress, controlling for social desirability, (r=-.53, n=422,p<.001). An inspection of the zero-order correlation (r=-.58) suggested that controlling for social desirability had very little effect on the strength of the relationship between these two variables.
+Building a Linear 
+Regression Model 
+
+MATH9102-W8-REGRESSION.QMD
+Sources used in creation of  this lecture: 
+Statistics and Data Analysis, Peck, Olsen and Devore; Discovering Statistics Using R, Field, Miles and Field; Understanding Basic Statistics, Brase and Brase;SPSS Survival Manual, Julie Pallant
+Simple Example – Linear Regression
+
+Suppose we want to look at what variables predict a child’s maths score aged 16 in the UK ( GCSE)
+We have a theory that their achievement on a standard maths test at aged 7 is a good predictor
+? (We’ve seen this before in correlation…)
+
+
+
+y = b0 + bx + e
+
+Relationship between Maths score age 7 with GCSE result at age 16
+
+
+y = b0 + bx + e
+Simple 
+
+Example
+‘b’ is the gradient of the line 
+Represents the amount that the response variable changes for one unit change in the predictor variable 
+(e.g. for every one percentage point increase in a child’s Maths Test score, the line suggests that the child’s predicted GCSE Score will increase by ‘b’ points);
+Relationship between Maths score age 7 with GCSE result at age 16
+
+y = b0 + bx + e
+Simple Example
+If the line did completely model the data then all of the points would rest exactly on the line. 
+Because there is a difference between what the line predicts (expected values) each student will achieve in their GCSE Score and what they actually achieved (observed values). 
+This difference is basically the vertical distance between each point and the line itself and this 
+distance is ‘e’ . 	Relationship between Maths score age 7 with GCSE 
+result at age 16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Simple Linear Regression
+
+It is generally good practice to standardise your response and predictor variables before including them in the model 
+It helps in the interpretation of the model. 
+? For example, if all the predictor variables have been standardised then we know that if they all have the value ‘0’ this would represent the average student.  
+? As such, the constant in the model comes to represent the mean score on the response variable for the average student in the sample. 
+? If the response variable has been standardised, we can immediately gain a sense of where the ‘average student’ fits in the distribution of the response variable 
+? (i.e. if the constant is negative then we know that they have a mean score below the mean for the sample as a whole, and so on).
+Simple Linear Regression
+
+Start by looking at the response variable :
+? Create a histogram
+? Create a Q-Q Plot
+? Examine the skewness and kurtosis and absolute scores
+? Create some descriptive statistics 
+This example:
+? The response variable (normexam) is approximately normally distributed 
+? And approximately standardised (with mean = -0.0001 and standard deviation = 0.9989).
+Normexam
+
+N: 4059
+Standlrt
+
+
+
+
+
+Simple Linear Regression
+
+Suppose we have read our data into a dataframe called regression
+To formally model this relationship now we can create a simple linear regression model:
+ #Create the model model1<-lm(regression$normexam~regression$standlrt) anova(model1) # Display the output
+We now have access to all the elements of the regression output in the variable model which we can unpack and examine.
+stargazer(model1, type="text") #Tidy output of 
+Simple 	all the required stats
+Linear Regression 
+Increases in scores in standlrt appear to associated with increases in scores in normexam.
+There appears to be a moderately strong correlation between the two (r = 0.592, p<0.001).
+Therefore, there is good justification for using regression to look at prediction.
+The constant represents the value at which the regression line crosses the y-axis.
+How Good is the Model?
+
+The regression line is only a model based on the data.
+This model might not reflect reality.
+? We need some way of testing how well the model fits the observed data.
+How has the model helped improve our understanding in the absence of any model?
+
+How Good is the Model?
+
+What would we use in the absence of the model?
+? The common approach would be to use the mean of the sample
+? This would be wrong in the vast majority of the cases 
+? depending on the variation in the sample i.e. how much each case varies from the mean
+? But we can use it as a baseline to see if our model has improved our understanding
+How good is the model?
+
+So how do we go about it?
+Total sum of squares
+? Square the differences from each data point to our mean for our outcome variable
+? total sum of squares = all variation that exists
+Residual sum of squares
+? But we will still experience some error 
+? This is the variation between our observed data and our regression line
+? Squaring these errors gives use the residual sum of squares (unexplained sum of squares) = variation which is left over after the model is fitted to the data
+Difference between the two is the amount of variation accounted for by the model 
+
+
+
+
+
+SSR
+Residual/Error variability (variability between the regression model and the actual data).
+SSM 
+Model variability (difference in variability between the model and the mean).
+SST
+Total variability (variability between scores and the mean).
+
+
+
+Testing the Model: ANOVA
+
+Mean Squared Error
+? Sums of Squares are total values.
+? They can be expressed as averages.
+? These are called Mean Squares, MS
+MSM
+F = 
+MSR
+
+Simple Linear Regression
+
+
+MSM 
+Mean Square Error of the Model
+MSR 
+Mean Square Error of the Residuals
+Testing the Model: R1
+R2
+? The proportion of variance accounted for by the regression model. ? The Pearson Correlation Coefficient Squared
+
+
+
+
+The R2 is the proportion of variance in the outcome (dependent) variable normexam which can be explained by the predictor (independent) variables. This is the usefulness of the model.
+An R2  of 1 means the independent variable explains 100% of the variance in the dependent variable. Conversely 0 means it explains none.
+
+
+2  
+
+Note: The intercept is the constant 
+The final thing to look at is ‘Coefficients’ gives us all the information we need to construct the actual model using unstandardized co-efficients. 
+The significance levels for each of the main terms (in this case the coefficients associated with the constant and ‘standlrt’) also tell us if there is evidence that each of these terms are adding something to the model (they are statistically significant). 
+
+Note: The intercept is the constant 
+Using the Coefficients from this table we get the following model:
+Predicted ‘normexam’ = -0.001 + 0.595 x ‘standlrt’
+
+What does it mean if the constant (intercept) is negative? 
+• If constant is negative then when all explanatory variables equal zero, the predicted outcome is below zero. This interpretation is purely mathematical and depends on whether ???????? =0 is meaningful in the context.
+• If zero is outside the realistic range of the predictors, the intercept itself may not carry practical meaning. 
+• The negativity simply ensures that the fitted line or plane best aligns with observed data across the range where predictors are valid.
+• It does not indicate a problem with the model unless it makes the predicted values nonsensical.
+Call: lm(formula = regression$normexam ~ regression$standlrt) Standardized 
+Coefficients:: 
+(Intercept) regression$standlrt 
+0.0000000    0.5916496 
+Function: lm.beta(model1)
+Standardised Coefficients
+Not hugely useful for our model since the variables are all standardized but will be useful for models you create.
+A simple linear regression model was created to investigate whether a student’s standardized score on the Standard London Reading Test (LRT) at age 11 could be considered to predict a student’s standardized exam result at age 16. A statistically significant regression equation was found (F(1,4057)=2,185.01, p < 0.01) with an adjusted R2 of 0.35. The regression equation is therefore:
+Standardized Exam Score at Age 16 = -0.001 + 0.595 * Standardized score on Standard LRT at age 11
+This indicates that for each one-unit increase in standardized LRT score at age 11, the standardized exam score at age 16 is expected to increase by approximately 0.595 units, holding other factors constant. This relationship is statistically significant and suggests a meaningful positive association between early reading performance and later academic achievement.
+
+•Use the template MATH9102-W8-RegressionExercise.qmd
+•Complete Exercise 1: 
+•Using the Sleep dataset from Pallant (sleep.rdata) build a linear regression model to investigate whether:
+•Total Sleep and Associated Sensation score (totsas) can be considered to be predicted by a respondent’s level of anxiety (anxiety) (simple linear regression)
+•You do not need to do the graphs and descriptive statistics – you can assume both can be treated as normal
+
+Multiple Linear Regression 
+
+Sources used in creation of  this lecture: 
+Statistics and Data Analysis, Peck, Olsen and Devore; Discovering Statistics Using R, Field, Miles and Field; Understanding Basic Statistics, Brase and Brase;SPSS Survival Manual, Julie Pallant
+What is Multiple Regression?
+
+Simple linear Regression is a model to predict the value of one variable from another.
+? It is rarely if ever used.
+Multiple Regression is a natural extension of this model:
+? This is the most common form of regression model used.
+? We use it to predict values of an outcome from several predictors.
+? It is a hypothetical model of the relationship between several variables.
+Multiple Regression as an Equation
+
+y=b0 +b1X1+b2X2 +?+bnXn +?iWith multiple regression the relationship is described using a variation of the equation of a straight line.
+b0 is the intercept.
+? The intercept is the value of the Y variable when all Xs = 0.
+ ? This is the point at which the regression plane crosses the Y-axis (vertical). b1 to bn are the regression coefficient for variable 1 to n
+Dummy (indicator) variables
+
+Many variables we are interested in prediction are categorical
+? E.g. we are interested in the effect gender or religion, or income category has
+Because they have no scale it makes no sense to think of the effect of a unit of increase in these as it would for a continuous variable
+But we can think in terms of the differential effect for groupings within the category
+We can transform the categorical variable into a series of dummy variables which indicate whether a particular case has that particular characteristic 
+? Dummy variables may also be referred to as indicator variables
+Our regression dataset (Regression.sav)
+
+Previously looked at standlrt as a predictor of normexam
+We might also be interested in gender and whether it has an influence
+? There is significant research that gender has an influence in educational achievement. 
+We might also be interested in exploring the type of school a student attends (either mixed-gender or single-gender  schools) as this might also influence a student’s examination performance (‘normexam’). 
+We are interested in exploring if there is a differential effect for students of different genders and for students of different genders attending different types of school.
+
+Dummy Variables
+If we just added them into the model as they are what would happen?
+? The values of these two variables  would be treated as real numerical values rather than just arbitrary numbers representing specific categories. 
+So, we need to transform these into dummy variables before we can add them into the regression model. 
+Dummy variables
+0 (reference category) and 1 (category of interest)
+Aim is to explore if there is a differential effect for the category of interest when compared to the reference category
+Indicator variable
+? Switch effect ON (1) or OFF (0)
+Before including in the regression model need to first establish if this makes sense to include as a predictor
+? Investigate using an independent t-test.
+Dummy variables
+0 (reference category) and 1 (category of interest)
+? R lm function automatically does this
+Our variable for gender is called girl (named for the category of interest)
+? Value 1: boy
+? Value 2: girl
+In our linear model boy will be treated as the reference category, girl as the category of interest
+? In our model boy will be given a value of 0, girl a value of 1
+? In this model
+? Boy =0, reference category ? Girl=1, category of interest
+? We are interested in exploring if there is a difference for girls in comparison to boys
+
+model2<-
+lm(regression$normexam~regr ession$standlrt+girl) anova(model2) summary(model2)
+
+
+
+Multiple Linear Regression
+
+Our regression equation
+What possible values can girl take here?
+Normexam=-0.10+0.59*standlrt+0.17*girl
+
+
+
+
+• In other words, and as illustrated here, this model can be represented as two parallel lines 
+• The vertical distance between both lines being 0.170 for the average student (value of 0 for standlrt) when  you calculate the equation for boys and girls.
+Normexam=-
+0.10+0.59*standlrt+0.17*girl
+Boys normexam = -.103+.590=0.487
+Girls normexam=-.103+.590+.167=0.654
+Multiple Linear Regression
+
+To investigate the impact gender is having we included our recoded variable into the model
+Adding additional predictors has an influence on the other predictors
+Notice the slight changes in the coefficient for standlrt from the first model
+How good a fit is this second model?
+
+In this case our Adjusted R2 (from the summary) Adjusted R-squared: 
+0.3567
+This model explains 35.67% of the variance in comparison to 35% for model1
+Why adjusted R2 ? Because we have multiple predictors
+
+Multiple Linear Regression
+
+Our regression equation:
+Normexam=-0.10+0.59*standlrt+0.17*girl
+Lets explore what this means
+? For a boy their score for normexam on average increases by  0.49 from their standlrt score:
+? Normexam=-0.10+0.59*standlrt+0 #since girl is 0 for boys
+? For a girl  their score increases by 0.66 from their standlrt score:
+? Normexam=-0.10+0.59*standlrt+0.17
+? So being a girl is on average adding 0.17 to your score at age 16 
+? So, there is a positive differential effect 
+Linear Regression 
+
+Four important statistics
+? F statistic
+? Whether the model as a whole predicts the dependent variable
+? Its statistical significance is the significance of the model 
+? Regression coefficients (Beta values)
+? Measure the strength and direction of relationships between independent variables and the dependent variance
+? Significance scores for the regression coefficients
+? Tell us whether the contribution of each variable is statistically significant
+? R2 statistic or Adjusted R2 Statistic
+? Measures the model’s overall predictive power and the extent to which the variables explain the variation found in the dependent variable
+How to Interpret Beta Values 
+
+Beta values:
+? the change in the outcome associated with a unit change in the predictor.
+Standardised beta values:
+? tell us the same but expressed as standard deviations.
+If we have standardised our variables in advance these will be virtually the same.
+Constant or intercept (b0)
+
+The constant can be statistically significant when:
+? Baseline Differences Exist: 
+? There’s a substantial baseline level of ???? even when all X variables are zero, indicating that the constant is needed to accurately represent the model.
+? Model Fit Adjustment: 
+? The intercept accounts for any systematic bias not explained by the predictors.
+? A significant intercept suggests there is a systematic part of Y that exists independently of the predictors.
+R2 V Adjusted R2
+
+Every time you add a predictor to a model, the R-squared increases, even if due to chance alone. It never decreases.
+? Therefore, a model with more terms may appear to have a better fit simply because it has more terms.
+If a model has too many predictors it begins to model the random noise in the data. 
+? This condition is known as overfitting the model and it produces misleadingly high R-squared values and a lessened ability to make predictions.
+Adjusted R2 
+? Adjusts value of R2 based on number of variables in the model
+? Report Adjusted R2 for multiple linear regression
+
+A multiple linear regression model was created to investigate whether a student’s standardised score on the LRT at age 11 could be considered to predict a student’s standardised exam result at age 16 and whether a differential effect exists for students of different gender. A statistically significant regression equation was found (F(2,4056)=1,125.86, p < 0.01) with an adjusted R2 of 0.36:
+Standardized score at age 16 = -0.103 + 0.591* Standardized score on Standard LRT + 0.17 * gender (coded as 0 or 1 for girls)
+This indicates that an increase of 1 unit in a student’s standardized score on the Standard LRT at age 11 can be consider to contribute a statistically significant increase of 0.591 to a students standardized exam result at age 16. A statistically significant differential effect was found for students identifying as a girl which can be considered to contribute an additional statistically significant increase of 0.17 to a student’s standardized exam result at age 16.
+A comparison between the simple and multiple linear regression models shows that including gender slightly improves the model’s explanatory power. In Model 1, students’ standardized scores on the Standard London Reading Test (LRT) at age 11 significantly predicted their standardized exam results at age 16, F(1, 4057) = 2185.01, p < .01, with an adjusted R² = .35. In Model 2, when gender (0 = boy, 1 = girl) was added as an additional predictor, the model remained statistically significant, F(2, 4056) = 1125.86, p < .01, and the adjusted R² increased to .36. Both predictors were statistically significant: the standardized LRT score (? = 0.59, p < .01) and gender (? = 0.17, p < .01). This indicates that, controlling for prior reading performance, girls scored on average 0.17 standard deviations higher than boys on their standardized exams at age 16. While the improvement in model fit is modest (?R² = .01), it suggests that gender contributes a small but meaningful effect on academic outcomes beyond prior reading ability.
+Transformed Data
+
+If you conduct your inferential statistics (e.g. linear regression) using transformed data, your interpretation of the equation will change
+For linear regression:
+? If you use raw values (original unit of measurement) you can say that the coefficient for each predictor represents the unit of change in the outcome variable for each 1 unit of change in the predictor (when controlling for all other predictors)
+? If you transform your outcome variable using sqrt for example and use the transformed values in your equation, you can say that the represents the square root unit of change in the outcome variable for each 1 unit of change in the predictor (when controlling for all other predictors).
+Review the section Regression Model 3 in 
+MATH9102-W8-Regression.qmd and the HTML output
+Use the template MATH9102-W8RegressionExercise.qmd ? Complete Exercise 2: 
+? Using the Sleep dataset from Pallant (sleep.sav) you build a linear regression model to investigate whether:
+? Extend your previous model to investigate whether a differential effect exists for respondents who report trouble sleeping v those who do not.
+? Include a dummy variable for trouble sleeping 
+(trubslep)
+? R will dummy code this for you
+? You do not need to do the graphs and descriptive statistics – you can assume both can be treated as 
+normal
+? You do not need to do the difference test at this point.
+
+
+Interaction effect
+
+When the effect of one independent variable on the dependent variable changes depending on the level of another independent variable. 
+? In other words, it indicates that the impact of one predictor variable on the outcome variable is influenced by the value of another predictor variable.
+The presence of an interaction effect suggests that the relationship between an independent variable and the dependent variable is not simply additive.
+? Instead, the effect of one variable depends on the level of another variable. 
+(Non-additivity)
+Interaction effect
+
+To include interaction effects in a regression model, you typically create a new variable that is the product of the two interacting variables. 
+? For example, if you have two variables, X1?  and X2? , the interaction term would be X1? ×X2?
+? In R, you can specify an interaction term in a model formula like this:
+? lm(y ~ x1 * x2) # This includes x1, x2, and their interaction
+The coefficients of the interaction terms indicate how much the effect of one variable changes with respect to the other variable.
+? If the interaction term is significant, it suggests that the main effects of the individual predictors are not sufficient to describe their relationship with the outcome variable.
+
+
+Interaction term
+
+We can test this hypothesis by adding what is referred to as an ‘interaction term’ to the model that is basically a new variable calculated by multiplying ‘standlrt’ by ‘girl’. 
+? First, therefore, we need to create a new variable (which we can call 
+‘standlrt_girl’) 
+regression$interaction <- regression$standlrt * as.numeric(regression$girl)
+*Note: This is already in our dataset regression.sav
+
+
+
+
+A multiple linear regression model was created to investigate whether a student’s prior academic achievement, as represented by the standardized score achieved on the LRT at age 11, could be considered to predict a student’s standardized exam result at age 16, whether a differential effect exists for students of different genders and whether there is an interaction effect between a student’s gender and their prior academic achievement. A statistically significant regression equation was found (F(3, 4055) = 750.399, p < 0.01) with an adjusted R² of 0.357. The regression equation can be expressed as follows:
+Standardized exam result at age 16 = ? 0.103 + 0.593 × 
+Standardized score on Standard LRT + 0.170 × gender ? 0.004 × Reporting interaction of prior achievement and gender
+This indicates that an increase of 1 unit in a student’s standardized score on the Standard LRT at age 11 is associated with a statistically significant increase of 0.593 in the student’s standardized exam result at age 16 (p < 0.01). Identifying as a girl (coded as 1) contributes an additional statistically significant increase of 0.170 to a student’s standardized exam result at age 16 (p < 0.01). The interaction term, which represents the combined effect of the standardized score on the LRT and the gender variable, has a coefficient of -0.004, and indicates a nonsignificant interaction effect (p = 0.25). This suggests that the effect of prior academic achievement does not significantly differ between genders in this model.
+                                              This 	multiple 	linear 	regression 	analysis 	was conducted 	to 	examine 	whether 	including 	an interaction 	term 	between 	gender 	and 	prior academic achievement (LRT score at age 11) would improve the prediction of standardized exam results at age 16. An initial regression analysis including standardized LRT score and gender (coded 0 = boy, 1 = girl) as predictors was found to be statistically significant, F(2, 4056) = 1125.86, p < .01, with an adjusted R² = .357. Both predictors were significant: higher LRT scores were associated with higher exam results (b = 0.591, p < .01), and girls scored, on Reporting - 	average, 0.17 standard deviations higher than boys 
+(b = 0.170, p < .01), controlling for prior reading 
+Comparison	achievement. When an interaction term between gender and LRT score was added, the overall model remained statistically significant, F(3, 4055) = 750.40, p < .01, but the adjusted R² did not change (R² = .357). The interaction term itself was not statistically significant (b = ?0.004, p = .87), indicating that the relationship between prior reading ability and later exam performance does not differ significantly between boys and girls. In summary, both prior achievement and gender were important predictors, but the inclusion of the interaction term provided no additional explanatory power.
+
+
+
+
+
+
+Dummy variables with more than two categories
+
+Suppose we want to include the type of school a student attended in our regression model.
+In our regression model this is:
+regression$schgend which has 3 values
+Mixed (1), Boys only(2), Girls only (3) 
+Dummy Variables
+
+To recode the variable we create two new dummy variables:
+regression$boy_sch <- 
+ifelse(regression$schgend=="boysch", 1, 0) regression$girl_sch <- 
+ifelse(regression$schgend=="girlsch", 1, 0)
+
+• This has already been done in the regression dataset we are using.
+• It is always worth just checking that you have recoded things properly by comparing the old and new variables via simple crosstabs 
+
+
+
+
+
+
+A multiple linear regression analysis was conducted to examine whether a student’s prior academic achievement, as measured by their standardized score on the Standard London Reading Test (LRT) at age 11, could predict standardized exam results at age 16, and to assess whether differential effects exist by gender and school type (single-gender versus mixed-gender schools). The overall model was statistically significant, F(4, 4054) = 580.15, p < .01, with an adjusted R² = .363, indicating that approximately 36% of the variance in exam performance was explained by the predictors.
+The resulting regression equation was:
+Standardized exam result at age 16 = ? 0.161 + 0.591 × 
+                               Standardized score on Standard LRT + 0.133 × gender Reporting	(girl) + 0.183 × boys school + 0.168 × girls school
+This indicates that each one-unit increase in a student’s standardized LRT score at age 11 was associated with a statistically significant increase of 0.591 in their standardized exam result at age 16 (p < .01). Identifying as a girl (coded 1) contributed an additional 0.133 to the predicted exam score (p < .01), relative to boys. 
+Attending a boys-only school was associated with a 0.183 higher exam score (p < .01) compared to students in mixed-gender schools, while attending a girls-only school was associated with a 0.168 higher score (p < .01). These 
+
+findings indicate that prior academic achievement, gender, and school type all make statistically significant contributions to predicting later exam performance.
+A multiple linear regression analysis was conducted to examine whether a student’s prior academic achievement, as measured by their standardized score on the Standard London Reading Test (LRT) at age 11, could predict standardized exam results at age 16, and to assess whether differential effects exist by gender and school type (single-gender versus mixed-gender schools). The overall model was statistically significant, F(4, 4054) = 580.15, p < .01, with an adjusted R² = .363, indicating that approximately 36% of the variance in exam performance was explained by the predictors.
+The resulting regression equation was: Standardized exam result at age 16 = ? 0.161 + 0.591 × 
+Reporting - 	Standardized score on Standard LRT + 0.133 × gender 
+(girl) + 0.183 × boys school + 0.168 × girls school
+Comparison
+This indicates that each one-unit increase in a student’s standardized LRT score at age 11 was associated with a statistically significant increase of 0.591 in their standardized exam result at age 16 (p < .01). Identifying as a girl (coded 1) contributed an additional 0.133 to the predicted exam score (p < .01), relative to boys. 
+Attending a boys-only school was associated with a 0.183 higher exam score (p < .01) compared to students in mixed-gender schools, while attending a girls-only school was associated with a 0.168 higher score (p < .01). These findings indicate that prior academic achievement, gender, and school type all make statistically significant contributions to predicting later exam performance.
+Time for you to try
+
+? Review the section Regression Model 4 in MATH9102-W8-Regression.qmd and the HTML output
+? Use the template MATH9102-W8RegressionExercise.qmd ? Complete Exercise 4: 
+? Using the Sleep dataset from Pallant (sleep.sav) you build a linear regression model
+? Extend your previous MLR model  which used a dummy variable to represent trouble sleeping to include education level (highest education level completed) as a predictor.
+? In R lm will automatically code edlevel as dummy variables.
+? Primary will be the reference category.
+1	SSM
+R = 
+SST
+---------------
+
+------------------------------------------------------------
+
+---------------
+
+------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

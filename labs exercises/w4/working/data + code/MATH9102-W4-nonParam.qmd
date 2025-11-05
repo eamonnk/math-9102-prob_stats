@@ -6,6 +6,7 @@ format:
       self-contained: true
       code-fold: true
 editor: visual
+# same as parametric 
 ---
 
 ```{=html}
@@ -20,7 +21,10 @@ table > caption {
   font-weight: bold;
 }
 </style>
+
 ```
+!<--# same as parametric 
+-->
 
 ```{r}
 #| label: install-and-load
@@ -38,18 +42,21 @@ quiet_library <- function(pkg) {
 quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
 quiet_library("psych")   # Descriptive statistics by group
 quiet_library("car")   # Includes Levene's test for homogeneity
-quiet_library("effectsize")   # Includes calculations for effectsizequiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("effectsize")   # Includes calculations for effectsize quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
 quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
 quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance test
+quiet_library("coin") #	To calculate Z, to get rosenthal's r, we can use the Wilcox test from the ‘coin ‘package
+
 
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'Field-BDI-Non-parametric.csv')
 
 #Load the data into a dataframe - it is a .csv file, we indicate that the first row is a header with colnames
 drinkset<- read.csv(datapath, header=TRUE)
 #Create data subsets for each drink
+# dividin data into 2 subsets to make it easy for us when we're doing histograms
 drinkxdata <- subset(drinkset, drink=='DrinkX')
 drinkydata <-subset(drinkset, drink=='DrinkY')
 ```
@@ -64,21 +71,27 @@ by(drinkset$bdisun,drinkset$drink, median)
 by(drinkset$bdisun,drinkset$drink, IQR)
 
 #Create plots of these
+# putting in density functin in red
+#and removing missin g data
 gs <- ggplot(drinkxdata, aes(x=bdisun))
 gs <- gs + labs(x="Drink X")
 gs <- gs + geom_histogram(binwidth=2, colour="black")
 gs <- gs + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
 gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(drinkxdata$bdisun, na.rm=TRUE), sd=sd(drinkxdata$bdisun, na.rm=TRUE)))
-```
 
+# histogram has bin width issue, is entirely presentational 
+# if put in a  value of '1' it will lok closer together
+# I don't have an issue with what it looks like once the information is there
+# its purely presentational
+```
 
 ```{r}
 #| fig.cap: "Figure 1: Histogram of Depression Levels for Drink X on Sunday"
 gs
 ```
 
-
 ```{r}
+# do the same for drink y
 gs <- ggplot(drinkydata, aes(x=bdisun))
 gs <- gs + ggtitle ("Depression Levels Sunday")
 gs <- gs + labs(x="Drink Y")
@@ -86,8 +99,6 @@ gs <- gs + geom_histogram(binwidth=2, colour="black")
 gs <- gs + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
 gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(drinkydata$bdisun, na.rm=TRUE), sd=sd(drinkydata$bdisun, na.rm=TRUE)))
 ```
-
-
 
 ```{r}
 #| fig.cap: "Figure 2: Histogram of Depression Levels for Drink Y on Sunday"
@@ -123,11 +134,12 @@ A Mann–Whitney test was used to test whether depression levels differed betwee
 ```{r}
 #Note I am not doing the inspection of the variables here as I know they are not normal since this data has been designed to illustrate non-parametric difference
 
+# doing the same thign for wed
+
 #Get your descriptive statistcs
 by(drinkset$bdiwed,drinkset$drink, median)
 by(drinkset$bdiwed,drinkset$drink, IQR)
 ```
-
 
 ```{r}
 #Create plots of these
@@ -138,7 +150,6 @@ gs <- gs + geom_histogram(binwidth=2, colour="black")
 gs <- gs + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
 gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(drinkxdata$bdiwed, na.rm=TRUE), sd=sd(drinkxdata$bdiwed, na.rm=TRUE)))
 ```
-
 
 ```{r}
 #| fig.cap: "Figure 3: Histogram of Depression Levels for Drink X on Wednesday"
@@ -159,6 +170,7 @@ gs <- gs + stat_function(fun=dnorm, color="red",args=list(mean=mean(drinkydata$b
 #| fig.cap: "Figure 4: Histogram of Depression Levels for Drink Y on Wednesday"
 gs
 ```
+
 ```{r}
 # Test for differences on  Wednesday to get our U statistic (reported as W)
 stats::wilcox.test(bdiwed~drink, data=drinkset) 
@@ -177,4 +189,4 @@ reff$effsize
 
 ## Reporting the comparison
 
-However, a Mann–Whitney test used to compare depression levels three days after the drinks were taken (Wednesday) indicated that those who drank DrinkX (Mdn = 33.50, IQR = 6.75) were significantly more depressed than those who drank DrinkY (Mdn = 7.50, IQR = 3.75) (U = 96.00, z = 3.48, p < .001, r = .78).
+However, a Mann–Whitney test used to compare depression levels three days after the drinks were taken (Wednesday) indicated that those who drank DrinkX (Mdn = 33.50, IQR = 6.75) were significantly more depressed than those who drank DrinkY (Mdn = 7.50, IQR = 3.75) (U = 96.00, z = 3.48, p \< .001, r = .78).

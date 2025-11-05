@@ -1,0 +1,236 @@
+---
+title: "MATH9102-W8-RegressionExercise"
+author: "Deirdre Lawless"
+format: 
+  html:
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+editor: source
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("foreign")   # For opening SPSS files
+quiet_library("lm.beta")   # For extracting standardized co-efficients from regression model
+quiet_library("stargazer") # For formatting output of regression
+quiet_library("rstatix")   # Effect size calculation plus Post hoc Tukey Test
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'sleep.rdata')
+
+#Read in the dataset - sleep dataset from Pallant
+sleep<- read.table(datapath, header=TRUE)
+```
+
+# Exercise 1: Build a simple regression model
+Using the Sleep dataset from Pallant (sleep.sav)build a linear regression model to investigate whether:
+Total Sleep and Associated Sensation score (totsas) can be considered to be predicted by a respondent’s level of anxiety (anxiety) (simple linear regression)
+
+## Step 1: Build the model
+```{r}
+#| label: bmodel1
+model1<-lm(outcomevar~predictorvar, data=sleep)#Replace the variables 
+
+```
+
+## Step 2:  Generate the Analysis of Variance Table
+This provides the information needed to calculate the F statistic.
+```{r}
+#| label: anovam1
+anova(model1)
+```
+
+
+## Step 3: Generate the summary statistics needed to assess model fit
+```{r}
+#| label: summm1
+summary(model1)
+```
+
+## Step 4: Generate Standardized Co-efficients
+```{r}
+#| label: betam1
+lm.beta::lm.beta(model1)
+```
+
+## Step 5 (optional: Use Stargazer to produce a tidy output of ANOVA and Summary
+```{r}
+#| label: stargazerm1
+stargazer(model1, type="text") #Tidy output of all the required stats
+```
+
+## Step 6: Report the model
+
+# Exercise 2: Multiple Linear Regression - Investigating a differential effect
+Extend your previous model to investigate whether a differential effect exists for respondents who report trouble sleeping v those who do not.
+Include a dummy variable for trouble sleeping (trubslep)
+
+## Step 1: Build the model
+```{r}
+#| label: buildm2
+model2<-lm(outcomevar~predictorvar1+dummyvar, data=sleep)
+
+```
+
+## Step 2:  Generate the Analysis of Variance Table
+This provides the information needed to calculate the F statistic.
+```{r}
+#| label: anovam2
+anova(model2)
+```
+
+
+## Step 3: Generate the summary statistics needed to assess model fit
+```{r}
+#| label: summm2
+summary(model2)
+```
+
+## Step 4: Generate Standardized Co-efficients
+```{r}
+#| label: betam2
+lm.beta::lm.beta(model2)
+```
+
+## Step 5 (optional: Use Stargazer to produce a tidy output of ANOVA and Summary
+```{r}
+#| label: stargazerm2
+stargazer(model2, type="text") #Tidy output of all the required stats
+```
+
+## Step 6: Report the model
+
+## Step 7: Compare with Simple Linear Regression Model
+
+
+```{r}
+#| label: stargazercomp
+#Create the simple regression model
+stargazer(model1, model2, type="text") #Quick model comparison
+```
+
+# Exercise 3: Multiple Linear Regression - Including an Interactive Term
+Extend your previous MLR to include an interaction term -number of caffeine drinks per day (caffeine) and the number of alcoholic drinks per day (alchohol – it is misspelt in the dataset).
+
+
+## Step 1: Build the model
+```{r}
+#| label: buildm3
+model3<-lm(outcomevar~predictorvar1+dummyvar+interactionterm, data=sleep)
+
+```
+
+## Step 2:  Generate the Analysis of Variance Table
+This provides the information needed to calculate the F statistic.
+```{r}
+#| label: anovam3
+anova(model3)
+```
+
+
+## Step 3: Generate the summary statistics needed to assess model fit
+```{r}
+#| label: summm3
+summary(model3)
+```
+
+## Step 4: Generate Standardized Co-efficients
+```{r}
+#| label: betam3
+lm.beta::lm.beta(model3)
+```
+
+## Step 5 (optional: Use Stargazer to produce a tidy output of ANOVA and Summary
+```{r}
+#| label: stargazerm3
+stargazer(model3, type="text") #Tidy output of all the required stats
+```
+
+## Step 6: Report the model
+
+## Step 7: Compare with the Regression Model incorporating Differential Effect
+
+```{r}
+#| label: stargazercomp1
+#Create the simple regression model
+stargazer(model2, model3, type="text") #Quick model comparison
+```
+
+# Exercise 4: 
+Extend your previous MLR model (model2) which used a dummy variable to represent trouble sleeping to include education level (highest education level completed) as a predictor.
+
+
+## Step 1: Build the model
+```{r}
+#| label: buildm4
+
+sleep$edlevelf <- factor(sleep$edlevel) # Create a factor from edlevel
+sleep$edlevelf <- relevel(sleep$edlevelf, ref = "primary school") # set the reference level to be primary
+model4<-lm(outcomevar~predictorvar1+dummyvartubsleep+dummyvaredlevel(you will need 4), data=sleep)
+
+```
+
+## Step 2:  Generate the Analysis of Variance Table
+This provides the information needed to calculate the F statistic.
+```{r}
+#| label: anovam4
+anova(model4)
+```
+
+
+## Step 3: Generate the summary statistics needed to assess model fit
+```{r}
+#| label: summm4
+summary(model4)
+```
+
+## Step 4: Generate Standardized Co-efficients
+```{r}
+#| label: betam4
+lm.beta::lm.beta(model4)
+```
+
+## Step 5 (optional: Use Stargazer to produce a tidy output of ANOVA and Summary
+```{r}
+#| label: stargazerm4
+stargazer(model4, type="text") #Tidy output of all the required stats
+```
+
+## Step 6: Report the model
+
+## Step 7: Compare with the Regression Model incorporating Trouble Sleeping Differential Effect
+
+```{r}
+#| label: stargazercomp2
+#Create the simple regression model
+stargazer(model2, model4, type="text") #Quick model comparison
+```

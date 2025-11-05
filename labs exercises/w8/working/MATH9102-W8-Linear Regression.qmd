@@ -1,0 +1,422 @@
+---
+title: "MATH9102-W8-Linear Regression"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+editor: source
+---
+
+This analysis is being conducted using a dataset about exam results and 
+contains a sub-sample from a much larger study undertaken by Goldstein, H., Rasbash, J., Yang, M., Woodhouse, G., et al. (1993) A multilevel analysis of school examination results, Oxford Review of Education, 19, pp. 425-433. The dataset has been specially constructed to illustrate linear regression and multi-level modelling.
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("foreign")   # For opening SPSS files
+quiet_library("lm.beta")   # For extracting standardized co-efficients from regression model
+quiet_library("stargazer") # For formatting output of regression
+quiet_library("rstatix")   # Effect size calculation plus Post hoc Tukey Test
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'Regression.sav')
+
+#Read in the dataset
+regression <- foreign::read.spss(datapath, use.value.labels=TRUE, max.value.labels=Inf, to.data.frame=TRUE)
+
+```
+
+# Simple Linear Regression
+
+This example of how to conduct simple linear regression involves a normalized outcome variable representing exam results at age 16 (normexam) with one scale predictor, student's results on the standard London Reading Test (standlrt) at age 11.
+
+# Descriptives and Visuals
+## Descriptives and visuals for Exam Results Age 16
+
+```{r}
+#| label: histnorme
+#| fig-cap: "Figure 1 - Histogram for Normalised Exam Results Age 16"
+gg <- ggplot(regression, aes(x=normexam))
+gg <- gg + labs(x="Normalised Exam Results Age 16")
+gg <- gg + geom_histogram(binwidth=0.1, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(regression$normexam, na.rm=TRUE), sd=sd(regression$normexam, na.rm=TRUE)))
+gg
+```
+
+
+```{r}
+#| label: qqplotnorme
+#| fig-cap: "Figure 2 - QQ Plot for Normalised Exam Results Age 16"
+qqnorm(regression$normexam)
+qqline(regression$normexam, col=2) #show a line on the plot
+```
+
+
+```{r}
+#| label: sumnorme
+#Get summary statistics - we know it the variable is normal so we will go ahead with it
+mean(regression$normexam)
+sd(regression$normexam)
+length(regression$normexam)
+
+tpskew<-semTools::skew(regression$normexam)
+tpkurt<-semTools::kurtosis(regression$normexam)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#We don't need to standardise the scores as they are already standardised
+
+```
+
+## Descriptives and visuals for Standard London Reading Test 
+```{r}
+#| label: histlrt
+#| fig-cap: "Figure 3 - Histogram for Students Standardised Score on LRT Age 11"
+gg <- ggplot(regression, aes(x=standlrt))
+gg <- gg + labs(x="Students' Standardised Score on LRT  Age 11")
+gg <- gg + geom_histogram(binwidth=0.1, colour="black", aes(y=..density.., fill=..count..))
+gg <- gg + scale_fill_gradient("Count", low="#DCDCDC", high="#7C7C7C")
+gg <- gg + stat_function(fun=dnorm, color="red",args=list(mean=mean(regression$standlrt, na.rm=TRUE), sd=sd(regression$standlrt, na.rm=TRUE)))
+gg
+```
+
+
+```{r}
+#| label: qqplotlrt
+#| fig-cap: "Figure 4 - QQ Plot for Students' Standardised Scores on LRT Age 11"
+qqnorm(regression$standlrt)
+qqline(regression$standlrt, col=2) #show a line on the plot
+```
+
+
+```{r}
+#| label: summlrt
+mean(regression$standlrt)
+sd(regression$standlrt)
+length(regression$standlrt)
+
+tpskew<-semTools::skew(regression$standlrt)
+tpkurt<-semTools::kurtosis(regression$standlrt)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+```
+
+# Explore relationship between Exam Results at Age 16 and Results on Standard London Reading Test Age 11
+```{r}
+#| label: scatterelrt
+#| fig-cap: "Figure 5: Scatterplot Normalized Exam Score Age 16 and Students Standardised Score on LRT Age 11"
+#Simple scatterplot of standlrt and normexm
+scatter <- ggplot2::ggplot(regression, aes(standlrt, normexam))
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "Students score on LRT Age 11", y = "Normalised Exam Score Age 16")
+```
+
+
+```{r}
+#| label: cortestelrt
+#Pearson Correlation
+stats::cor.test(regression$standlrt, regression$normexam, method='pearson')
+```
+
+Report your findings as demonstrated previously.
+
+# Regression Model 1: Simple Linear Regression Model
+
+Note: This example is equivalent to doing a Pearson correlation. It is included as it is simply to illustrate the outcomes.
+
+## Step 1: Build the model
+```{r}
+#label: model1
+#Create the model
+model1<-lm(regression$normexam~regression$standlrt)
+```
+
+##  Step 2: Generate the Analysis of Variance Table
+This provides the information needed to calculate the F statistic.
+```{r}
+#| label: anovam1
+anova(model1)
+```
+
+## Step 3: Generate the summary statistics needed to assess model fit
+```{r}
+#| label: summm1
+summary(model1)
+```
+
+## Step 4: Generate Standardized Co-efficients
+In this example as the data is standardized these will not be different to the co-efficients produced by the summary.
+```{r}
+#| label: betam1
+lm.beta::lm.beta(model1)
+```
+
+## Step 5 (optional): Use Stargazer to produce a tidy output of ANOVA and Summary
+```{r stargazer}
+stargazer(model1, type="text") #Tidy output of all the required stats
+```
+
+## Step 6: Report the results
+Note: You can locate the F statistic, degrees of freedom and p value from the ANOVA, summary and Stargazer. The adjusted R^2^ and co-efficients come from the summary or Stargazer. 
+
+
+A simple linear regression model was created to investigate whether a student’s standardized score on the Standard London Reading Test (LRT) at age 11 could be considered to predict a student’s standardized exam result at age 16.  A statistically significant regression equation was found (F(1,4057)=2,185.01, p < 0.01) with an adjusted R^2^ of 0.35. The regression equation is therefore:
+
+  Standardized Exam Score at Age 16 =  -0.001 + 0.595 * Standardized score on Standard LRT at age 11
+  
+This indicates that for each one-unit increase in standardized LRT score at age 11, the standardized exam score at age 16 is expected to increase by approximately 0.595 units, holding other factors constant. This relationship is statistically significant and suggests a meaningful positive association between early reading performance and later academic achievement.
+ 
+  
+# Regression Model 2: Multiple Linear Regression - Investigating a differential effect
+
+This example of how to conduct linear regression involves a normalized outcome variable representing exam results at age 16 (normexam) with one scale predictor, student's results on the standard London Reading Test (standlrt) at age 11 and a dummy variable to investigate the influence of gender on exam performance.
+
+## Establish Difference
+```{r}
+#| label: ttest
+
+#Conduct Levene's test for homogeneity of variance in library car.
+car::leveneTest(normexam ~ girl , data=regression)
+
+#Conduct the t-test from package stats - basic r package. 
+#In this case we can use the var.equal = FALSE option to specify unequal variances
+stats::t.test(normexam~girl,var.equal=FALSE,data=regression)
+res <- stats::t.test(normexam~girl,var.equal=FALSE,data=regression)
+#Calculate eta squared
+eta=round((res$statistic*res$statistic)/((res$statistic*res$statistic)+(res$parameter)),3)
+eta
+```
+
+
+## Step 1: Create the model  
+Normexam predicted by Standlrt including a dummy variable to investigate a differential effect by gender - variable girl.
+
+```{r}
+#| label: model2
+#Note: R automatically recodes categorical to be dummy variable 0 = reference (boy), 1 category of interest (girl)
+
+model2<-lm(regression$normexam~regression$standlrt+regression$girl)
+options(scipen=999) #Setup to discourage R to use scientific notation to make output readable
+```
+
+## Step 2: Generate Analysis of Variance 
+
+```{r}
+#| label: anovam2
+# Get information on the co-efficients with information to calculate the F statistic
+anova(model2)
+```
+
+## Step 3: Generate Summary statistics 
+
+```{r}
+#| label: summm2
+# Get the summary statistics to assess goodness of fit
+summary(model2)
+```
+
+## Step 4: Generate standardized co-efficients 
+
+```{r}
+#| label: betam2
+lm.beta(model2)
+# Remember that for the categorical variable the possible values are 0 and 1 - it will be dummy coded in the model. 1 is the value of the category of interest, 0 reference category
+```
+
+## Step 5 (optional): Generate Stargazer Tidy Report 
+
+```{r}
+#| label: stargazerm2
+stargazer(model2, type="text") #Tidy output of all the required stats
+# Get the standardized co-efficients
+```
+
+
+
+## Step 6: Report the Findings
+
+A multiple linear regression model was created to investigate whether a student’s standardised score on the LRT at age 11 could be considered to predict a student’s standardised exam result at age 16 and whether a differential effect exists for students of different gender. A statistically significant regression equation was found (F(2,4056)=1,125.86, p < 0.01) with an adjusted R<sup>2</sup> of 0.36:
+
+Standardized score at age 16 = -0.103 + 0.591* Standardized score on Standard LRT + 0.17 * gender (coded as 0 or 1 for girls)
+
+This indicates that an increase of 1 unit in a student’s standardized score on the Standard LRT at age 11 can be consider to contribute a statistically significant increase of 0.591 to a students standardized exam result at age 16. A statistically significant differential effect was found for students identifying as a girl which can be considered to contribute an additional statistically significant increase of 0.17 to a student’s standardized exam result at age 16. 
+
+## Step 7: Compare with Simple Linear Regression Model
+We can compare this multiple regression model to the simple regression model we previously created - this is for information only
+
+A comparison between the simple and multiple linear regression models shows that including gender slightly improves the model’s explanatory power. In Model 1, students’ standardized scores on the Standard London Reading Test (LRT) at age 11 significantly predicted their standardized exam results at age 16, F(1, 4057) = 2185.01, p < .01, with an adjusted R² = .35. In Model 2, when gender (0 = boy, 1 = girl) was added as an additional predictor, the model remained statistically significant, F(2, 4056) = 1125.86, p < .01, and the adjusted R² increased to .36. Both predictors were statistically significant: the standardized LRT score (β = 0.59, p < .01) and gender (β = 0.17, p < .01). This indicates that, controlling for prior reading performance, girls scored on average 0.17 standard deviations higher than boys on their standardized exams at age 16. While the improvement in model fit is modest (ΔR² = .01), it suggests that gender contributes a small but meaningful effect on academic outcomes beyond prior reading ability.
+
+```{r}
+#| label: stargazercomp
+#Create the simple regression model
+stargazer(model1, model2, type="text") #Quick model comparison
+```
+
+# Regression Model 3: Multiple Linear Regression - Including an Interactive Term
+
+This example of how to conduct linear regression involves a normalized outcome variable representing exam results at age 16 (normexam) with one scale predictor, student's results on the standard London Reading Test (standlrt) at age 11 and the interaction between  gender and prior academic achievement (standlrt).
+
+## Step 1: Build the model
+
+```{r}
+#| label: model3
+model3<-lm(regression$normexam~regression$standlrt+regression$girl+
+             regression$interaction)
+```
+
+## Step 2: Generate Analysis of Variance 
+```{r}
+#| label: anovam3
+# Get information on the co-efficients with information to calculate the F statistic
+anova(model3)
+```
+
+## Step 3: Generate Summary statistics 
+
+```{r}
+#| label: summm3
+# Get the summary statistics to assess goodness of fit
+summary(model3)
+```
+
+## Step 4: Generate standardized co-efficients 
+```{r}
+#| label: betam3
+lm.beta(model3)
+# Remember that for the categorical variable the possible values are 0 and 1 - it will be dummy coded in the model. 1 is the value of the category of interest, 0 reference category
+```
+
+## Step 5 (optional): Generate Stargazer Tidy Report 
+```{r}
+#| label: stargazerm3
+stargazer(model3, type="text") #Tidy output of all the required stats
+# Get the standardized co-efficients
+```
+
+
+
+
+## Step 6: Report the Findings
+A multiple linear regression model was created to investigate whether a student’s prior academic achievement, as represented by the standardized score achieved on the LRT at age 11, could be considered to predict a student’s standardized exam result at age 16,  whether a differential effect exists for students of different genders and whether there is an interaction effect between a student's gender and their prior academic achievement. A statistically significant regression equation was found (F(3, 4055) = 750.399, p < 0.01) with an adjusted R² of 0.357. The regression equation can be expressed as follows:
+
+Standardized exam result at age 16 =
+− 0.103 + 0.593 × Standardized score on Standard LRT +
+0.170 × gender − 0.004 × interaction of prior achievement and gender
+
+This indicates that an increase of 1 unit in a student’s standardized score on the Standard LRT at age 11 is associated with a statistically significant increase of 0.593 in the student’s standardized exam result at age 16 (p < 0.01). Identifying as a girl (coded as 1) contributes an additional statistically significant increase of 0.170 to a student’s standardized exam result at age 16 (p < 0.01). The interaction term, which represents the combined effect of the standardized score on the LRT and the gender variable, has a coefficient of -0.004, and indicates a non-significant interaction effect (p = 0.25). This suggests that the effect of prior academic achievement does not significantly differ between genders in this model.
+
+## Step 7: Compare with Previous Model
+
+```{r}
+#| label: stargazercomp3
+# This is optional
+stargazer::stargazer(model2, model3, type="text") #Quick model comparison
+```
+
+This multiple linear regression analysis was conducted to examine whether including an interaction term between gender and prior academic achievement (LRT score at age 11) would improve the prediction of standardized exam results at age 16. An initial regression analysis including standardized LRT score and gender (coded 0 = boy, 1 = girl) as predictors was found to be statistically significant, F(2, 4056) = 1125.86, p < .01, with an adjusted R² = .357. Both predictors were significant: higher LRT scores were associated with higher exam results (b = 0.591, p < .01), and girls scored, on average, 0.17 standard deviations higher than boys (b = 0.170, p < .01), controlling for prior reading achievement. When an interaction term between gender and LRT score was added, the overall model remained statistically significant, F(3, 4055) = 750.40, p < .01, but the adjusted R² did not change (R² = .357). The interaction term itself was not statistically significant (b = −0.004, p = .87), indicating that the relationship between prior reading ability and later exam performance does not differ significantly between boys and girls. In summary, both prior achievement and gender were important predictors, but the inclusion of the interaction term provided no additional explanatory power.
+
+
+# Regression Model 4: Multiple Linear Regression - Including multiple dummy variables for a single concept
+To investigate differential effect of attending single gender school v mixed gender school.
+
+## Establish Difference
+
+```{r}
+#| label: ANOVAnorme
+#Conduct Bartlett's test for homogeneity of variance
+stats::bartlett.test(normexam~ schgend, data=regression)
+
+# Compute the analysis of variance using the oneway.test from the stats package
+stats::oneway.test(normexam ~ schgend, data = regression, var.equal = TRUE)
+
+# Use Tukey for post-hoc testing . Use Games Howell if Levene is significant.
+rstatix::tukey_hsd(regression, normexam ~ schgend)
+
+#Compute our Eta squared
+effectsize::effectsize(stats::oneway.test(normexam ~ schgend, data = regression, var.equal = TRUE)
+)
+```
+## Step 1: Build the model
+```{r}
+#| label: model4
+model4<-lm(regression$normexam~regression$standlrt+regression$girl+regression$boys_sch+regression$girls_sch)
+stargazer::stargazer(model4, type="text") #Tidy output of all the required stats
+```
+
+## Step 2: Generate Analysis of Variance 
+```{r}
+#| label: anovam4
+# Get information on the co-efficients with information to calculate the F statistic
+anova(model4)
+```
+
+## Step 3: Generate Summary statistics 
+
+```{r}
+#| label: summm4
+# Get the summary statistics to assess goodness of fit
+summary(model4)
+```
+
+## Step 4: Generate standardized co-efficients 
+```{r}
+#| label: betam4
+lm.beta(model4)
+# Remember that for the categorical variable the possible values are 0 and 1 - it will be dummy coded in the model. 1 is the value of the category of interest, 0 reference category
+```
+
+## Step 5 (optional): Generate Stargazer Tidy Report 
+```{r}
+#| label: stargazerm4
+stargazer(model4, type="text") #Tidy output of all the required stats
+# Get the standardized co-efficients
+```
+
+
+## Step 6: Report the Findings
+
+A multiple linear regression analysis was conducted to examine whether a student’s prior academic achievement, as measured by their standardized score on the Standard London Reading Test (LRT) at age 11, could predict standardized exam results at age 16, and to assess whether differential effects exist by gender and school type (single-gender versus mixed-gender schools). The overall model was statistically significant, F(4, 4054) = 580.15, p < .01, with an adjusted R² = .363, indicating that approximately 36% of the variance in exam performance was explained by the predictors.
+
+The resulting regression equation was:
+
+Standardized exam result at age 16 = − 0.161 + 0.591 × Standardized score on Standard LRT + 0.133 × gender (girl) + 0.183 × boys school + 0.168 × girls school
+
+This indicates that each one-unit increase in a student’s standardized LRT score at age 11 was associated with a statistically significant increase of 0.591 in their standardized exam result at age 16 (p < .01). Identifying as a girl (coded 1) contributed an additional 0.133 to the predicted exam score (p < .01), relative to boys. Attending a boys-only school was associated with a 0.183 higher exam score (p < .01) compared to students in mixed-gender schools, while attending a girls-only school was associated with a 0.168 higher score (p < .01). These findings indicate that prior academic achievement, gender, and school type all make statistically significant contributions to predicting later exam performance.
+
+## Step 7: Compare with Previous Model (Gender Differential Effect)
+This multiple linear regression analysis examining gender and prior academic achievement as predictors of exam performance at age 16 was extended to include school type to explore whether attending a single-gender or mixed-gender school contributed additional explanatory power. In the initial analysis, both standardized LRT score at age 11 and gender were significant predictors of exam performance (F(2, 4056) = 1125.86, p < .01, adjusted R² = .357), with girls achieving higher standardized exam scores than boys after controlling for prior reading ability. When school type was added, the overall model remained statistically significant (F(4, 4054) = 580.15, p < .01) and the adjusted R² increased slightly to .363, indicating a modest improvement in model fit. Attending either a boys-only or girls-only school was associated with statistically significant increases in exam performance compared to mixed-gender schools, even after accounting for gender and prior achievement. These results suggest that while prior academic achievement and gender remain strong predictors of exam outcomes, school type also has a small but meaningful additional effect on students’ standardized exam results.
+
+```{r}
+#| label: stargazercomp4
+stargazer::stargazer(model2, model4, type="text") #Quick model comparison
+```
