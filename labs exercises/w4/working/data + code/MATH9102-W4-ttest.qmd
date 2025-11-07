@@ -82,6 +82,8 @@ print(child_summary)
 
 ```{r}
 # Filter out NA values from the 'child' variable only
+# get rid of NAs
+# already doen missing values analysis  - ctaete a bar chart to show that
 cleaned_survey <- survey %>%
   filter(!is.na(child))
 ```

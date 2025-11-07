@@ -51,6 +51,10 @@ datapath <- file.path(datalocation,'sleep.rdata')
 sleep<- read.table(datapath, header=TRUE)
 ```
 
+```{r}
+summary(sleep)
+
+```
 # Exercise 1: Build a simple regression model
 Using the Sleep dataset from Pallant (sleep.sav)build a linear regression model to investigate whether:
 Total Sleep and Associated Sensation score (totsas) can be considered to be predicted by a respondent’s level of anxiety (anxiety) (simple linear regression)
@@ -58,7 +62,7 @@ Total Sleep and Associated Sensation score (totsas) can be considered to be pred
 ## Step 1: Build the model
 ```{r}
 #| label: bmodel1
-model1<-lm(outcomevar~predictorvar, data=sleep)#Replace the variables 
+model1<-lm(totsas~anxiety, data=sleep)#Replace the variables 
 
 ```
 
@@ -97,7 +101,7 @@ Include a dummy variable for trouble sleeping (trubslep)
 ## Step 1: Build the model
 ```{r}
 #| label: buildm2
-model2<-lm(outcomevar~predictorvar1+dummyvar, data=sleep)
+model2<-lm(totsas~anxiety+trubslep, data=sleep)
 
 ```
 
@@ -145,7 +149,7 @@ Extend your previous MLR to include an interaction term -number of caffeine drin
 ## Step 1: Build the model
 ```{r}
 #| label: buildm3
-model3<-lm(outcomevar~predictorvar1+dummyvar+interactionterm, data=sleep)
+model3<-lm(totsas~anxiety+trubslep+caffeine:alchohol, data=sleep)
 
 ```
 
@@ -195,7 +199,7 @@ Extend your previous MLR model (model2) which used a dummy variable to represent
 
 sleep$edlevelf <- factor(sleep$edlevel) # Create a factor from edlevel
 sleep$edlevelf <- relevel(sleep$edlevelf, ref = "primary school") # set the reference level to be primary
-model4<-lm(outcomevar~predictorvar1+dummyvartubsleep+dummyvaredlevel(you will need 4), data=sleep)
+model4<-lm(totsas~anxiety+trubslep+edlevelf, data=sleep)
 
 ```
 

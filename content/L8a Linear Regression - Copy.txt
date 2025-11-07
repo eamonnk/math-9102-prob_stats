@@ -29,6 +29,7 @@ Questions it allows you to answer:
 ? How well a set of variables can predict an outcome variable
 ? Which variable in a set is the best predictor
 ? Whether a variable is still able to predict an outcome when controlling for other variables 
+
 Predictive model – what does it allow you do?
 
 The same model structure can be used to explore differences between groups or conditions — this is often called testing for group effects.
@@ -38,12 +39,26 @@ Do different groups (e.g. treatment vs. control) show significant differences in
 How large is the difference between these groups, after accounting for other predictors?
 Before Regression
 
+We need to establish evidence to support going ahead with building a predictive model
+
+If we are asserting a relationship
+We need to investigate if there is any evidence of a relationship using correlation and make a decision based on the results (strength, direction etc.)
+Correlation – Pearson, Spearman, Kendall, Chi, Fisher
 
 
+If we are asserting a differential effect for different groups
+We need to investigate if there is any difference using either the appropriate test and make a decision based on the result
+Difference – T-test (independent or paired), Mann-Whitney, Anova (one-way or multiple), Kruskal-Wallis, Friedmann, McNemar, Chi, Fisher
 
 
+Causal Relationship
+To assert a causal relationship is to claim that changes in the independent variable(s) create changes in the dependent variable
 
 
+In practice can only assert that one factor causes change in another when you can satisfy the following criteria:
+Association
+Time order
+Non-spuriousness
 
 Causal Relationship – Nonspuriousness
 
@@ -94,19 +109,23 @@ Measures the relationship between two variables, controlling for the effect that
 ? Usually, a variable you suspect is influencing your two variables of interest
 ? This can artificially inflate the correlation co-efficient found
 
+
+
+
+
+Sources used in creation of this lecture:
+Statistics and Data Analysis, Peck, Olsen and Devore; Discovering Statistics Using R, Field, Miles and Field; Understanding Basic Statistics, Brase and Brase;SPSS Survival Manual, Julie Pallant
+
+
+
+
+
+
+
 Partial Correlation
 
-Using survey.dat
-? Julie Pallant
-Interested in exploring the relationship between scores on the 
-Perceived Control of Internal States Scale (tpcoiss) and scores on the Perceived Stress Scale (tpstress) but controlling for what is known as socially desirable responding bias (tendency to present yourself in a socially desirable way)
-? This tendency is measured using Marlowe-Crowne Social Desirability Scale (tmarlow)
-
-Partial Correlation
-
-
-
-
+Top value= co-efficient
+Lower value = p value
 Reporting Results
 
 Partial correlation was used to explore the relationship between perceived control of internal states (as measured by PCOISS) and perceived stress (measured by the Perceived Stress Scale), while controlling for scores on the Marlowe-Crowne Social Desirability Scale. Preliminary analyses were performed to ensure no violation of the assumption of normality, linearity and homoscedasticity. There was a strong, negative partial correlation between perceived control of internal states and perceived stress, controlling for social desirability, (r=-.53, n=422,p<.001). An inspection of the zero-order correlation (r=-.58) suggested that controlling for social desirability had very little effect on the strength of the relationship between these two variables.
@@ -122,8 +141,8 @@ Suppose we want to look at what variables predict a child’s maths score aged 16 
 We have a theory that their achievement on a standard maths test at aged 7 is a good predictor
 ? (We’ve seen this before in correlation…)
 
-
-
+Relationship between Maths score age 7 with GCSE result at age 16
+Relationship between Maths score age 7 with GCSE result at age 16
 y = b0 + bx + e
 
 Relationship between Maths score age 7 with GCSE result at age 16
@@ -149,15 +168,11 @@ result at age 16
 
 
 
-
-
-
-
-
-
-
-
-
+Simple Linear Regression
+The theory we are exploring is whether the
+main predictor of ‘normexam’ is a student’s prior performance in a reading test at age 11 (the variable ‘standlrt’)
+The response (outcome or dependent) variable in this case is the student’s exam score at age 16 (‘normexam’) that has been converted into a standardised score (with mean = 0 and standard deviation = 1).
+The predictor (independent) variable in this case is the student's prior performance in a reading test at age 11 (standlrt) which is also a standardised score)
 
 
 Simple Linear Regression
@@ -184,8 +199,9 @@ N: 4059
 Standlrt
 
 
-
-
+Simple Linear Regression
+Calculate the correlation for these two variables
+There appears to be a strong statistically significant positive linear relationship. – R2 = 0.35, r=0.592, p<0.01
 
 Simple Linear Regression
 
@@ -238,34 +254,22 @@ SST
 Total variability (variability between scores and the mean).
 
 
+Simple Linear Regression
+The F statistic looks at whether the model as whole is statistically significant
+This allows us to answer the question:
+Do the independent variables, taken together, predict the dependent variable better than just predicting the mean for everything?
+To get this information in R:
+anova(model1)
+summary(model1)
 
-Testing the Model: ANOVA
-
-Mean Squared Error
-? Sums of Squares are total values.
-? They can be expressed as averages.
-? These are called Mean Squares, MS
 MSM
-F = 
+Mean Square Error of the Model
 MSR
-
+Mean Square Error of the Residuals
 Simple Linear Regression
 
 
-MSM 
-Mean Square Error of the Model
-MSR 
-Mean Square Error of the Residuals
-Testing the Model: R1
-R2
-? The proportion of variance accounted for by the regression model. ? The Pearson Correlation Coefficient Squared
-
-
-
-
-The R2 is the proportion of variance in the outcome (dependent) variable normexam which can be explained by the predictor (independent) variables. This is the usefulness of the model.
-An R2  of 1 means the independent variable explains 100% of the variance in the dependent variable. Conversely 0 means it explains none.
-
+Function: lm.beta(model1)
 
 2  
 
@@ -303,20 +307,24 @@ Multiple Linear Regression
 
 Sources used in creation of  this lecture: 
 Statistics and Data Analysis, Peck, Olsen and Devore; Discovering Statistics Using R, Field, Miles and Field; Understanding Basic Statistics, Brase and Brase;SPSS Survival Manual, Julie Pallant
-What is Multiple Regression?
+b
+0 is the intercept.
+?
+The intercept is the value of the Y variable when all Xs = 0.
+?
+This is the point at which the regression plane crosses the Y-axis (vertical).
+b
+1 to bn are the regression coefficient for variable 1 to n
 
-Simple linear Regression is a model to predict the value of one variable from another.
-? It is rarely if ever used.
-Multiple Regression is a natural extension of this model:
-? This is the most common form of regression model used.
-? We use it to predict values of an outcome from several predictors.
-? It is a hypothetical model of the relationship between several variables.
-Multiple Regression as an Equation
+With multiple regression the relationship is described using a variation of the equation of a straight line.
 
-y=b0 +b1X1+b2X2 +?+bnXn +?iWith multiple regression the relationship is described using a variation of the equation of a straight line.
+
+y=b0 +b1X1 +b2X2 +?+bnXn +?i
 b0 is the intercept.
 ? The intercept is the value of the Y variable when all Xs = 0.
  ? This is the point at which the regression plane crosses the Y-axis (vertical). b1 to bn are the regression coefficient for variable 1 to n
+
+
 Dummy (indicator) variables
 
 Many variables we are interested in prediction are categorical
@@ -361,14 +369,33 @@ lm(regression$normexam~regr ession$standlrt+girl) anova(model2) summary(model2)
 
 
 
-Multiple Linear Regression
-
-Our regression equation
-What possible values can girl take here?
+In other words, and as illustrated here, this model can be represented as two parallel lines
+•
+The vertical distance between both lines being 0.170 for the average student (value of 0 for standlrt) when you calculate the equation for boys and girls.
 Normexam=-0.10+0.59*standlrt+0.17*girl
+Boys normexam = -.103+.590=0.487
+Girls normexam=-.103+.590+.167=0.654
 
+Multiple Linear Regression
+Our regression equation:
+Normexam
+=-0.10+0.59*standlrt+0.17*girl
+Lets explore what this means
+?
+For a boy their score for normexam on average increases by 0.49 from their standlrt score:
+?
+Normexam=-0.10+0.59*standlrt+0 #since girl is 0 for boys
+?
+For a girl their score increases by 0.66 from their standlrt score:
+?
+Normexam=-0.10+0.59*standlrt+0.17
+?
+So being a girl is on average adding 0.17 to your score at age 16
+?
+So, there is a positive differential effect
 
-
+This is the impact being a girl has on the predicted normexam
+Why is the impact of being a girl being shown? Because we have coded it as 1, it is our category of interest
 
 • In other words, and as illustrated here, this model can be represented as two parallel lines 
 • The vertical distance between both lines being 0.170 for the average student (value of 0 for standlrt) when  you calculate the equation for boys and girls.
@@ -458,6 +485,11 @@ Use the template MATH9102-W8RegressionExercise.qmd ? Complete Exercise 2:
 normal
 ? You do not need to do the difference test at this point.
 
+Enable you to examine whether the relationship between the target and the independent variable changes depending on the value of another independent variable.
+An interaction term is effectively a multiplication of the two features that you believe have a joint effect on the target.
+The following equation represents a model including an interaction term:
+
+
 
 Interaction effect
 
@@ -477,6 +509,26 @@ The coefficients of the interaction terms indicate how much the effect of one va
 
 
 Interaction term
+This model is fine, but it does assume that the gap
+in exam scores at age 16 between boys and girls remains constant (at 0.170 points) regardless of a student’s prior educational achievement at 11 (‘standlrt’).
+But it may be that high achieving boys at age 11 could be outperforming girls at age 16 and/or that low performing boys at age 11 may fall even further behind their female counterparts by the age of 16?
+?We are hypothesising here, in effect, that the gradients of both these lines of best fit might not be the same and thus these two lines might not actually be parallel
+So, to really improve this we would need to look at including an interaction term
+We are investigating here an interaction effect
+
+We can see how the inclusion of the
+interaction term has basically had the consequence of giving us two lines of best fit (one for boys and one for girls) that now have differing intercepts as well as differing gradients or slopes.
+On this occasion we already knew that the
+difference in the slopes was minor (and not statistically significant)
+This is confirmed by the where the
+difference in the gradients of two lines of best (0.593 compared to 0.589)
+?
+This is marginal and wouldn’t even be obvious to the eye if the two lines were plotted on a graph.
+We would conclude that this interaction term
+has no significant effect on the model.
+
+
+Interaction term
 
 We can test this hypothesis by adding what is referred to as an ‘interaction term’ to the model that is basically a new variable calculated by multiplying ‘standlrt’ by ‘girl’. 
 ? First, therefore, we need to create a new variable (which we can call 
@@ -484,7 +536,13 @@ We can test this hypothesis by adding what is referred to as an ‘interaction ter
 regression$interaction <- regression$standlrt * as.numeric(regression$girl)
 *Note: This is already in our dataset regression.sav
 
-
+Model 3 – including an interaction term
+General Equation
+Predicted normexam=-.103+0.593*standlrt+0.17*girl-0.0*interaction
+Equation for Boys
+Predicted Boys normexam=-.103+0.593*standlrt=0.49
+Equation for Girls
+Girls normexam=-.103+(0.593-0.004) standlrt+.17= -.103+.589*standrt+.17
 
 
 A multiple linear regression model was created to investigate whether a student’s prior academic achievement, as represented by the standardized score achieved on the LRT at age 11, could be considered to predict a student’s standardized exam result at age 16, whether a differential effect exists for students of different genders and whether there is an interaction effect between a student’s gender and their prior academic achievement. A statistically significant regression equation was found (F(3, 4055) = 750.399, p < 0.01) with an adjusted R² of 0.357. The regression equation can be expressed as follows:
@@ -496,8 +554,22 @@ This indicates that an increase of 1 unit in a student’s standardized score on t
 Comparison	achievement. When an interaction term between gender and LRT score was added, the overall model remained statistically significant, F(3, 4055) = 750.40, p < .01, but the adjusted R² did not change (R² = .357). The interaction term itself was not statistically significant (b = ?0.004, p = .87), indicating that the relationship between prior reading ability and later exam performance does not differ significantly between boys and girls. In summary, both prior achievement and gender were important predictors, but the inclusion of the interaction term provided no additional explanatory power.
 
 
+This example has created an interaction term using a categorical variable and a numerical variable
+However, you can create interaction terms for two numerical features as well.
 
+Time for you to try
+?
+Review the section Regression Model 3 in MATH9102-W8-Regression.qmd and the HTML output
+?Use the template MATH9102-W8-RegressionExercise.qmd
+?Complete Exercise 3:
+?Using the Sleep dataset from Pallant (sleep.sav) you build a linear regression model
+?Extend your previous MLR to include an interaction term -number of caffeine drinks per day (caffeine) and the number of alcoholic drinks per day (alchohol – it is misspelt in the dataset).
+?You do not need to do the difference test at this time.
 
+We need to create several dummy coded variables (the number of which will be one less than the number of categories in the original variable).
+We need to define one of the categories as the reference category.
+Which category you pick is entirely up to you, but it should make sense in the context of your question
+For ordinal variables, it is usually best to select the lowest-ranked category as the reference category.
 
 
 Dummy variables with more than two categories
@@ -515,10 +587,17 @@ ifelse(regression$schgend=="girlsch", 1, 0)
 
 • This has already been done in the regression dataset we are using.
 • It is always worth just checking that you have recoded things properly by comparing the old and new variables via simple crosstabs 
+Model 4 – including school gender
 
+model3<-lm(regression$normexam~regression$standlrt+regression$girl+regression$boys_sch+regression$girls_sch)
+Stargazer(model3, type="text")
+Why isn’t mixed school appearing? Because it’s the reference category
+We are exploring the difference between attending a boys only and attending a mixed gender school and the difference between attending a girls only school and a mixed gender school.
+From the model we can also compare a girl attending a girls only to a boy attending a boys only
 
-
-
+Interpreting the model
+Predicted normexam=-.16+.59*standlrt+0.13*girl+0.18*boy_sch+0.17*girl_sch
+So, we can see a difference in scores for boys attending boys only schools and girls attending girls only schools.
 
 
 A multiple linear regression analysis was conducted to examine whether a student’s prior academic achievement, as measured by their standardized score on the Standard London Reading Test (LRT) at age 11, could predict standardized exam results at age 16, and to assess whether differential effects exist by gender and school type (single-gender versus mixed-gender schools). The overall model was statistically significant, F(4, 4054) = 580.15, p < .01, with an adjusted R² = .363, indicating that approximately 36% of the variance in exam performance was explained by the predictors.
@@ -529,6 +608,8 @@ This indicates that each one-unit increase in a student’s standardized LRT score
 Attending a boys-only school was associated with a 0.183 higher exam score (p < .01) compared to students in mixed-gender schools, while attending a girls-only school was associated with a 0.168 higher score (p < .01). These 
 
 findings indicate that prior academic achievement, gender, and school type all make statistically significant contributions to predicting later exam performance.
+
+
 A multiple linear regression analysis was conducted to examine whether a student’s prior academic achievement, as measured by their standardized score on the Standard London Reading Test (LRT) at age 11, could predict standardized exam results at age 16, and to assess whether differential effects exist by gender and school type (single-gender versus mixed-gender schools). The overall model was statistically significant, F(4, 4054) = 580.15, p < .01, with an adjusted R² = .363, indicating that approximately 36% of the variance in exam performance was explained by the predictors.
 The resulting regression equation was: Standardized exam result at age 16 = ? 0.161 + 0.591 × 
 Reporting - 	Standardized score on Standard LRT + 0.133 × gender 

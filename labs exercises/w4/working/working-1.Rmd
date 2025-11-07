@@ -6,7 +6,9 @@ output: html_notebook
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
+```{r}
+install.packages("car")
+```
 
 ```{r}
 #| label: install-and-load
@@ -28,6 +30,7 @@ quiet_library("FSA")        # Includes general tools for data analysis (e.g., no
 quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement in variance tests
 quiet_library("sjstats")  
 quiet_library("gmodels")
+quiet_library("car")
 
 
 #Amend this to reflect your folder structure 
@@ -55,7 +58,12 @@ youth<-read.table(datapath, header=TRUE)
 
 ```{r}
 library(car)
-leveneTest(continuousvariable ~ categoricalvariable, data=dataframename)
+datalocation <- file.path("./")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Read in the dataset
+survey <- read.table(datapath)
+leveneTest(continuousvariable ~ categoricalvariable, data=survey)
 ‘’’
 
 ```

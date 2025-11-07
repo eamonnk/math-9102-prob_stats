@@ -21,10 +21,9 @@ table > caption {
   font-weight: bold;
 }
 </style>
-
 ```
-!<--# same as parametric 
--->
+
+!\<--# same as parametric --\>
 
 ```{r}
 #| label: install-and-load

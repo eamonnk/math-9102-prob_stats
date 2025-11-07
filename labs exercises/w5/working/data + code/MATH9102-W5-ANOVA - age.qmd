@@ -150,11 +150,10 @@ res <- stats::oneway.test(toptim ~ as.factor(agegp3), data = survey, var.equal =
 # Summary of the analysis
 res
 
-#We use Tukey for post-hoc testing as ahve homogenous variance int he groups
+#We use Tukey for post-hoc testing
 rstatix::tukey_hsd(survey, toptim ~ agegp3)
 
 #Compute our Eta squared
-# cal effect size...
 effes=effectsize::effectsize(res)
 effes
 
@@ -169,8 +168,6 @@ pval=round(res$p.value,2)
 
 
 #A statistically significant difference was found so we need to examine and report the post-hoc results also.
-
-# effect size  = 0.02
 ```
 
 ### Reporting the results with eta squared effect
