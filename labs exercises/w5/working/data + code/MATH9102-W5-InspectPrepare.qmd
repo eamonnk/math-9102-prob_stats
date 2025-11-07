@@ -43,7 +43,7 @@ quiet_library("semTools")   # Supplementary functions for Structural Equation Mo
 quiet_library("MASS")       # Includes function for Box-Cox transformation
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'survey.dat')
 
 #Read in the dataset
@@ -53,12 +53,9 @@ survey <- read.table(datapath)
 colnames(survey) <- tolower(colnames(survey))
 ```
 
-
 This analysis is being conducted using data condensed from a postgraduate study conducted by Julie Pallant. The study was designed to explore the factors that impact on respondents’ psychological adjustment and wellbeing. The dataset is available at http://spss4.allenandunwin.com.s3-website-ap-southeast-2.amazonaws.com/data_files.html. The survey contained a variety of validated scales measuring constructs that the extensive literature on stress and coping suggest influence people’s experience of stress. The scales measured self-esteem, negative affect, perceptions of control, perceived stress, positive and negative affect, and life satisfaction. A scale was also included that measured people’s tendency to present themselves in a favourable or socially desirable manner. The survey was distributed to members of the general public in Melbourne, Australia and surrounding districts. This sample included 439 rows of data.
 
 Total negative affect scores have a standardised skewness score of 7.58. Over 5% of the scores are outside of +/-2 using Curran, West and Finch's guidelines. However 100% fall withing +/- 3.29. They can be treated as normal. But to illustrate the impact of transformation we will apply a log10 transformation
-
-
 
 ```{r }
 #| label: hist-negaff
@@ -80,9 +77,6 @@ gg
 qqnorm(survey$tnegaff)
 qqline(survey$tnegaff, col=2) #show a line on the plot
 ```
-
-
-
 
 ```{r }
 #| label: desc-negaff
@@ -106,12 +100,9 @@ FSA::perc(as.numeric(ztnegaff), 3.29, "gt")
 
 ```
 
-
 ## Untransformed - using all our heuristics
 
 Total negative affect scores data were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) identified some issues with skewness and kurtosis. The standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996), but the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) was outside the acceptable range. However over 99% of standardized scores for total negative affect fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the data can be considered to approximate a normal distribution (m=`r round(mean(survey$tnegaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$tnegaff, na.rm=TRUE),2)`, n=`r length(survey$tnegaff)-sum(is.na(survey$tnegaff))`).
-
-
 
 ## Transforming data using log(10)
 
@@ -119,7 +110,6 @@ Total negative affect scores data were assessed for normality. Visual inspection
 # Transform the data and save as a column in the survey dataset
 survey$lognaff <- log10(survey$tnegaff)
 ```
-
 
 ```{r }
 #| label: hist-negafflog10
@@ -142,9 +132,6 @@ qqnorm(survey$lognaff)
 qqline(survey$lognaff, col=2) #show a line on the plot
 ```
 
-
-
-
 ```{r }
 #| label: desc-lognegaff
 #stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
@@ -165,9 +152,7 @@ FSA::perc(as.numeric(zlognegaff), 3.29, "gt")
 
 ```
 
-Total negative affect scores data were transformed using logarithm base 10 transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. However, while the standardized score for  skewness  (`r round(tpskew[1]/tpskew[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$lognaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$lognaff, na.rm=TRUE),2)`, n=`r length(survey$lognaff)-sum(is.na(survey$lognaff))`).
-
-
+Total negative affect scores data were transformed using logarithm base 10 transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. However, while the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$lognaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$lognaff, na.rm=TRUE),2)`, n=`r length(survey$lognaff)-sum(is.na(survey$lognaff))`).
 
 Note: All subsequent tests/models should use the transformed values not the raw.
 
@@ -177,7 +162,6 @@ Note: All subsequent tests/models should use the transformed values not the raw.
 # Transform and store as a column in the survey dataset
 survey$sqrtnaff <- sqrt(survey$tnegaff)
 ```
-
 
 ```{r }
 #| label: hist-negaffsqr
@@ -200,9 +184,6 @@ qqnorm(survey$sqrtnaff)
 qqline(survey$sqrtnaff, col=2) #show a line on the plot
 ```
 
-
-
-
 ```{r }
 #| label: desc-sqrnegaff
 #stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
@@ -223,10 +204,9 @@ FSA::perc(as.numeric(zsqrnegaff), 3.29, "gt")
 
 ```
 
-Total negative affect scores data were transformed using a square root transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. However, while the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`)  can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for skewness  (`r round(tpskew[1]/tpskew[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$sqrtnaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$sqrtnaff, na.rm=TRUE),2)`, n=`r length(survey$sqrtnaff)-sum(is.na(survey$sqrtnaff))`).
+Total negative affect scores data were transformed using a square root transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) identified some issues with skewness and kurtosis. However, while the standardized score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for skewness (`r round(tpskew[1]/tpskew[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$sqrtnaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$sqrtnaff, na.rm=TRUE),2)`, n=`r length(survey$sqrtnaff)-sum(is.na(survey$sqrtnaff))`).
 
 Note: All subsequent tests/models should use the transformed values not the raw.
-
 
 ## Transforming data using Box Cox transformation
 
@@ -244,7 +224,6 @@ survey$bcnegaff <- if (abs(lambda) < 1e-6) {
   (survey$tnegaff^lambda - 1) / lambda
 }
 ```
-
 
 ```{r }
 #| label: hist-negaffbc
@@ -267,9 +246,6 @@ qqnorm(survey$bcnegaff)
 qqline(survey$bcnegaff, col=2) #show a line on the plot
 ```
 
-
-
-
 ```{r }
 #| label: desc-bcnegaff
 #stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scientific notation
@@ -290,7 +266,6 @@ FSA::perc(as.numeric(zbcnegaff), 3.29, "gt")
 
 ```
 
-Total negative affect scores data were transformed using a square root transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 5 and Figure 6) identified some issues with skewness and kurtosis. However, while the standardized score for  skewness  (`r round(tpskew[1]/tpskew[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$bcnegaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$bcnegaff, na.rm=TRUE),2)`, n=`r length(survey$bcnegaff)-sum(is.na(survey$bcnegaff))`).
+Total negative affect scores data were transformed using a square root transformation. These transformed scores were then assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 5 and Figure 6) identified some issues with skewness and kurtosis. However, while the standardized score for skewness (`r round(tpskew[1]/tpskew[2],2)`) can be considered acceptable using the criteria proposed by West, Finch and Curran (1996),the standardised score for kurtosis (`r round(tpkurt[1]/tpkurt[2],2)`) cannot. However as 95% of standardized scores for total negative affect fall within the bounds of +/- 1.96 and 100% fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2013) the transformed data can be considered to approximate a normal distribution (m=`r round(mean(survey$bcnegaff, na.rm=TRUE),2)`, sd=`r round(sd(survey$bcnegaff, na.rm=TRUE),2)`, n=`r length(survey$bcnegaff)-sum(is.na(survey$bcnegaff))`).
 
 Note: All subsequent tests/models should use the transformed values not the raw.
-

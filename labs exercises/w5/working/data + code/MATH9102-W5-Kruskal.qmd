@@ -21,7 +21,6 @@ table > caption {
   caption-side: bottom;  /*  this moves captions below tables */
 }
 </style>
-
 ```
 
 ```{r}
@@ -48,7 +47,7 @@ quiet_library("gt") # Formatting tables
 quiet_library("flextable") # Formatting tables
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'youthcohort.dat')
 
 #Read in the dataset
@@ -60,13 +59,7 @@ colnames(ydata) <- tolower(colnames(ydata))
 
 This analysis is being conducted using the Youth Cohort dataset taken from the datasets used in Quantitative Data Analysis in Education by Paul Connolly) available at https://www.routledge.com/Quantitative-Data-Analysis-in-Education-A-Critical-Introduction-Using-SPSS/Connolly/p/book/9780415372985. This dataset includes a small number of variables from the Youth Cohort Study of England and Wales that consisted of a random sample of young people who had reached their school leaving age in 2002 (n=13,201). The survey tracks young people over a number of years post leaving school and focuses on their education, training and career pathways. The variables included in the dataset used in this analysis focus on the performance of young people in the public examination (GCSE) at the end of their final compulsory year of schooling.
 
-
-“Is there a significant difference in students’ GCSE mathematics grades across different family social class groups ?
-H0: There is no significant difference in the GCSE Maths grades achieved by across different family social class groups.
-HA: There is no significant difference in the GCSE Maths grades achieved by across different family social class groups.
-
-
-
+“Is there a significant difference in students’ GCSE mathematics grades across different family social class groups ? H0: There is no significant difference in the GCSE Maths grades achieved by across different family social class groups. HA: There is no significant difference in the GCSE Maths grades achieved by across different family social class groups.
 
 ```{r}
 #Variables: 'famsec' family social class, 'gradmath' grade achieved in maths
@@ -100,7 +93,6 @@ summary_tbl <- ydata %>%
   rename(`Family Social Class` = famsec)
 ```
 
-
 ```{r}
 #| tbl-cap: "Table 1: Median and IQR of Maths Grades by Family Social Class "
 # Format with gt
@@ -119,13 +111,10 @@ summary_tbl %>%
 
 ```
 
-
 ```{r}
 #run a kruskal wallis test - this is the omnibus stest
 stats::kruskal.test(gradmath~famsec,data=ydata)
 ```
-
-
 
 ```{r posthoc-approach1}
 #We need the as.numeric to make sure our gradmath variable is treated as a numeric variable 
@@ -148,7 +137,6 @@ ft <- flextable(significant_results) %>%
   set_table_properties(width = 1, layout = "autofit") # Autofit to ensure all content is visible
 ```
 
-
 ```{r}
 #| tbl-cap: "Table 2: Post-hoc Results using Dunn's Test"
 ft
@@ -170,14 +158,6 @@ rstatix::kruskal_effsize(ydata, gradmath~famsec, ci = FALSE, conf.level = 0.95,
 
 ```
 
-### Reporting the results 
+### Reporting the results
 
-
-A Kruskal–Wallis test was conducted to examine differences in mathematics grades  across family social class groups. The results indicated a statistically significant difference in median maths grades between groups, H(5) = , p < .001, suggesting that family social class is associated with student performance in mathematics. Post hoc pairwise comparisons using Dunn’s test with Bonferroni adjustment revealed that students from higher social class backgrounds (e.g., Large employers and higher professionals) achieved significantly higher maths grades than those from lower social class groups (e.g., Semi-routine and routine occupations, Lower supervisory occupations). Differences between adjacent middle groups (e.g., Intermediate occupations vs. Lower professional and higher technical occupations) were smaller but still significant (p < .001). Overall, the pattern of results suggests a social gradient in mathematics achievement, where students from families with higher occupational status tend to obtain higher grades.The effect size, calculated using eta squared was moderate at η² = 0.12. The median and IQR values for the GCSE Maths grades for all class categories are shown in Table 1.
-
-
-
-
-
-
-
+A Kruskal–Wallis test was conducted to examine differences in mathematics grades across family social class groups. The results indicated a statistically significant difference in median maths grades between groups, H(5) = , p \< .001, suggesting that family social class is associated with student performance in mathematics. Post hoc pairwise comparisons using Dunn’s test with Bonferroni adjustment revealed that students from higher social class backgrounds (e.g., Large employers and higher professionals) achieved significantly higher maths grades than those from lower social class groups (e.g., Semi-routine and routine occupations, Lower supervisory occupations). Differences between adjacent middle groups (e.g., Intermediate occupations vs. Lower professional and higher technical occupations) were smaller but still significant (p \< .001). Overall, the pattern of results suggests a social gradient in mathematics achievement, where students from families with higher occupational status tend to obtain higher grades.The effect size, calculated using eta squared was moderate at η² = 0.12. The median and IQR values for the GCSE Maths grades for all class categories are shown in Table 1.
