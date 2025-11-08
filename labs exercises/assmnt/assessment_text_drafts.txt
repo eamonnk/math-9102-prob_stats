@@ -1,0 +1,74 @@
+This analysis uses water quality data which was taken over a period of 16 years from 2007 to 2023 across 160 locations in ireland by the Environmental Protection Agency(EPA).
+
+The measurements taken arec across a range of water quality metrics such as
+- Alkalinity-total (as CaCO3)	
+- Ammonia-Total (as N)	
+- Biochemical Oxygen Demand (BOD) - 5 days (Total) - estimates how much biodegradable organic matter is present in the water.	 
+	High BOD = lots of organic pollution (e.g., sewage, runoff, decaying vegetation).
+	Low BOD = clean water with little organic load.
+- Chloride	
+- Conductivity @25°C	- ow well water conducts electricity, which depends on the amount of dissolved ions
+proxy for total dissolved salts or minerals — i.e., salinity or ionic strength.
+Low conductivity → very soft water, low mineral content, possibly vulnerable to pH swings.
+High conductivity → indicates possible saline intrusion, fertilizer runoff, or industrial/urban inputs.
+- Dissolved Oxygen	
+- ortho-Phosphate (as P) - unspecified	
+- pH	
+- Temperature	
+- Total Hardness (as CaCO3)	
+- True Colour
+
+Samples were taken form these sites, and tested in labs throughout the year at various intervals. Calculations were then carried out to determine Water Quality accorrding to different water quality standards.
+
+The purpose of this analysis is to explore the extent to which individual measurements, such as *Temperature*, *ph*, *Disolved Oxygen*, Biochemical Oxygen Demand (BOD) can predict the water quality at various times of the year in various locations through the country.
+
+
+Question 1 > Biochemical Oxygen Demand (BOD) and temperature (both interval / ratio) - Question: Is there a relationship between water pH and temperature?
+Question 2 > ph and Excellent / Poor  - Q = Do water bodies rated “Excellent” differ in mean pH compared to those rated “Poor”?
+Question 3 > Disolved Oxygen and Waterbodyname (i.e. location) - Does mean dissolved oxygen differ significantly between different WaterbodyName sites? (interval / ratio vs 3 + categories
+Question 4 > Is there a relationship between month and waterbodyname ( Nominal × Ordinal)
+
+need to ad water body type to the data set!!
+
+Before developing a predictive model, a series of preliminary analyses were conducted to establish statistical evidence supporting the inclusion of these variables as potential predictors. A set of hypotheses were derived which together test whether each potential predictor (ph, disolved oxgen and Temperature). Evidence from the analysis of these hypotheses will provide the basis for including these variables in a subsequent **multiple linear regression model** predicting exam outcomes.
+===========================
+
+
+Alkalinity-total (as CaCO3)	Ammonia-Total (as N)	BOD - 5 days (Total)	Chloride	Conductivity @25Â°C	Dissolved Oxygen	ortho-Phosphate (as P) - unspecified	pH	Temperature	Total Hardness (as CaCO3)	True Colour
+
+Each model (CCME, WAWQI, Horton, Brown, SRDD) uses a different mathematical approach to combine multiple water quality parameters (like pH, DO, BOD, nitrates, turbidity, etc.) into one number that reflects overall water quality.
+
+“_Values” columns = intermediate or per-parameter computation results.
+
+“WQI” columns = the final index score (usually from 0 to 100, or sometimes higher)
+
+
+Data set
+1) describe data
+
+The data set contains 24 variables, and 29,259 rows of data. 
+
+Missing Data
+
+
+Bias! mentin it
+
+we attempted to craete a new categorical data set for 'waterbodytype', coastal, lake, etc by filtering the name, but too many errors were present for it to be usable. This is an area of future additional work to include this to the dataset.
+
+
+IMproveemnts
+need to ad water body type to the data set!!
+
+
+
+
+wqi_df <- wqi_df %>%
+  mutate(
+    Waterbodytype = case_when(
+      grepl("river|Stream|canal|brook", waterbodyname, ignore.case = TRUE) ~ "inland-waterway",
+      grepl("lough|lake", waterbodyname, ignore.case = TRUE) ~ "lake",
+      grepl("estuary|bay|harbour|coast", waterbodyname, ignore.case = TRUE) ~ "coastal",
+      grepl("reservoir|Res", waterbodyname, ignore.case = TRUE) ~ "reservoir",
+      TRUE ~ "other"
+    )
+  )

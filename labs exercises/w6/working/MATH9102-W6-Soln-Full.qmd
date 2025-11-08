@@ -1,0 +1,664 @@
+---
+title: "Title"
+subtitle: "Include module code"
+author: "Include your student ID and name"
+format:
+  html:
+    self-contained: true
+    code-fold: true
+    code-tools: true
+    toc: true
+editor: source
+---
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("pastecs")    # Tools for descriptive statistics, time series analysis, and data exploration (e.g., stat.desc)
+quiet_library("psych")   # Descriptive statistics by group
+quiet_library("FSA")        # Includes general tools for data analysis (e.g., nonparametric tests, bootstrapping)
+quiet_library("semTools")   # Supplementary functions for Structural Equation Modeling (SEM), including model fit, reliability, and measurement invariance tests
+quiet_library("VIM") # Visualization and Imputation of Missing Values
+quiet_library("naniar") #(naniar short for NA + naniar) - Missing data wrangling plus Little's test
+quiet_library("simputation") # For imputing variables
+
+quiet_library("sjstats")  # Provides convenient functions for effect sizes
+quiet_library("gmodels")  # Includes 'CrossTable()' for contingency tables.
+
+quiet_library("car")   # Includes Levene's test for homogeneity
+quiet_library("effectsize")   # Includes calculations for effectsize
+quiet_library("rstatix")   # Includes calculations for effectsize and Dunn's test
+
+quiet_library("gtsummary") # Formatting tables
+quiet_library("flextable") # Formatting tables
+
+```
+
+```{r}
+#| label: loaddata
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'experim_clean.dat')
+
+#Read in the dataset
+experim <- read.table(datapath, header=TRUE)
+
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(experim) <- tolower(colnames(experim))
+
+```
+
+```{r}
+#| label: add-agegrp
+#| output: false
+
+
+#The goal of this code is to divide participants into three age groups (Low, Mid, High) based on the distribution of ages in the dataset. This is purely for illustration purposes - it is not something you should do in the real world.
+
+# Calculate quantile-based breaks including min and max
+q_breaks <- quantile(experim$age, probs = seq(0, 1, length.out = 4), na.rm = TRUE)
+#quantile(experim$age, probs = seq(0, 1, length.out = 4)) calculates the boundaries that divide the age distribution into three equal parts.
+
+#The first value (0%) is the minimum age,
+#the second (33%) is the first tertile,
+#the third (67%) is the second tertile,
+#and the last (100%) is the maximum age.
+
+# Create age groups
+experim$age_group <- cut(
+  experim$age,
+  breaks = q_breaks,
+  include.lowest = TRUE,
+  labels = c("Undergraduate", "Postgraduate", "Mature Student")
+)
+
+# cut() then uses these boundaries to categorize each age into:
+#"Low" for the youngest third; "Mid" for the middle third; "High" for the oldest third
+#include.lowest = TRUE ensures the smallest age value is included in the first group.
+```
+
+# 1. Introduction
+
+-   Include in this section:
+
+-   **Context and rationale:** Some background
+
+-   **Research aim:** One or two sentences summarising what the report investigates.
+
+-   **Research question and hypotheses:**
+
+-   Example:
+
+This analysis uses data from a study investigating the impact of two different types of interventions designed to help students cope with anxiety about an upcoming statistics course.
+
+Students were asked to complete several psychological scales at **Time 1 (pre-intervention)**. These included:
+
+-   *Fear of Statistics Test*\
+-   *Confidence in Coping with Statistics Scale*\
+-   *Depression Scale (Measured using the Beck Depression Inventory (BDI) (Beck, Steer, & Brown, 1996)*
+
+Based on baseline assessments of need, students were then allocated equally into two groups:
+
+-   **Group 1:** participated in sessions designed to *improve mathematical skills*\
+-   **Group 2:** participated in a program designed to *build confidence* in coping with statistics
+
+After the intervention (**Time 2**) and again at a three-month follow-up (**Time 3**), students completed the same scales. Their **performance on a statistics exam** was also recorded as a measure of learning outcome.
+
+The purpose of this analysis is to explore the extent to which **type of support** (maths skills vs. confidence-building), **age group**, and **students’ depression levels at the end of the course** can be considered predictors of **exam performance**.
+
+Before developing a predictive model, a series of preliminary analyses were conducted to establish statistical evidence supporting the inclusion of these variables as potential predictors. A set of hypotheses were derived which together test whether each potential predictor (depression, type of support, and age group) shows a meaningful association with exam performance (see Table 1). Evidence from the analysis of these hypotheses will provide the basis for including these variables in a subsequent **multiple linear regression model** predicting exam outcomes.
+
+```{=html}
+<table style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr style="background-color:#f2f2f2;">
+      <th style="text-align:left; padding:8px;">Analysis Focus</th>
+      <th style="text-align:left; padding:8px;">Null Hypothesis (H₀)</th>
+      <th style="text-align:left; padding:8px;">Alternative Hypothesis (H₁)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding:8px;"><strong>Depression and Exam Performance</strong></td>
+      <td style="padding:8px;">A student’s level of depression at the end of the course (Time 3) is <strong>not related</strong> to their final exam performance.</td>
+      <td style="padding:8px;">A student’s level of depression at the end of the course (Time 3) <strong>is related</strong> to their final exam performance.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Type of Support and Exam Performance</strong></td>
+      <td style="padding:8px;">The type of support provided (maths skills vs. confidence-building) <strong>does not affect</strong> students’ final exam performance.</td>
+      <td style="padding:8px;">The type of support provided (maths skills vs. confidence-building) <strong>does affect</strong> students’ final exam performance.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Age Group and Type of Support</strong></td>
+      <td style="padding:8px;">A student’s age group and the type of support provided are <strong>independent</strong> (unrelated).</td>
+      <td style="padding:8px;">A student’s age group and the type of support provided are <strong>associated</strong>.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Age Group and Exam Performance</strong></td>
+      <td style="padding:8px;">Students’ exam performance <strong>does not differ</strong> across age groups.</td>
+      <td style="padding:8px;">Students’ exam performance <strong>differs</strong> across age groups.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+  <div style="text-align:center; font-weight:bold; padding-top:8px;">
+  Table 1. Hypotheses for Planned Analysis.
+</div>
+  
+```
+
+In the remainder of this report, Section 2 describes the dataset used for the analysis, including participant demographics, variable descriptions, and data preparation steps. Section 3 outlines the analytical approach, detailing the statistical methods and rationale for their selection. Section 4 presents the results of the analyses, organised by hypothesis. Section 5 discusses the main findings in the context of the research aims, highlighting their implications and limitations. Finally, Section 6 provides a concise conclusion, summarising the key insights and potential directions for future research. References and any supplementary materials are provided in Section 7 and the Appendix, respectively.
+
+# 2. Dataset
+
+-   **Participants:** number of cases, key demographics.
+-   **Missing data / cleaning:** discuss levels of missingness and implications; mention if any cases or variables were removed or recoded or imputed.
+-   **Amendments:** discuss any recoding of variables e.g. in this case age group was created
+-   ** Describe the variables relevant to the analysis **
+    -   **Continuous variables** this would include your normality assessment
+    -   **Grouping variables**
+    -   **Include visuals**
+
+- Divide into sub-sections as you wish. This section can include a small table summarising variable names, types, and ranges. You can include the visuals in your main report or in an appendix as you prefer.
+
+** Example:**
+
+The dataset used in this study consists of 300 observations. The concepts of interest are outlined in Table 2. Each associated variable was examined to determine whether the level of missing data could introduce bias. No missing data were identified.
+
+Of the participants, 51.33% identified as male and 48.67% as female. Regarding the support groups, 50% of students were assigned to the maths skills group and 50% to the confidence skills groups. A new variable was created to recode students’ ages into categorical age groups. In this classification, 36.67% of the students were identified as undergraduates (19–22 years), 33.67% as postgraduates (23–30 years), and 29.66% as mature students (30+ years).
+
+```{=html}
+<table style="width:100%; border-collapse:collapse;">
+  <thead>
+    <tr style="background-color:#f2f2f2;">
+      <th style="text-align:left; padding:8px;">Concept</th>
+      <th style="text-align:left; padding:8px;">Statistical Type</th>
+      <th style="text-align:left; padding:8px;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="padding:8px;"><strong>Depression</strong></td>
+      <td style="padding:8px;">Continuous (Ratio)</td>
+      <td style="padding:8px;">A student’s level of depression at the end of the course. Single measure calculated from student anwsers to Beck Depression Inventory.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong> Exam Performance</strong></td>
+      <td style="padding:8px;"> Continuous (Ratio)</td>
+      <td style="padding:8px;">The student's numerical result on their final examination.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;">Type of Support</strong></td>
+      <td style="padding:8px;">Nominal (Binary).</td>
+      <td style="padding:8px;">A grouping variable to indicate the type of support provided: maths skills or condfidence skills.</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Age Group</strong></td>
+      <td style="padding:8px;">Nominal (Multi-category).</td>
+      <td style="padding:8px;">A categorisation of students age: Undergraduate (19-22), Postgraduate (23-25), Mature Student(25+)) </td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="text-align:center; font-weight:bold; padding-top:8px;">
+  Table 2. Concepts of Interest for Planned Analysis.
+  
+</div>
+```
+
+Before statistical tests were conducted, the data representing the relevant concepts was inspected to determine the correct test to be used.
+
+Students' level of depression at the end of the course were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) suggested some potential deviations due to skewness and kurtosis. However, while the standardized score for skewness (0.66) can considered acceptable using the criteria proposed by Curran, West and Finch (1996), the standardised score for kurtosis (-2.47) is slightly outside the acceptable range. Inspection of the standardised scores showed that 95% of fall within the bounds of +/-1.96 and 100% within the bounds of +/- 3.29. Thus, using the guidance of Field, Miles and Field (2012), there are insufficient outliers to be considered problematic. Therefore the data for depression can be considered to approximate a normal distribution (m=11.48, sd=6.23,n=300).
+
+```{r}
+#| fig-cap: "Figure 1: Histogram of Depression at the End of the Course"
+#Create histogram
+ggplot(experim, aes(x = depress3)) +
+  labs(x = "Depression at the End of the Course") +
+  geom_histogram(
+    binwidth = 2,
+    colour = "black",
+    aes(y = after_stat(density), fill = after_stat(count))
+  ) +
+  scale_fill_gradient("Count", low = "#DCDCDC", high = "#7C7C7C") +
+  stat_function(
+    fun = dnorm,
+    color = "red",
+    args = list(
+      mean = mean(experim$depress3, na.rm = TRUE),
+      sd = sd(experim$depress3, na.rm = TRUE)
+    )
+  )
+```
+
+```{r}
+#| fig.cap: "Figure 2: QQPlot for Depression at the end of the Course"
+#Create a qqplot
+qqnorm(experim$depress3)
+qqline(experim$depress3, col=2) #show a line on the plot
+```
+
+Students' results on the examination at the end of the course were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) suggested some potential deviations due to skewness and kurtosis. However, the standardized score for skewness (-1.18) and the standardised score for kurtosis (-1.47) can considered acceptable using the criteria proposed by Curran, West and Finch (1996). Inspection of the standardised scores indicated that only 94% of standardized scores fall within the bounds of +/-1.96 but over 99% fall within the bounds of +/- 3.29.  Thus using the guidance of Field, Miles and Field (2012), there are insufficient outliers to be considered problematic. Therefore the data for exam results can be considered to approximate a normal distribution (m=67.1, sd=11,97,n=300).
+
+```{r}
+#| fig-cap: "Figure 3: Histogram of Exam Results at the End of the Course"
+#Create histogram
+ggplot(experim, aes(x = exam)) +
+  labs(x = "Exam Performance at the end of the Course") +
+  geom_histogram(
+    binwidth = 2,
+    colour = "black",
+    aes(y = after_stat(density), fill = after_stat(count))
+  ) +
+  scale_fill_gradient("Count", low = "#DCDCDC", high = "#7C7C7C") +
+  stat_function(
+    fun = dnorm,
+    color = "red",
+    args = list(
+      mean = mean(experim$exam, na.rm = TRUE),
+      sd = sd(experim$exam, na.rm = TRUE)
+    )
+  )
+```
+
+```{r}
+#| fig.cap: "Figure 3: QQPlot for Exam Results at the End of the Course"
+#Create a qqplot
+qqnorm(experim$exam)
+qqline(experim$exam, col=2) #show a line on the plot
+```
+
+The number of students in each age group for each support group (maths skills and confidence skills) is show in Table 3:
+
+```{r}
+#| tbl-cap: "Table 3: Cross Tabulation of Age Group and Support Group"
+
+# Create and style the summary table
+table3 <- experim %>%
+  select(age_group, group) %>%
+  tbl_summary(
+    by = group,                                 # Compare across support groups
+    statistic = all_categorical() ~ "{n}",      # Show counts only
+    missing = "no",
+    label = list(age_group ~ "**Age Group**")   # Bold label directly here
+  )
+
+# Convert to flextable for nice output
+as_flex_table(table3)
+
+```
+
+# 3. Analysis Approach
+
+Explain what you did statistically:
+
+-   State the cut-off level you are working with for statistical significance
+
+-   State the types of tests and why they’re appropriate:
+
+    -   Correlation (for continuous–continuous relationships)
+    -   Independent samples *t*-test/Mann-Whitney (for two groups)
+    -   Chi-square test (for two categorical variables)
+    -   One-way ANOVA/Kruskal Wallis (for differences across three groups)
+
+-   State the effect size conventions you will be using.
+
+** Example (for this report - you may use a different effect for nominal tests ): **
+
+An alpha level of .05 was adopted as the threshold for statistical significance, in line with conventional standards in psychological and behavioural research. Results with p values less than .05 are considered statistically significant. To assess the practical significance of findings, effect sizes will be reported alongside p values.
+
+For parametric difference tests, eta squared (η²) will be used as the measure of effect size, interpreted according to Cohen’s (1988) conventions, where values of approximately .01, .06, and .14 represent small, medium, and large effects, respectively.
+
+For correlational analyses, Pearson’s r will be reported, with effect sizes interpreted using benchmarks of .10, .30, and .50 for small, medium, and large associations, respectively.
+
+For associations between nominal variables, a Chi-Square test will be conducted, and (or Cramér’s V will be reported as the measure of effect size, using benchmarks of .07, .21, and .35 to indicate small, medium, and large associations.
+
+Reporting both statistical significance and effect size provides a more comprehensive understanding of the magnitude and practical importance of the observed effects.
+
+
+
+# 4. Results
+Organise by hypothesis- a sub-section for each.
+
+For each:
+
+- 1. Briefly restate the hypothesis 
+
+- 2. Present the inferential test result (test statistic, df, *p*-value, and effect size) 
+
+- 3. Interpret in plain language
+
+## 4.1 Relationship between Depression and Exam Performance
+
+H0: A student’s level of depression at the end of the course (Time 3) is not related to their final exam performance. 
+
+H1: A student’s level of depression at the end of the course (Time 3) is related to their final exam performance.
+
+The relationship between a student's depression level at the end of the course (measured using the Becks Depression Index) and the result achieved on the final examination was investigated using a Pearson correlation. No statistically significant relationship was found (r =-0.01, n=298. p=0.87). There is therefore no evidence to reject the null hypothesis in favour of the alternate. We can conclude that there does not appear to be a relationship between a student's level of depression and their exam performance.
+
+
+
+```{r message=FALSE}
+#| label: corr-scatter
+#| fig.cap: "Figure 4: Scatterplot Depression and Exam Performance"
+
+#aes(x,y) - depress3 is the independent and exam is the outcome
+scatter <- ggplot(experim, aes(x = depress3, y = exam)) +
+  labs(
+    x = "Depression at End of Course",
+    y = "End of Course Exam Result"
+  )
+
+# Add regression line
+scatter + geom_point() +
+  geom_smooth(method = "lm", colour = "red", se = FALSE)
+
+```
+
+
+
+## 4.2 Type of Support and Exam Performance
+
+H0: The type of support provided (maths skills vs. confidence-building) does not affect students’ final exam performance.
+
+H1: The type of support provided (maths skills vs. confidence-building) does affect students’ final exam performance.
+
+An independent-samples t-test was conducted to compare end-of-course examination results for students who received mathematical skills support and those who received confidence-building support. Levene’s test for equality of variances was not statistically significant (p > .05), indicating that the assumption of homogeneity of variance was met. There was no significant difference in exam results between the two groups: maths support (M = 66.79, SD = 11.16, n = 150) and confidence support (M = 67.40, SD = 12.77, n = 150), t(298) = 0.44, p = .66. The effect size, calculated using eta squared, was η² = .005, indicating a very small effect. Therefore, there is no evidence to reject the null hypothesis. We can conclude that students’ exam results did not differ significantly based on the type of support provided.
+
+
+## 4.3 Association between Age Group and Type of Support
+
+H0: A student’s age group and the type of support provided are independent (unrelated). 
+
+H1: A student’s age group and the type of support provided are associated.
+
+A Chi-square test of independence was conducted to examine the relationship between being a student's age group and the support group to which they were allocated (maths skills v confidence building). The association was not statistically significant (χ²(1, N = 2) = 0.93, p = 0.63). Therefore we can conclude that students of different groups were equally as likely to allocated to either maths skills support or confidence building support. The effect size, measured by Cramér’s V (V = .05), indicated a very small association. Therefore, there is no evidence to reject the null hypothesis. We can conclude that age group and type of support appear to be independent.
+
+## 4.4 Age Group and Exam Performance Students’ exam performance does not differ across age
+
+H0: Students’ exam performance does not differ across age groups. 
+
+H1: Students’ exam performance differs across age groups.
+
+A one-way between-groups analysis of variance (ANOVA) was conducted to examine the impact of age group on end-of-course exam performance. Participants were divided into three groups based on age: Undergraduate (22 years or younger), Postgraduate (23–30 years), and Mature students (30 years and above). There was no statistically significant difference in exam performance between the three age groups, F(2, 298) = 2.05, p = .13. The effect size, calculated using eta squared, was η² = .01, indicating a very small effect.
+
+The mean exam scores for the three groups were:
+
+- Undergraduate: M = 67.54, SD = 12.33, n = 110
+
+- Postgraduate: M = 68.43, SD = 11.26, n = 101
+
+- Mature students: M = 65.02, SD = 12.17, n = 89
+
+Therefore, there is no evidence to reject the null hypothesis. Exam performance did not differ significantly based on age group, suggesting that students of varying ages performed similarly regardless of the type of support they received.
+
+
+# 5. Discussion
+
+-   **Summarise findings:** What patterns emerged?
+-   **Interpret results:** Why might these differences or relationships exist?
+-   **Discuss limitations:** small sample, sources of bias, etc.
+-   **Implications:** 
+
+The aim of this analysis was to explore factors associated with students’ performance on a final statistics examination, focusing on depression at the end of the course, type of support received, and age group. Across all analyses, no statistically significant effects were observed, suggesting that these variables did not meaningfully predict exam outcomes within this sample.
+
+The absence of a significant relationship between depression and exam performance indicates that, within this context, students’ emotional wellbeing at the end of the course did not appear to influence their examination achievement. This finding may suggest that the intervention period or external supports helped to stabilise students’ mood, thereby reducing the potential impact of depressive symptoms on performance.
+
+Similarly, the type of support received (maths skills vs. confidence building) did not produce significant differences in exam results. This may imply that both forms of intervention were comparably effective in supporting students’ learning, or that other unmeasured factors played a larger role in determining outcomes. The small effect size observed supports the view that differences between the two intervention types were minimal.
+
+The chi-square analysis confirmed that age group was independent of the type of support allocated, indicating no selection bias in group assignment. Moreover, the ANOVA results revealed that exam performance did not significantly differ across age categories, suggesting that students of varying ages achieved similar levels of success. While mature students displayed slightly lower mean scores, the effect was very small and not statistically significant.
+
+Collectively, these findings highlight that neither demographic factors (age) nor psychological factors (depression) were strong predictors of exam outcomes. It is possible that other variables—such as study habits, attendance, prior knowledge, or intrinsic motivation—may better explain performance differences. 
+
+Finally, while the analyses met relevant statistical assumptions, limitations should be acknowledged. The dataset was restricted to a single cohort of 300 students, which may limit generalisability. Self-reported measures such as the Beck Depression Inventory can also introduce response bias. 
+
+# 6. Conclusion
+
+- A concise paragraph that brings everything together — what was learned overall, and what it suggests for future work.
+
+
+This study examined whether students’ age group, type of support received, and depression levels at the end of a course were associated with exam performance. The results indicated no statistically significant differences or relationships between these factors and exam outcomes, and all observed effect sizes were small. These findings suggest that both intervention types were similarly effective in supporting learning and that age and depression did not meaningfully influence exam results.
+
+Overall, the analysis provides useful evidence that targeted academic support—whether focused on skills or confidence—can help maintain comparable outcomes across diverse student groups. Future analyses could build on these results by including additional cognitive and motivational factors in predictive models of academic success.
+
+# 7. References
+
+List any articles, books or sources cited.
+
+Beck, A. T., Steer, R. A., & Brown, G. K. (1996). Manual for the Beck Depression Inventory–II. San Antonio, TX: Psychological Corporation. 
+
+Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillside, NJ: Lawrence Erlbaum Associates. 
+
+Curran, Patrick J., Stephen G. West, and John F. Finch. (1996). "The robustness of test statistics to nonnormality and specification error in confirmatory factor analysis." 
+
+Field, A., Field Z. & Miles J.(2012). Discovering statistics using IBM SPSS statistics. Sage publications limited.
+
+# Appendix
+
+Optional If you choose to include your visuals in the appendix.
+
+** Example: ** 
+
+## General Descriptives
+
+### Gender Proportions:
+
+```{r}
+#| label: desc-gender
+# Proportions of gender
+prop.table(table(experim$sex))
+```
+
+### Age Group Proportions:
+
+```{r}
+#| label: desc-age
+
+#Get the numbers in each age group
+table(experim$age_group)
+
+table(experim$age_group)
+
+# Show the range of ages in each group
+prop.table(table(experim$age_group))
+```
+
+### Support Group Proportions:
+
+```{r}
+#| label: desc-group
+
+#Get the numbers in group
+table(experim$group)
+
+# Show the range of ages in each group
+prop.table(table(experim$group))
+```
+
+### Missing Data
+
+```{r}
+#| label: missing
+varsint<-c("depress3", "exam", "group", "age_group")
+esub<-experim[varsint]
+#Adjust the margins so that we can display the labels
+par(mar = c(10, 4, 4, 2))  # more space at bottom
+# rename columns to human-friendly labels - we are restricted with the length we can use
+colnames(esub) <- c("Depression", "Exam", "Group", "AgeGrp")
+# run VIM::aggr
+res <- summary(VIM::aggr(esub, sortVar = TRUE, combined = FALSE))$combinations
+
+# Include Little's MCAR if you have data missing
+```
+
+## Normality Assessment (depression and exam results)
+### Depression
+```{r}
+#|label: desc-depress
+#Generate regular summary statistics 
+psych::describe(experim$depress3)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(experim$depress3)
+tpkurt<-semTools::kurtosis(experim$depress3)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+zdepress3<- abs(scale(experim$depress3))
+
+FSA::perc(as.numeric(zdepress3), 1.96, "gt")
+FSA::perc(as.numeric(zdepress3), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+```
+### Exam Results
+```{r}
+#|label: desc-exam
+#Generate regular summary statistics 
+psych::describe(experim$exam)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(experim$exam)
+tpkurt<-semTools::kurtosis(experim$exam)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+zexam<- abs(scale(experim$exam))
+experim$zexam <-abs(scale(experim$exam))
+FSA::perc(as.numeric(zexam), 1.96, "gt")
+FSA::perc(as.numeric(zexam), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+```
+
+## Correlation Test (Depression and Exam Result)
+
+```{r}
+#| label: correlationtest
+#Pearson Correlation - this is the correct test for this data
+stats::cor.test(experim$depress3, experim$exam, method='pearson')
+```
+
+## T-Test (Exam Results by Support Group)
+
+```{r}
+#| label: level-homogen
+#Conduct Levene's test for homogeneity of variance in library car - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+car::leveneTest(exam ~ group, data=experim)
+#Pr(>F) is your probability - in this case it is not statistically significant so we can assume homogeneity
+```
+
+```{r}
+#| label: ttest
+#Conduct the t-test from package stats - basic r package. Prefixing it to make sure that is the one used rather than t-test from another package.
+
+#In this case we can use the var.equal = TRUE option to specify equal variances and a pooled variance estimate
+stats::t.test(exam~group,var.equal=TRUE,data=experim)
+#No statistically significant difference was found
+
+res <- stats::t.test(exam~group,var.equal=TRUE,data=experim)
+#Calculate Cohen's d
+#artithmetically
+effcd=round((2*res$statistic)/sqrt(res$parameter),2)
+effcd
+#Alternate approach -Using function from effectsize package to convert t to Cohen's d
+effectsize::t_to_d(t = res$statistic, res$parameter)
+
+#Calculate eta squared
+effes=round((res$statistic*res$statistic)/((res$statistic*res$statistic)+(res$parameter)),3)
+effes
+
+```
+
+## Chi-square (Age Group and Support Group)
+
+```{r}
+#| label: chisquaretest
+#CrossTable(predictor, outcome, fisher = TRUE, chisq = TRUE, expected = TRUE)
+#Note: for this approach there must be the same number of values for both variables so
+#missing data is important. 
+
+# Remove rows where either variable is NA
+experim_c <- experim%>%
+  filter(!is.na(age_group) & !is.na(group))
+
+# Now run CrossTable requesting both Fisher and Chi Square so we have full information
+# We request the format in SPSS to make it easier to interpret.
+gmodels::CrossTable(
+  experim_c$age_group,
+  experim_c$group,
+  fisher = TRUE,
+  chisq = TRUE,
+  expected = TRUE,
+  sresid = TRUE,
+  format = "SPSS"
+)
+
+```
+
+```{r}
+#Alternate approach: Create your own contingency table
+mytable<-xtabs(~age_group+group, data=experim)
+#You can use the chisq.test function in the stats package to do the test
+#set the flag correct=TRUE to get Yates correction needed for 2x2 table
+ctest<-stats::chisq.test(mytable, correct=TRUE)#chi square test
+
+
+#Calculate effect sizes
+sjstats::cramer(mytable)
+
+```
+
+## ANOVA (Exam Result by Age Group)
+
+```{r}
+#Get descriptive statistics by group - output as a matrix
+psych::describeBy(experim$exam, experim$age_group, mat=TRUE)
+```
+
+```{r}
+#| label: ANOVA-optage_group
+#Conduct Bartlett's test for homogeneity of variance  - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+stats::bartlett.test(exam~ age_group, data=experim)
+#p value is > 0.05 so the result is not statistically significant so we can assume homogeneity
+
+#Conduct ANOVA using the one-way ANOVA from the stats package
+
+# Compute the analysis of variance using the oneway.test from the stats package- we set VAR.equal to be true because we have homogeneity
+res <- stats::oneway.test(exam ~ as.factor(age_group), data = experim, var.equal = TRUE)
+# Summary of the analysis
+res
+
+#We would use Tukey for post-hoc testing - not needed here. Use Games Howell if Levene is significant.
+#rstatix::tukey_hsd(experim, exam ~ age_group)
+
+#Compute our Eta squared
+effectsize::effectsize(res)
+```

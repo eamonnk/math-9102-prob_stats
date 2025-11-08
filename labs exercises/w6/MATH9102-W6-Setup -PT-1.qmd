@@ -9,7 +9,6 @@ format:
     code-tools: true
     toc: true
 editor: source
-# added toc tag here above -other didn't have it?
 ---
 
 
@@ -64,7 +63,7 @@ quiet_library("flextable") # Formatting tables
 ```{r}
 #| label: loaddata
 #Amend this to reflect your folder structure 
-datalocation <- file.path("./")
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
 datapath <- file.path(datalocation,'experim_clean.dat')
 
 #Read in the dataset
@@ -73,22 +72,9 @@ experim <- read.table(datapath, header=TRUE)
 #Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
 colnames(experim) <- tolower(colnames(experim))
 
-# time 2 - md way thru
-# 3 end final measurement take
-# they di an actual eam
-# star fo coure either given help wiht maths schools or to i,rpove their
-# at start they were either given helop wiht their maths
-# or imrove their comprtence?
-#   
-# thsi analysis is avbsed on  that theory- we wantto see if there are relationships between how depressed a student is and their examperformance
-# what type of score theywere gove in the r wxam performance
-# an age levels(does age affect them?
-# is there a relayion between age and type f report they werr assigned
-# tryign to build a predictive model
 ```
 
 ```{r}
-
 #| label: add-agegrp
 #| output: false
 
@@ -99,15 +85,10 @@ colnames(experim) <- tolower(colnames(experim))
 q_breaks <- quantile(experim$age, probs = seq(0, 1, length.out = 4), na.rm = TRUE)
 #quantile(experim$age, probs = seq(0, 1, length.out = 4)) calculates the boundaries that divide the age distribution into three equal parts.
 
-# # take ag and divide into 3 differet catagoeires, so its pure mechanical - thso data set has been scaled up
-# so 300 rows in it
-# not in any way reflective of any real world scenario.. purely illustrative
-
 #The first value (0%) is the minimum age,
 #the second (33%) is the first tertile,
 #the third (67%) is the second tertile,
 #and the last (100%) is the maximum age.
-# thsi has been scaled up so its 300 rows in it . 
 
 # Create age groups
 experim$age_group <- cut(
@@ -197,20 +178,12 @@ In the remainder of this report, Section 2 describes the dataset used for the an
 # 2. Dataset
 
 * **Participants:** number of cases, key demographics.
-* **Missing data / cleaning:** discuss levels of missingness and implications; mention if any cases or variables were removed or recoded or imputed. # here recoded age variabel into 3 groups - woudl ahve to discus that.
+* **Missing data / cleaning:** discuss levels of missingness and implications; mention if any cases or variables were removed or recoded or imputed.
 * **Amendments:** discuss any recoding of variables e.g. in this case age group was created
 * ** Describe the variables relevant to the analysis **
   * **Continuous variables** this would include your normality assessment
   * **Grouping variables** 
   * **Include visuals**
-
-<!-- # missing Data -->
-<!-- If there is no missing data - say that you looked at it and couldn't find any.. no missing data eas identified -->
-<!-- demonstrate that yu have actualyl done it... -->
-<!-- put it in the appendix tha actual graphing or some numebrs to  -->
-<!-- can't do little mcar test as no missing data... -->
-<!-- won't lose any marks if don't have to dealk wiht missing data... just icnlude it -->
-
 
 Divide into sub-sections as you wish.
 This section can include a small table summarising variable names, types, and ranges.
@@ -266,6 +239,7 @@ Before statistical tests were conducted, the data representing the relevant conc
 
 
 
+Students' level of depression at the end of the course were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) suggested some potential deviations due to skewness and kurtosis.. However, the standardized score for skewness (0.66) and for kurtosis (-2.47) can be considered acceptable using the criteria proposed by Curran, West and Finch (1996). Further as  as over 95% of standardized scores fall within the bounds of +/-1.96 and 100% within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), there are insufficient outliers to be considered problematic. Therefore the data for depression can be considered to approximate a normal distribution (m=11.48, sd=6.23,n=300).
 
 ```{r}
 #| fig-cap: "Figure 1: Histogram of Depression at the end of the Course"
@@ -294,7 +268,42 @@ qqnorm(experim$depress3)
 qqline(experim$depress3, col=2) #show a line on the plot
 ```
 
-Students' level of depression at the end of the course were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 1 and Figure 2) suggested some potential deviations due to skewness and kurtosis.. However, the standardized score for skewness (0.66) and for kurtosis (-2.47) can be considered acceptable using the criteria proposed by Curran, West and Finch (1996). Further as  as over 95% of standardized scores fall within the bounds of +/-1.96 and 100% within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), there are insufficient outliers to be considered problematic. Therefore the data for depression can be considered to approximate a normal distribution (m=11.48, sd=6.23,n=300).
+
+
+Students' results on an examination at the end of the course were assessed for normality. Visual inspection of the histogram and QQ-Plot (see Figure 3 and Figure 4) suggested some potential deviations due to skewness and kurtosis. However, the standardized score for skewness (-1.18) and for kurtosis (1.47) can be considered acceptable using the criteria proposed by Curran, West and Finch (1996). While only 94% of standardised scores fell within  the bounds of +/-1.96, 99.7% fall within the bounds of +/- 3.29. Therefore using the guidance of Field, Miles and Field (2012), there are insufficient outliers to be considered problematic. Therefore the data for exam performance can be considered to approximate a normal distribution (m=67.1,sd=11.97,n=300).
+
+
+```{r}
+#| fig-cap: "Figure 3: Histogram of Exam Performance at the end of the Course"
+#Create histogram
+ggplot(experim, aes(x = exam)) +
+  labs(x = "Exam Performance at the end of the Course") +
+  geom_histogram(
+    binwidth = 2,
+    colour = "black",
+    aes(y = after_stat(density), fill = after_stat(count))
+  ) +
+  scale_fill_gradient("Count", low = "#DCDCDC", high = "#7C7C7C") +
+  stat_function(
+    fun = dnorm,
+    color = "red",
+    args = list(
+      mean = mean(experim$exam, na.rm = TRUE),
+      sd = sd(experim$exam, na.rm = TRUE)
+    )
+  )
+```
+```{r}
+#| fig.cap: "Figure 4: QQPlot for Exam Performance at the end of the Course"
+#Create a qqplot
+qqnorm(experim$exam)
+qqline(experim$exam, col=2) #show a line on the plot
+```
+
+
+
+
+
 
 --- We will complete this section during class --
 
@@ -319,6 +328,48 @@ An alpha level of .05 was used as the threshold for statistical significance, co
 -- We will complete this section during class --
 
 # 4. Results
+
+## 4.1 Relatioship between Depression and Exam Performance	
+H0:A student’s level of depression at the end of the course (Time 3) is not related to their final exam performance.	
+H1: A student’s level of depression at the end of the course (Time 3) is related to their final exam performance.
+
+The relationship between depression and exam performance was investigated using a Pearson correlation. No statistically significant, correlation was found (r =-0.01, n=298, p=0.87). There is therefore no evidence to reject the null hypothesis in favour of the alternate. We can conclude therefore that there appears to be no relationship between depression and exam performance, see Figure 5.
+
+```{r}
+#| label: "scatter"
+#| fig-cap: "Figure 5: Scatterplot Depression and Exam Performance At the of the Course"
+#Create a Simple scatterplot of feeling of control and exam performance
+#aes(x,y)
+scatter <- ggplot(experim, aes(depress3, exam))
+scatter + geom_point() + labs(x = "Depression at the end of the course", y = "Exam performance at the end of the course") 
+
+#Add a regression line
+scatter + geom_point() + geom_smooth(method = "lm", colour = "Red", se = F) + labs(x = "Depression at the end of the course", y = "Exam performance at the end of the course")
+```
+
+## 4.2 Does the Type of Support Provided Impact  Exam Performance	
+H0: The type of support provided (maths skills vs. confidence-building) does not affect students’ final exam performance.	
+H1: The type of support provided (maths skills vs. confidence-building) does affect students’ final exam performance.
+
+
+An independent-samples t-test was conducted to compare exam performance scores for students who had maths skills support and those who had confidence skills support. Levene’s test for equality of variances was not statistically significant, indicating that the assumption of homogeneity of variance was met (p > .05). No significant difference in the exam results was found (M=67.40, SD= 12.77 for students who had confidence skills support, M= 66.79, SD= 11.16 for students who had maths skills support), (t(298)= 0.49, p = 0.66. A very small effect size was also indicted by the eta squared value (0.001). There is therefore no evidence to support rejecting the null hypothesis in favour of the alternate. There appears to be no significant difference in exam performance for different support offered.
+
+
+# 4.3 Assoication between Age Group and Type of Support	
+H0: A student’s age group and the type of support provided are independent (unrelated).	H1: A student’s age group and the type of support provided are associated.
+
+
+A Chi-square test of independence was conducted to examine the relationship between being age group category and support group assigned. The association was not statistically significant (χ²(2, N = 298) = 0.93, p =.63). A student's age group did not impact the support group to which they were assigned. The effect size, measured by Phi (φ = 0.05), indicates a small association. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis.
+
+## 4.4 Difference in Exam Performance	for Different Age Groups
+H0: Students’ exam performance does not differ across age groups.	
+H1: Students’ exam performance differs across age groups.
+
+
+### Reporting the results with eta squared effect
+
+A one-way between-groups analysis of variance (ANOVA) was conducted to explore the impact of exam performance. Participants were divided into three groups according to their age (Group 1: 22 yrs or less; Group 2: 23 to 30 yrs; Group 3: 40yrs and above). No statistically significant difference in exam results was found for the three age groups: (F(2, 297)= 2.05, p=0.13.  The effect size, calculated using eta squared was (η² = 0.01), indicated a small effect. The mean score for Group 1 (M=67.54,SD=12.33) was not significantly different to that for Group 2 (M=68.43,SD=11.26) or  Group 2 (M=65.03,SD=12.17). Group 2 and 3 did not differ significantly from each other. Therefore, the null hypothesis cannot be rejected in favour of the alternative hypothesis. Age does not appear to impact exam performance. 
+
 
 Organise by  hypothesis- a sub-section for each. For each:
 
@@ -423,7 +474,170 @@ FSA::perc(as.numeric(zdepress3), 3.29, "gt")
 
 ```
 
+```{r}
+#|label: desc-exam
+#Generate regular summary statistics 
+psych::describe(experim$exam)
+
+#Generate standardized scores for skewness and kurtosis
+tpskew<-semTools::skew(experim$exam)
+tpkurt<-semTools::kurtosis(experim$exam)
+tpskew[1]/tpskew[2]
+tpkurt[1]/tpkurt[2]
+
+#Calculate the percentage of standardized scores outside acceptable limits
+zexam<- abs(scale(experim$exam))
+
+FSA::perc(as.numeric(zexam), 1.96, "gt")
+FSA::perc(as.numeric(zexam), 3.29, "gt")
+# Below we are reporting the normality assessment - embedding code within a paragraph to get the statistics generated ( you can just write it out)
+
+```
 
 
 
 
+
+
+```{r}
+#| label: "correlation test"
+#Pearson Correlation - this is the correct test for this data
+stats::cor.test(experim$depress3, experim$exam, method='pearson')
+
+```
+
+## t-test
+
+
+
+
+```{r}
+#| fig.cap: "Figure 6: Histogram of Exam Performance Grouped by student's Type of Support"
+
+# Create a separate histogram showing the distribution for the two (potentially) separate populations (the groups)
+# Create the plot with both histogram and density plot
+ggplot(cleaned_experim, aes(x=exam, color=group, fill=group))  + 
+  labs(x="Total exam performance") + 
+  # Histogram with alpha for transparency
+  geom_histogram(aes(y = ..density..), position="identity", alpha=0.5, binwidth=1, color="black") +
+  # Density plot with transparency for overlapping curves
+  geom_density(alpha=0.4) +
+  # Customize the color and fill scales
+  scale_color_manual(values=c("blue", "red"), labels=c("Maths Skills", "Confidence Skills")) +
+  scale_fill_manual(values=c("lightblue", "lightcoral"), labels=c("Maths Skills", "Confidence Skills"))
+
+```
+
+```{r}
+#| fig.cap: "Table 4: Descriptive Statistics of Exam performance Grouped by Respndent's Type of Support"
+#Get descriptive statistics by group - output as a matrix
+psych::describeBy(experim$exam, experim$group, mat=TRUE)
+
+```
+
+
+## Independent t-test
+
+```{r}
+#Conduct Levene's test for homogeneity of variance in library car - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+car::leveneTest(exam ~ group, data=experim)
+#Pr(>F) is your probability - in this case it is not statistically significant so we can assume homogeneity
+
+
+#Conduct the t-test from package stats - basic r package. Prefixing it to make sure that is the one used rather than t-test from another package.
+
+#In this case we can use the var.equal = TRUE option to specify equal variances and a pooled variance estimate
+stats::t.test(exam~group,var.equal=TRUE,data=experim)
+#No statistically significant difference was found
+
+res <- stats::t.test(exam~group,var.equal=TRUE,data=experim)
+#Calculate Cohen's d
+#artithmetically
+effcd=round((2*res$statistic)/sqrt(res$parameter),2)
+
+#Alternate approach -Using function from effectsize package to convert t to Cohen's d
+effectsize::t_to_d(t = res$statistic, res$parameter)
+
+#Calculate eta squared
+effes=round((res$statistic*res$statistic)/((res$statistic*res$statistic)+(res$parameter)),3)
+effes
+
+```
+
+## Nominal - chi
+
+## Approach 1 - use the Crosstable function from gmodels
+
+```{r}
+#CrossTable(predictor, outcome, fisher = TRUE, chisq = TRUE, expected = TRUE)
+#Note: for this approach there must be the same number of values for both variables so
+#missing data is important. 
+
+# Remove rows where either variable is NA
+experim_clean <- experim %>%
+  filter(!is.na(age_group) & !is.na(group))
+
+# Now run CrossTable requesting both Fisher and Chi Square so we have full information
+# We request the format in SPSS to make it easier to interpret.
+gmodels::CrossTable(
+  experim_clean$age_group,
+  experim_clean$group,
+  fisher = TRUE,
+  chisq = TRUE,
+  expected = TRUE,
+  sresid = TRUE,
+  format = "SPSS"
+)
+
+```
+
+## Approach 2: Create your own contingency table and use the chi square test from the stats package
+
+```{r}
+#Alternate approach: Create your own contingency table
+mytable<-xtabs(~age_group+group, data=experim)
+#You can use the chisq.test function in the stats package to do the test
+#set the flag correct=TRUE to get Yates correction needed for 2x2 table
+ctest<-stats::chisq.test(mytable, correct=TRUE)#chi square test
+
+ctest#will give you the details of the test statistic and p-value
+ctest$expected#expected frequencies
+ctest$observed#observed frequencies
+ctest$p.value
+#Calculate effect sizes
+sjstats::phi(mytable)
+sjstats::cramer(mytable)
+
+```
+## ANOVA
+
+
+```{r}
+#Get descriptive statistics by group - output as a matrix
+psych::describeBy(experim$exam, experim$age_group, mat=TRUE)
+#Store the output to use in our final reporting of the outcomes of ANOVA
+
+optdesc<-psych::describeBy(experim$exam,experim$age_group,mat=TRUE)
+```
+
+```{r}
+#| label: ANOVA-optage_group
+#Conduct Bartlett's test for homogeneity of variance  - the null hypothesis is that variances in groups are equal so to assume homogeneity we would expect probability to not be statistically significant.
+stats::bartlett.test(exam~ age_group, data=experim)
+#p value is > 0.05 so the result is not statistically significant so we can assume homogeneity
+
+#Conduct ANOVA using the one-way ANOVA from the stats package
+
+# Compute the analysis of variance using the oneway.test from the stats package- we set VAR.equal to be true because we have homogeneity
+res <- stats::oneway.test(exam ~ as.factor(age_group), data = experim, var.equal = TRUE)
+# Summary of the analysis
+res
+
+#We use Tukey for post-hoc testing
+rstatix::tukey_hsd(experim, exam ~ age_group)
+
+#Compute our Eta squared
+effes=effectsize::effectsize(res)
+effes
+
+```
