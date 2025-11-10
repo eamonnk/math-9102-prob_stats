@@ -50,7 +50,7 @@ datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
 
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'survey.dat')
 
 #Read in the dataset
@@ -289,11 +289,11 @@ effes
 
 ### Reporting the results with Cohen's d effect
 
-A Welch's independent-samples t-test was conducted to compare total self esteem scores for respondents who have children and those who do not. Levene’s test for equality of variances was statistically significant, indicating that the assumption of homogeneity of variance was not met (p \<0.01). A statistically significant difference in the scores for self-esteem was found (M=34.21, SD= 4.93, n=183 for respondents who have children, M=33.01, SD= 5.67, n=225 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p < 0.05. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting a difference in self-esteem between respondents who have and do not have children. However, as Cohen's d indicated a small effect size, (`r effcd`), this result should be treated with caution.
+A Welch's independent-samples t-test was conducted to compare total self esteem scores for respondents who have children and those who do not. Levene’s test for equality of variances was statistically significant, indicating that the assumption of homogeneity of variance was not met (p \<0.01). A statistically significant difference in the scores for self-esteem was found (M=34.21, SD= 4.93, n=183 for respondents who have children, M=33.01, SD= 5.67, n=225 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p \< 0.05. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting a difference in self-esteem between respondents who have and do not have children. However, as Cohen's d indicated a small effect size, (`r effcd`), this result should be treated with caution.
 
 ### Reporting the results with eta squared effect
 
-A Welch's independent-samples t-test was conducted to compare total self esteem scores for respondents who have children and those who do not. Levene’s test for equality of variances was statistically significant, indicating that the assumption of homogeneity of variance was not met (p \<0.01). A statistically significant difference in the scores for self-esteem was found (M=34.21, SD= 4.93, n=183 for respondents who have children, M=33.01, SD= 5.67, n=225 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p < 0.05. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting a difference in self-esteem between respondents who have and do not have children. However, as the eta square indicated a small effect size, (`r effes`), this result should be treated with caution.
+A Welch's independent-samples t-test was conducted to compare total self esteem scores for respondents who have children and those who do not. Levene’s test for equality of variances was statistically significant, indicating that the assumption of homogeneity of variance was not met (p \<0.01). A statistically significant difference in the scores for self-esteem was found (M=34.21, SD= 4.93, n=183 for respondents who have children, M=33.01, SD= 5.67, n=225 for respondents who do not), (t(`r res$parameter`)= `r round(res$statistic,3)`, p \< 0.05. There is therefore evidence to support rejecting the null hypothesis in favour of the alternate hypothesis, suggesting a difference in self-esteem between respondents who have and do not have children. However, as the eta square indicated a small effect size, (`r effes`), this result should be treated with caution.
 
 ## Difference in Life Satisfaction scores for respondents who said they had children and those who said they did not
 
@@ -413,4 +413,4 @@ sjstats::phi(mytable)
 sjstats::cramer(mytable)
 ```
 
-A Chi-square test of independence was conducted to examine the relationship between parental education and whether a child sat GCSE maths. The association was statistically significant, χ²(2, N = 13,201) = 36.23, p < .001. Only 1.07% of students with degree-educated parents did not take GCSE maths, compared to 1.31% of those with at least one parent educated to A-level, and 2.57% of those whose parents had no A-level qualifications. There is therefore evidence to reject the null hypothesis in favour of the alternate hypothesis, indicating a relationship between parental education and GCSE maths participation. However, the effect size, Φ = 0.05, indicates a very small association, so this result should be interpreted with caution.
+A Chi-square test of independence was conducted to examine the relationship between parental education and whether a child sat GCSE maths. The association was statistically significant, χ²(2, N = 13,201) = 36.23, p \< .001. Only 1.07% of students with degree-educated parents did not take GCSE maths, compared to 1.31% of those with at least one parent educated to A-level, and 2.57% of those whose parents had no A-level qualifications. There is therefore evidence to reject the null hypothesis in favour of the alternate hypothesis, indicating a relationship between parental education and GCSE maths participation. However, the effect size, Φ = 0.05, indicates a very small association, so this result should be interpreted with caution.

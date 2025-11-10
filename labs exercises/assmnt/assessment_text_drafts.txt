@@ -24,16 +24,47 @@ The purpose of this analysis is to explore the extent to which individual measur
 
 
 Question 1 > Biochemical Oxygen Demand (BOD) and temperature (both interval / ratio) - Question: Is there a relationship between water pH and temperature?
+Ho = There is no statistically significant relationship between Biochemical Oxygen Demand (BOD) and temperature
+Ha = There is a rstatistically significant elatinoshipt between Biochemical Oxygen Demand (BOD) and temperature
+Thsi is a two tailed test, as we do nto indicate if is a positive or negaive relationship.
 Question 2 > ph and Excellent / Poor  - Q = Do water bodies rated “Excellent” differ in mean pH compared to those rated “Poor”?
+H₀ (Null Hypothesis):
+There is no statistically significant difference in mean pH between water bodies rated “Excellent” and those rated “Poor”.
+
+H₁ (Alternative Hypothesis):
+There is a statistically significant difference in mean pH between water bodies rated “Excellent” and those rated “Poor”.
+ccording to the CCME WQI, using a two-tailed test with α = 0.05.
+
+
+
 Question 3 > Disolved Oxygen and Waterbodyname (i.e. location) - Does mean dissolved oxygen differ significantly between different WaterbodyName sites? (interval / ratio vs 3 + categories
 Question 4 > Is there a relationship between month and waterbodyname ( Nominal × Ordinal)
+
+so tthe onyl variables we want to keep for this are
+Biochemical Oxygen Demand (BOD)
+temperature
+ph 
+Disolved Oxygen
+
+a rating?
+Disolved Oxygen
+Waterbodyname
+month
+year
+
 
 need to ad water body type to the data set!!
 
 Before developing a predictive model, a series of preliminary analyses were conducted to establish statistical evidence supporting the inclusion of these variables as potential predictors. A set of hypotheses were derived which together test whether each potential predictor (ph, disolved oxgen and Temperature). Evidence from the analysis of these hypotheses will provide the basis for including these variables in a subsequent **multiple linear regression model** predicting exam outcomes.
 ===========================
 
-
+====== type of test pre-hypothesis =====
+🔹 ✅ Summary
+Comparison Type	Example	Visualisation	Statistical Test
+ >>> Continuous × Continuous	Temp vs BOD	Scatterplot + regression line	Correlation / Regression
+Continuous × Categorical (2 groups)	pH vs Rating (Excellent vs Poor)	Boxplot / Violin plot	Independent t-test
+Continuous × Categorical (>2 groups)	DO vs Waterbody	Boxplot / ANOVA	One-way ANOVA
+Categorical × Categorical	Month vs Waterbody	Mosaic / Bar / Cross-tab	Chi-square
 Alkalinity-total (as CaCO3)	Ammonia-Total (as N)	BOD - 5 days (Total)	Chloride	Conductivity @25Â°C	Dissolved Oxygen	ortho-Phosphate (as P) - unspecified	pH	Temperature	Total Hardness (as CaCO3)	True Colour
 
 Each model (CCME, WAWQI, Horton, Brown, SRDD) uses a different mathematical approach to combine multiple water quality parameters (like pH, DO, BOD, nitrates, turbidity, etc.) into one number that reflects overall water quality.
@@ -47,6 +78,9 @@ Data set
 1) describe data
 
 The data set contains 24 variables, and 29,259 rows of data. 
+
+Fro the summary statistics we cna see that we ahve a min value of
+0.6 'C and a maximun of 13.1'C.  
 
 Missing Data
 
@@ -72,3 +106,378 @@ wqi_df <- wqi_df %>%
       TRUE ~ "other"
     )
   )
+
+par(mar = c(12, 6, 4, 4))  # bottom, left, top, right
+VIM::aggr(wqi_dsubset, sortVar = TRUE, combined = FALSE,
+           numbers = TRUE, cex.axis = 0.8, gap = 3, 
+           ylab = c("Missing Data", "Missing Data Pattern"))
+
+
+Dataset
+> import
+> craete subset datafram
+> check for missing values
+> check for 
+
+      median         mean      SE.mean CI.mean.0.95          var      std.dev     coef.var 
+ 7.700000000  7.552056861  0.003403989  0.006671972  0.337869403  0.581265347  0.076967819 
+Standardised skewness (z): -65.23 
+Standardised kurtosis (z): 26.11 
+[1] 6.125039
+[1] 0.3943894
+
+
+      median         mean      SE.mean CI.mean.0.95          var      std.dev     coef.var 
+  18.0000000   19.4045977    0.3390692    0.6664218   50.0110387    7.0718483    0.3644419 
+Warning :Missing observations are removed from a vector.
+Warning :Missing observations are removed from a vector.
+skew (g1) 
+ 7.580495 
+Excess Kur (g2) 
+        0.73867 
+[1] 5.517241
+[1] 0
+
+
+how do you know both of these?
+99.6 % of cases within ±3.29 z. >> how do you knwo this?
+Looks extreme but due to large N (~29 000)
+
+    temperature  
+Min.   :  0.60     
+1st Qu.:  8.20    
+Median : 10.70     
+Mean   : 10.85   
+3rd Qu.: 13.10  
+Max.   :637.00  
+
+dissolved.oxygen
+Min.   :  0.00  
+1st Qu.: 49.40  
+Median : 54.90  
+Mean   : 58.29  
+3rd Qu.: 75.00  
+Max.   :198.00
+
+---Whats DONE---
+Handled missing data (checked & verified with naniar/VIM)
+
+Cleaned and labelled your variables
+
+Determined variable types (interval, ratio, ordinal, nominal)
+
+Created descriptive summaries (mean, SD, median, etc.)
+
+Verified distribution normality (and transformed BOD to achieve it)
+
+Produced all supporting visuals (histograms, Q–Q plots)
+
+converted categorical data to factors  with levels
+
+
+====== purpose of the analysis ========
+
+
+To determine whether key measured water quality parameters can serve as predictors or indicators of overall water quality classification.
+
+overall objective could be "purpose of analysis is can we use any of the variables we have to be a predictor of overall water quality", what woudl the 4 hypothesis tests be to fit that analysis objective? given we havw ot use the criteria outlined before i.e. 1 hypothesis where both variables are interval/ratio. o 1 hypothesis: interval/ratio variable compared across a binary categorical variable. o 1 hypothesis: interval/ratio variable compared across a multi-category nominal variable. o 1 hypothesis: two nominal variables.
+
+💧 Option 1 — Concise, technical purpose (suitable for academic reports):
+
+The purpose of this analysis is to examine the relationships between key physicochemical indicators and contextual factors to better understand the drivers of overall water quality. Specifically, the study investigates how temperature, biochemical oxygen demand, pH, dissolved oxygen, and temporal or spatial factors (month and location) interact and contribute to variations in overall water quality classification.
+
+💧 Option 2 — Plain-language, interpretive version:
+
+The purpose of this analysis is to identify which environmental factors and measurement parameters most strongly influence water quality in Irish waterbodies. By exploring relationships among temperature, biochemical oxygen demand, pH, dissolved oxygen, and site or seasonal variation, the analysis aims to reveal how these factors jointly shape overall water quality conditions.
+
+💧 Option 3 — Predictive/insight-driven framing (if you want a forward-looking spin):
+
+The purpose of this analysis is to assess the relationships between key water quality parameters and to determine whether physical, chemical, spatial, and temporal factors can be used to explain or predict variation in water quality ratings across monitoring sites in Ireland.
+
+✅ Recommended (balanced and clear)
+
+Purpose:
+The purpose of this analysis is to evaluate the relationships among key physicochemical parameters, spatial factors, and temporal patterns to understand how they influence overall water quality across Irish monitoring sites. The analysis examines whether variables such as temperature, biochemical oxygen demand, pH, and dissolved oxygen vary by location, season, or water quality classification.
+
+
+=== conductivity  == appendi
+
+Summary of Waterbodies with Extreme Conductivity Readings (> 2000 µS/cm)
+waterbodyname	n_extreme	max_cond
+DARGLE_040	4	4200
+CLOONAGHMORE_060	1	4040
+
+outliers from two locations, are these anomalies or actyual real data .. higer conductivity comes from higher density water typically, inland streams such as the dargle woudl have lighter water wth less deposits in them, but it depends where the data was take from and lcoal conditions. Needs furter investigation, as such decided to remove this variable for the moment, and proceed more reliable dat from others. environments cna have extreme values when extreme environmental conditions materialise, this n be problematic when determine if a dat avleu is an error or actual real measurement. perisitence over time, persistence in location. so some more detailed geograp[hical knowledge is required.
+
+
+
+===== BOD and temp --- Pearson ----
+
+Pearson's product-moment correlation
+
+data:  wqi_dsubset_clean_t_bod$temperature and wqi_dsubset_clean_t_bod$bod_log10
+t = 17.937, df = 29152, p-value < 2.2e-16
+alternative hypothesis: true correlation is not equal to 0
+95 percent confidence interval:
+ 0.09311464 0.11582196
+sample estimates:
+      cor 
+0.1044819 
+
+r= 0.1044 .. tells us positive correlleation exists but it is very weak 
+p
+
+
+The relationship between perceived sense of being in control (Total PCOISS derived from the PCOISS questionnaire) and perceived stress(Total PerceivedS tress derived from the perceived stress questionnaire) was investigated using a Pearson correlation.
+A strong, statistically significant, negative correlation was found  (r=0.21,n=29152,p<.001).
+This result suggests that individuals with higher levels perceived sense of control report lower levels perceived stress.
+
+The relationship between Biochemical Oxygen Demand (BOD) and temperature was investigated using a Pearson correlation. While a statistically Significant result was found (r =0.1, n=29152. p=<0.01), it is very weak. Cohen's d also indicated a very small effect size (`r effcd`). There is therefore no evidence to reject the null hypothesis in favour of the alternate. We can conclude that there does not appear to be a relationship between a student's level of depression and their exam performance.
+
+Cohen's d also indicated a very small effect size (`r effcd`).
+
+
+List of 9
+ $ statistic  : Named num 17.9
+  ..- attr(*, "names")= chr "t"
+ $ parameter  : Named int 29152
+  ..- attr(*, "names")= chr "df"
+ $ p.value    : num 1.46e-71
+ $ estimate   : Named num 0.104
+  ..- attr(*, "names")= chr "cor"
+ $ null.value : Named num 0
+  ..- attr(*, "names")= chr "correlation"
+ $ alternative: chr "two.sided"
+ $ method     : chr "Pearson's product-moment correlation"
+ $ data.name  : chr "wqi_dsubset_clean_t_bod$temperature and wqi_dsubset_clean_t_bod$bod_log10"
+ $ conf.int   : num [1:2] 0.0931 0.1158
+  ..- attr(*, "conf.level")= num 0.95
+ - attr(*, "class")= chr "htest"
+
+| Coastal Location | Example WaterbodyName Entries |
+|------------------|-------------------------------|
+| Cork Harbour     | "Cork Harbour - East Channel", "Cork Harbour - Lough Mahon", etc. |
+| Moy Killala Bay  | "Moy Estuary Upper", "Killala Bay Inner" |
+| Dublin Bay       | "River Liffey Estuary", "North Bull Island" |
+
+
+| Variable | Range (Min–Max) | Mean | SD | Median | IQR (Q1–Q3) | General Interpretation |
+|-----------|-----------------|------|----|---------|--------------|------------------------|
+| **Year** | 2007–2023 | 2015 | 4.5 | 2015 | 2011–2018 | Data collected over 16 years. |
+| **Alkalinity (mg/L)** | 0–442 | 139.9 | 100.2 | 127 | 55–214 | Moderately alkaline across sites. |
+| **Biochemical Oxygen Demand (BOD, mg/L)** | 0.0–16.0 | 1.28 | 0.65 | 1.20 | 1.2–1.2 | Low BOD overall, typical of good-quality coastal water. |
+| **Conductivity (µS/cm)** | 33–4200 | 363 | 270.0 | 356 | 229–501 | High variation, reflecting both freshwater and saline influences. |
+| **Dissolved Oxygen (mg/L)** | 0–198 | 58.29 | 22.5 | 54.9 | 49.4–75.0 | Generally high oxygenation, but wide range indicates local variation. |
+| **pH** | 4.7–9.8 | 7.55 | 0.7 | 7.7 | 7.2–8.0 | Mostly neutral to slightly basic, suitable for aquatic life. |
+| **Temperature (°C)** | 0.6–637.0* | 10.85 | 2.5 | 10.7 | 8.2–13.1 | Typical of Irish coastal waters (excluding outliers). |
+
+
+cat("Rows remaining in the dataset =", nrow(wqi_dsubset_clean_t), "\n")
+
+
+
+
+
+-----------
+#### ph value
+
+```{r}
+#| label: hist-ph
+#| fig.cap: "Figure 1: Histogram of PH"
+
+# create a histogram of ph with density curve over it
+# some referenes taken from hare https://stackoverflow.com/questions/5688082/overlay-histogram-with-density-curve
+gg <- ggplot(wqi_dsubset_clean, aes(x = ph))
+gg <- gg + labs(
+  title = "Histogram of ph",
+  x = "ph",
+  y = "Density"
+)
+# draw the histogram with bin width and colour defined
+gg <- gg + geom_histogram(
+  binwidth = 0.2,
+  colour = "black",
+  aes(y = ..density.., fill = ..count..)
+)
+# sets the colour gradient for the histogram
+gg <- gg + scale_fill_gradient("Count", low = "#DCDCDC", high = "#7C7C7C")
+# creates the normal distribution curve using probability density function
+# using the mean and standard deviation from our dataset ph variable
+gg <- gg + stat_function(
+  fun = dnorm,
+  color = "red",
+  args = list(
+    mean = mean(wqi_dsubset_clean$ph, na.rm = TRUE),
+    sd = sd(wqi_dsubset_clean$ph, na.rm = TRUE)
+  )
+)
+# set the minimal style
+gg <- gg + theme_minimal()
+# call to dislpay the plot
+gg
+
+
+------
+
+#| label: qq-temp
+#| fig.cap: "Figure 4: QQ Plot of Temp values"
+
+# craete qq plot for temperature
+# plots the data quantiles on y axis and theoritical values on x axis
+qqnorm(wqi_dsubset_clean_t$temperature,
+       main = "Q–Q Plot of Water Temperature Values",
+       xlab = "Theoretical Quantiles",
+       ylab = "Sample Quantiles",
+       col = "steelblue",
+       pch = 19)
+# drawa the comparison line which is standard normal
+qqline(wqi_dsubset_clean_t$temperature, col = "red", lwd = 2)
+
+```
+--------
+
+#| label: desc-ph
+#| fig.cap: "Table 3: Descriptive Statistics for pH Values"
+
+# 
+# use pastec stats describe to get basic statistics
+pastecs::stat.desc(wqi_dsubset_clean$ph, basic = FALSE)
+
+# will give us mean, sd, median, skew, kurtosis, etc.
+psych::describe(wqi_dsubset_clean$ph)
+
+# Standardized scores for skewness and kurtosis
+ph_skew <- semTools::skew(wqi_dsubset_clean$ph)
+ph_kurt <- semTools::kurtosis(wqi_dsubset_clean$ph)
+ph_skew_z <- ph_skew[1] / ph_skew[2]
+ph_kurt_z <- ph_kurt[1] / ph_kurt[2]
+
+# print otu the standadized skew and kurtosis scores
+cat("Standardised skewness (z):", round(ph_skew_z, 2), "\n")
+cat("Standardised kurtosis (z):", round(ph_kurt_z, 2), "\n")
+
+#Calculate percentage of standardized scores for total sleep satisfcation
+# are within our limits of +/- 1.96, +/- 3.29
+zph <- abs(scale(wqi_dsubset_clean$ph))
+
+# % beyond ±1.96 (approx 5% expected in normal data)
+FSA::perc(as.numeric(zph), 1.96, "gt")
+
+# % beyond ±3.29 (approx 0.1% expected in normal data)
+FSA::perc(as.numeric(zph), 3.29, "gt")
+```
+
+
+=---ph---
+Visual inspection of the histogram and Q–Q plot indicated a roughly symmetrical, unimodal distribution of pH values. Although standardized skewness (z = –65.23) and kurtosis (z = 26.11) were statistically significant, only 6.1 % of standardized scores exceeded ±1.96 and 0.39 % exceeded ±3.29, using the criteria proposed by Curran, West and Finch (1996). As 99.6% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution.
+
+---temp---
+Visual inspection of the histogram and Q–Q plot indicated a symmetrical, unimodal distribution of temp values with the QQ plot shows minor deviations from normal at the tails. Standardized skewness (z = 17.06) and kurtosis (z = -7.39) were not statistically significant, only 4.2 % of standardized scores exceeded ±1.96 and 0.065 % exceeded ±3.29, using the criteria proposed by Curran, West and Finch (1996). As 99.35% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution.
+
+--- b6d 1st--- s2kewness
+
+Visual inspection of the Biochemical Oxygen Demand (BOD) histogram indicated a highly positive skew with standadtised skewness (z = 564.87) with pronounced leptokurtosis, standardised kurtosis z = 4163.14. The Q–Q plot indicated a strong right tail, showing a small number of high BOD readings (up to 16) among predominantly low values (mean = 1.27 and median = 1.20 and a stdnard deviation = 0.55).
+
+To address the skewness and non-normal distribution, we applied a transform to the log10.
+
+
+Visual inspection of the histogram and Q–Q plot of the Biochemical Oxygen Demand (BOD) values, which have been transformed by Log10, show a correction to the previous positive skewness in the histogram, and while there is still deviation from the tails we now have Standardised skewness (z = 184.15) and stamndardised kurtosis (z = 676.68). Aproximately 93.6% of standardized scores lay within ±1.96 , and 97,96% are within ±3.29 z, (Curran, West, & Finch, 1996). Following the guidance of Field, Miles, and Field (2012), the data can be considered to approximate a normal distribution.
+
+Following the guidance of Field, Miles, and Field (2012), these results suggest that the data are not normally distributed, and a transformation or non-parametric approach may be more appropriate.
+
+
+Overall, the histograms show that pH and temperature approximate normal distributions, while BOD is strongly skewed and DO is bimodal. This suggests that transformations or non-parametric methods may be required for some variables prior to hypothesis testing.
+
+
+wqi_subset <- wqi_long %>%
+  filter(ccme_wqi %in% c("Excellent", "Poor"))
+
+ggplot(wqi_subset, aes(x = value, fill = ccme_wqi)) +
+  geom_density(alpha = 0.5) +
+  facet_wrap(~ parameter, scales = "free_x", ncol = 2) +
+  theme_minimal() +
+  labs(
+    title = "Density Distributions of Key Parameters\nfor 'Excellent' and 'Poor' Water Quality Classes",
+    x = "Measured Value",
+    y = "Density",
+    fill = "CCME WQI Category"
+  )
+
+“Density plots highlight differences in distribution shape between water quality classes. ‘Poor’ sites show broader, right-skewed distributions for BOD and temperature, while pH and DO values are more dispersed compared to ‘Excellent’ sites.”
+
+This pattern is contrary to the expected ecological relationship between DO and water quality, where higher oxygen typically indicates better conditions.
+The reversal likely reflects dataset-specific factors such as differences between marine and estuarine sampling locations, possible sensor calibration differences, or the weighting of dissolved oxygen within the CCME WQI calculation.
+
+CCME_WQI
+WAWQI
+Horton WQI
+SRDD WQI
+
+he results highlight significant variation among indices in how they classify the same water quality data. The CCME WQI (olive-green) categorizes most sites as ‘Fair’, suggesting moderate impairment, while Brown’s WQI (red) and WAWQI (purple) tend to produce more optimistic classifications (‘Good’–‘Excellent’). In contrast, SRDD (green) yields a higher proportion of ‘Poor’ and ‘Unsuitable’ scores, indicating stricter thresholds.
+
+These differences reflect methodological variations: CCME WQI penalizes frequent or large exceedances of standards, while arithmetic and weighted indices (Brown, WAWQI) smooth out extremes. Consequently, the choice of WQI framework strongly influences perceived water quality, underscoring the need for consistency in reporting and comparison.
+
+
+| Observation                | Interpretation                                                                                                                                              |
+|-----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **CCME_WQI (olive-green)** | Most values classified as **“Fair”**, some “Good”, few “Excellent” or “Poor”. → CCME is relatively *strict* — it penalizes small deviations from standards. |
+| **WAWQI (pink)**           | Many values fall into **“Good”** or **“Unsuitable”** → suggests it spreads values across a wider range and is *more sensitive* to extreme parameter values. |
+| **Brown_WQI (red)**        | Skewed toward **“Good” and “Excellent”**, very few “Poor”. → Brown’s method tends to give more optimistic classifications.                                  |
+| **Horton_WQI (blue)**      | Fairly even distribution across **“Fair”, “Good”, and “Moderate”**, some “Excellent”. → Shows more balanced spread; moderate strictness.                    |
+| **SRDD_WQI (green)**       | Distinctly high numbers in **“Poor” and “Unsuitable”** → a *more conservative or strict* index (possibly overemphasizes parameter variability).             |
+
+wqi_subset <- wqi_dsubset_clean_t_bod %>%
+  filter(ccme_wqi %in% c("Excellent", "Poor")) %>%
+  droplevels()   # drops unused factor levels
+
+
+ggplot(wqi_subset, aes(x = ph, fill = ccme_wqi)) +
+  geom_histogram(aes(y = ..density..), alpha = 0.6, position = "identity", bins = 30) +
+  geom_density(alpha = 0.3) +
+  theme_minimal() +
+  labs(title = "Distribution of pH by Water Quality Class",
+       x = "pH", y = "Density", fill = "CCME WQI")
+
+ggplot(wqi_h2_subset, aes(x = ccme_wqi, y = ph, fill = ccme_wqi)) +
+  geom_boxplot(alpha = 0.7) +
+  theme_minimal() +
+  labs(title = "Boxplot of pH across Water Quality Classes",
+       x = "CCME WQI", y = "pH")
+
+
+#| label: scatter_ph_fair_poor
+#| fig.cap: "Figure 16: Scatterplot of pH Values for 'Fair' and 'Poor' Water Quality Classes"
+#| fig.align: center
+
+# Subset only the two categories of interest
+wqi_ph_subset <- wqi_dsubset_clean_t_bod %>%
+  filter(ccme_wqi %in% c("Fair", "Poor")) %>%
+  droplevels()
+
+# Create scatter (jittered) plot
+ggplot(wqi_ph_subset, aes(x = ccme_wqi, y = ph, colour = ccme_wqi)) +
+  geom_jitter(width = 0.2, alpha = 0.5, size = 1.5) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 4, colour = "black") +
+  stat_summary(fun.data = mean_cl_normal, geom = "errorbar", width = 0.1, colour = "black") +
+  labs(
+    title = "Distribution of pH Across 'Fair' and 'Poor' Water Quality Classes",
+    x = "CCME WQI Category",
+    y = "pH"
+  ) +
+  scale_colour_manual(values = c("Fair" = "#1E90FF", "Poor" = "#FF4500")) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+
+A Welch’s independent samples t-test was conducted to compare mean pH values between water bodies rated “Fair” and “Poor” under the CCME WQI. Levene’s test indicated unequal variances (F(1, 17430) = 9.72, p = .0018), so the Welch correction was applied. Results showed a statistically significant difference in mean pH between the two groups, t(77.06) = -6.28, p < .001. Mean pH was lower for “Fair” sites (M = 7.54, SD ≈ 0.58) than for “Poor” sites (M = 7.84, SD ≈ 0.48). The 95% confidence interval for the mean difference (-0.40 to -0.21) did not include zero, indicating that “Poor” water bodies tend to have more alkaline conditions than “Fair” ones.
+
+effes <- round((res$statistic^2) / ((res$statistic^2) + res$parameter), 3)
+effes
+•	Guidelines on effect size:
+o	0.01= small
+o	0.06 = moderate
+o	0.14 =large
+
+Ho = There is no statistically significant difference in mean dissolved oxygen among the different WaterbodyName sites.
+
+Ha = There is a statistically significant difference in mean dissolved oxygen between at least two WaterbodyName sites.
