@@ -38,10 +38,21 @@ ccording to the CCME WQI, using a two-tailed test with α = 0.05.
 
 
 Question 3 > Disolved Oxygen and Waterbodyname (i.e. location) - Does mean dissolved oxygen differ significantly between different WaterbodyName sites? (interval / ratio vs 3 + categories
-Question 4 > Is there a relationship between month and waterbodyname ( Nominal × Ordinal)
+Null hypothesis (H₀):
+There is no significant association between Month and CCME_WQI classification.
+(Water quality categories are independent of month.)
+
+Alternative hypothesis (H₁):
+There is a significant association between Month and CCME_WQI classification.
+(Water quality classifications vary across months.)
 
 so tthe onyl variables we want to keep for this are
 Biochemical Oxygen Demand (BOD)
+
+Because both variables are categorical, the appropriate test is the Chi-square test of independence (chisq.test in R).
+This test will determine whether there is a significant association between the Month of sampling and the Water Quality classification (CCME_WQI).
+
+If the Chi-square test is significant, post-hoc analysis with standardized residuals can identify which months or WQI categories contribute most to the association.
 temperature
 ph 
 Disolved Oxygen
@@ -478,6 +489,83 @@ o	0.01= small
 o	0.06 = moderate
 o	0.14 =large
 
+Does mean Dissolved Oxygen (DO) differ significantly between different WaterbodyName sites?
+
 Ho = There is no statistically significant difference in mean dissolved oxygen among the different WaterbodyName sites.
 
 Ha = There is a statistically significant difference in mean dissolved oxygen between at least two WaterbodyName sites.
+
+Inniscarra	623	
+Belmullet	830	
+River Foyle	704	
+
+Null Hypothesis (H₀):
+There is no statistically significant difference in the median Dissolved Oxygen between the water quality categories.
+
+H0:MedianFair=MedianModerate=MedianGood
+H
+0
+	​
+
+:Median
+Fair
+	​
+
+=Median
+Moderate
+	​
+
+=Median
+Good
+	​
+
+
+Alternative Hypothesis (H₁):
+library(ggplot2)
+
+# Load needed packages
+library(FSA)
+library(flextable)
+library(dplyr)
+
+The Kruskal–Wallis test (χ² = 6479.2, df = 2, p < 0.001) indicated a significant difference in median dissolved oxygen across CCME_WQI categories.
+Dunn’s post-hoc tests (Bonferroni-adjusted) showed all pairwise differences were significant (p < 0.001).
+Median DO was highest for Moderate sites (88.0 mg/L), followed by Fair (54.9 mg/L), and lowest for Good (39.9 mg/L
+
+
+#| tbl-cap: "Table 3: Frequency of Water Quality Classifications by Month"
+
+# Create the contingency table (Month × Water Quality)
+contingency_table <- table(wqi_h3_subset$month, wqi_h3_subset$ccme_wqi)
+
+# Add row and column totals
+contingency_with_totals <- addmargins(contingency_table)
+
+# Display as a formatted table
+knitr::kable(contingency_with_totals, digits = 0, 
+             caption = "Table 3: Frequency of Water Quality Classifications by Month")
+
+# Optional details
+ctest$expected   # Expected frequencies
+ctest$observed   # Observed frequencies
+ctest$p.value    # Extract just the p-value
+
+
+A Chi-square test of independence was conducted to examine the relationship between month and CCME_WQI water quality classification.
+The association was statistically significant, χ²(22, N = 28,923) = 780.63, p < .001, indicating that water quality classifications vary across months.
+
+Inspection of the cross-tabulation revealed that “Good” water quality classifications occurred more frequently than expected during April and October, while they were less frequent in January and February. Conversely, “Fair” classifications were higher than expected in the winter months.
+
+There is therefore evidence to reject the null hypothesis in favour of the alternative, indicating a significant association between month and water quality.
+However, the effect size, Cramér’s V = 0.12, indicates a small association, suggesting that while the pattern is statistically significant, the strength of the relationship is modest.
+
+A Chi-square test of independence found a significant association between month and CCME_WQI classification, χ²(22, N = 28,923) = 780.63, p < .001.
+Cramér’s V = 0.12 indicated a small effect size, suggesting that water quality classifications vary modestly across months.
+“Good” classifications were more frequent in spring and autumn (April, October) and less frequent in winter (January–February), indicating seasonal variation in water quality.
+Hi Deirdre, submitting  a zip file which contains the following:
+D24127620_assignment_1_eamonn_kelly.qmd - quarto notebook with code, text and visualizations
+D24127620_assignment_1_eamonn_kelly.html - rendered qmd into html file
+WQI Results on Dataset.csv - dataset
+Just to note the datset csv needs to be placed in the same folder as the csv or yuo cna change file path in the qmd file if yo neeed. 
+Thanks,
+eamonn

@@ -1,0 +1,362 @@
+---
+title: "Week 9: Checking Linear Regression Assumptions"
+author: "MATH9102: Fundamentals of Data Analysis"
+format:
+  html:
+    self-contained: true
+    theme: cosmo
+    toc: true
+---
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+
+/* Center and bold table captions, force them below tables */
+.table-caption, 
+caption {
+  caption-side: bottom;  /* caption below table */
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse")      # Loads the tidyverse suite (ggplot2, dplyr, etc.) for data handling and visualisation
+quiet_library("performance")    # Loads tools for checking model assumptions and diagnostics (e.g., normality, collinearity)
+quiet_library("ppcor")          # Provides functions for calculating partial and semi-partial correlations
+quiet_library("car")            # Companion to Applied Regression – includes functions for influence tests and outlier detection
+quiet_library("see")            # Needed for plots
+quiet_library("pastecs")        #Needed for descriptive stats
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'sleep.rdata')
+
+#Read in the dataset - sleep dataset from Pallant
+sleep<- read.table(datapath, header=TRUE)
+sleep <-na.omit(sleep)
+
+```
+
+## Overview
+
+In this exercise, you will learn **how to check the key assumptions of a linear regression model** using the `sleep.rdata` dataset. You’ll test each assumption step by step, interpret the results, and reflect on possible model improvements.
+
+By the end of this activity, you should be able to:
+
+- Verify **linearity** and **homoscedasticity** using residual plots  
+- Check **normality of residuals**  
+- Detect **influential observations**  
+- Test for **multicollinearity**  
+
+## How to Use This Exercise
+
+
+
+This exercise mirrors the structure and tone of the Week 9 lecture notes. For each assumption, you will: 1) **Run** a short block of code, 2) **Inspect** the output/plot, and 3) **Answer** a brief interpretation prompt.
+
+Keep your answers concise and evidence-based (reference the specific plot/test and its key indicators).
+---
+
+## 1. Fit a Linear Regression Model
+
+Fit a regression model predicting **sleep quality** from relevant predictors. 
+High stress and poor sleep behaviours are known predictors of daytime sleepiness, not typically its effects. In this task you will build two models:
+
+Model 1 : “Does stress,  and sleep behaviour (hours slept on week nights) predict the degree of sleepiness/fatigue experienced?”
+
+Model 2: “Does stress,  and sleep behaviour (hours slept on week nights) predict the degree of sleepiness/fatigue experienced and is there a differential effect for respondents of different genders?”
+
+
+| Variable             | Concept measured                                                                   | Type                | Typical role in regression                                        |
+| -------------------- | ---------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------------------------- |
+| `totsas`             | Sleepiness, fatigue, low energy, tiredness, lethargy (aggregate of multiple items) | Continuous (5–50)   | **Outcome** – a holistic measure of sleep quality and its effects |
+| `stressmo`           | Perceived stress over last month                                                   | Continuous (1–10)   | **Predictor** – a psychological factor that may affect sleepiness |
+                                                 |
+| `hourwnit`           | Hours of sleep on weeknights                                                       | Continuous          | **Predictor**                                                     |
+
+| `gender`     | Demographic controls                                                               | Binary / continuous | **Predictors or control variables**                               |
+
+
+# Model 1
+```{r}
+# Example model (edit as appropriate)
+model1 <- lm(totsas ~ stressmo + hourwnit,   data = sleep)
+
+
+summary(model1)
+```
+A multiple linear regression model was conducted to examine whether perceived stress and average hours of sleep on weeknights could significantly predict daytime sleepiness and fatigue as measured by the totsas score. The overall model was statistically significant, F(6, 3) = 106.20, p = 0.001, explaining approximately 99.5% of the variance in sleepiness (Adjusted R² = 0.986).
+
+The fitted regression equation was:
+
+Predicted Total Sleepiness and Associated Sensation Score  = 33.44 
+                          + 29.00 x Moderate perceived stress (level 5) 
+                          + 23.47 × Moderately high perceived stress (level 6) 
+                          + 26.84 × High perceived stress (level 7) 
+                          + 30.00 × Very high perceived stress (level 8) 
+                          + 6.81 × Extremely high perceived stress (level 9) 
+                          – 3.06 × Average hours of sleep on weeknights
+
+Higher perceived stress levels were associated with significantly greater total sleepiness and sensations scores (p < 0.01), whereas longer weekday sleep duration was linked to lower scores (p = 0.02). This suggests that participants reporting higher stress levels tend to experience greater sleepiness, while each additional hour of weeknight sleep corresponds to an estimated 3-point reduction in the total sleepiness score.
+
+
+## Assess the Assumptions
+### Step 1: Generate Summary Statistics
+
+```{r}
+pastecs::stat.desc(sleep$totsas, basic = FALSE)
+pastecs::stat.desc(sleep$stressmo, basic = FALSE)
+pastecs::stat.desc(sleep$hourwnit, basic = FALSE)
+pastecs::stat.desc(sleep$anxiety, basic = FALSE)
+```
+
+**Task:** Review means, ranges, and variances. Are the predictors measured on compatible scales? Any extreme values?
+
+### Step 2: Residual Analysis
+
+#### Step 2a. Normality Test
+
+```{r}
+performance::check_normality(model1)
+```
+
+**Task:** Does the p-value suggest that residuals deviate significantly from normality? What does this mean for the model?
+
+#### Step 2b. Visualize Residual Distribution
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 1"
+
+ggplot(data.frame(residuals = resid(model1)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), bins = 20, fill = "skyblue", color = "white") +
+  stat_function(fun = dnorm, args = list(mean = mean(resid(model1)), sd = sd(resid(model1))), color = "red", linewidth = 1) +
+  labs(title = "Histogram of Residuals", x = "Residuals", y = "Density") +
+  theme_minimal()
+
+plot(check_normality(model1))
+qqnorm(rstandard(model1)); qqline(rstandard(model1), col = "red")
+```
+
+**Task:** Inspect the histogram and Q–Q plot. Do the residuals approximate a normal distribution?
+
+#### Step 2c. Outliers or Influential Points
+
+```{r}
+performance::check_outliers(model1)
+```
+
+**Task:** Note any cases flagged as outliers. What threshold is used?
+
+#### Step 2d. Examine Residuals
+
+```{r}
+residuals <- resid(model1)
+std_residuals <- residuals / sd(residuals)
+max(std_residuals); min(std_residuals)
+car::outlierTest(model1)
+```
+
+**Task:** Identify any standardized residuals exceeding ±3.29. How might they influence model fit?
+
+### Step 3: Check Homoscedasticity
+
+```{r}
+performance::check_heteroscedasticity(model1)
+```
+
+**Task:** Is there evidence of unequal variance across fitted values?
+
+### Step 4: Check Multicollinearity
+
+```{r}
+performance::check_collinearity(model1)
+```
+
+**Task:** What are the VIF and Tolerance values? Are they within acceptable limits (\< 5 and \> 0.2)?
+
+### Step 6: Summary Diagnostic Plots
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Diagnostic plots for Model 1"
+# If using R 4.4.x use
+performance::check_model(model1,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+# If using R 4.5.x use
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model1)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+```
+
+**Task:** Review the combined diagnostics. Which assumptions are well met, and which may require attention?
+
+
+### Task: Write the report
+
+------------------------------------------------------------------------
+
+# 3. Model 2 — Add Gender as a Predictor
+
+Now extend the model by adding `gender` as a control variable.
+
+**Outcome variable:** `totsas`\
+**Predictors:** `stressmo`, `hourwnit`, `anxiety`, `sex`
+
+```{r}
+# Ensure gender is coded as numeric (0/1) if not already
+sleep$gender <- ifelse(sleep$sex == "male", 0, ifelse(sleep$sex == "female", 1, NA))
+
+# Fit the extended model
+model2 <- lm(totsas ~ stressmo + hourwnit + gender, data = sleep)
+summary(model2)
+```
+A second multiple linear regression model was fitted to determine whether gender further improved prediction of daytime sleepiness and fatigue when combined with perceived stress and weeknight sleep duration. The overall model was statistically significant, F(7, 2) = 433.90, p = 0.002, explaining approximately 99.9% of the variance in sleepiness (Adjusted R² = 0.997).
+
+The fitted regression equation was:
+
+Sleepiness (totsas) = 36.84 
+        + 29.00 × Moderate perceived stress (level 5)
+        + 23.93 × Moderately high perceived stress (level 6)
+        + 27.51 × High perceived stress (level 7)
+        + 30.82 × Very high perceived stress (level 8)
+        + 4.65 × Extremely high perceived stress (level 9)
+        – 3.78 × Average hours of sleep on weeknights
+        + 1.65 × Gender (1 = female, 0 = male)
+
+Higher perceived stress continued to predict significantly greater total sleepiness and sensation scores (p < 0.01), and more hours of sleep on weeknights remained associated with reduced scores (p < 0.01). Gender was a marginal predictor (p = 0.07), suggesting that females (coded 1) reported slightly higher levels of total sleepiness after controlling for stress and sleep duration.
+
+## Assess Assumptions
+### Step 1: Generate Summary Statistics
+
+```{r}
+pastecs::stat.desc(sleep$gender, basic = FALSE)
+table(sleep$gender, useNA = "ifany")
+prop.table(table(sleep$gender))
+```
+
+**Task:** Are both genders adequately represented in the dataset?
+
+### Step 2: Residual Analysis
+
+#### Step 2a. Normality Test
+
+```{r}
+performance::check_normality(model2)
+```
+
+#### Step 2b. Visualize Residual Distribution
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 2"
+ggplot(data.frame(residuals = resid(model2)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), bins = 20, fill = "skyblue", color = "white") +
+  stat_function(fun = dnorm, args = list(mean = mean(resid(model2)), sd = sd(resid(model2))), color = "red", linewidth = 1) +
+  labs(title = "Histogram of Residuals", x = "Residuals", y = "Density") +
+  theme_minimal()
+
+plot(check_normality(model2))
+qqnorm(rstandard(model2)); qqline(rstandard(model2), col = "red")
+```
+
+#### Step 2c. Outliers or Influential Points
+
+```{r}
+performance::check_outliers(model2)
+```
+
+#### Step 2d. Examine Residuals
+
+```{r}
+residuals <- resid(model2)
+std_residuals <- residuals / sd(residuals)
+max(std_residuals); min(std_residuals)
+car::outlierTest(model2)
+```
+
+### Step 3: Check Homoscedasticity
+
+```{r}
+performance::check_heteroscedasticity(model2)
+```
+
+### Step 4: Check Multicollinearity
+
+```{r}
+performance::check_collinearity(model2)
+```
+
+### Step 5: Summary Diagnostic Plots
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Diagnostic plots for Model 2"
+# If using R 4.4.x use
+performance::check_model(model2,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+# If using R 4.5.x use
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model2)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+```
+### Task: Write the report
+
+
+------------------------------------------------------------------------
+
+# Task: Reflection
+
+1.  Compare Model 1 and Model 2. Does adding gender improve the model?\
+2.  Which assumptions are most/least well met in each model?\
+3.  Suggest one possible next step if violations were detected (e.g., transformation, re-specification, removal of outliers).
+
+
+---
+
+
+**End of Exercise**

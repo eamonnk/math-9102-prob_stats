@@ -1,0 +1,657 @@
+---
+title: "TU059/TU060/TU256/PhD (Delete as appropriate) Probability and Statistical Inference"
+subtitle: "Multiple Linear Regression"
+format:
+  html:
+    self-contained: true
+    code-fold: true
+    toc: true        # Enables table of contents
+    toc_float: true  # Makes the TOC float on the side
+    toc-depth: 3     # Specifies the depth of headers to include in TOC
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+
+/* Center and bold table captions, force them below tables */
+.table-caption, 
+caption {
+  caption-side: bottom;  /* caption below table */
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r include=FALSE}
+#Loads the R file that includes the following functions:
+#install_packages(packagelist) - install/load packages needed
+#analyze_ratio_variable(survey, "tpstress") - generates statistics needed to assess normality of a ratio variable
+#regression_diagnostics_stats(model1, sdata, predictors) - returns a list containing relevant stats from diagnostics checks of a linear regression model 
+#regression_diagnostic_plots <- function(model, sdata, predictors, figure_number) - generates all plots to support diagnostic check of a linear regression model
+source("MATH9102-W9-Functions.R")
+```
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+# ---- Load (and install if needed) required packages ----
+packages <- c(
+  "stats",        # Core R statistical functions (cor.test, oneway.test, bartlett.test)
+  "car",          # Companion to Applied Regression (Levene’s test, outlier diagnostics)
+  "rstatix",      # User-friendly statistical tests (Tukey HSD post-hoc)
+  "effectsize",   # Computes and interprets effect sizes (e.g., eta squared, Cohen’s d)
+  "psych",        # Descriptive statistics for grouped data (describeBy)
+  "ggplot2",      # Data visualization (histograms, QQ plots, diagnostic plots)
+  "VIM",          # Visualization of missing data patterns (aggr)
+  "kableExtra",   # Enhances tables created with knitr::kable (styling, layout)
+  "knitr",        # Generates formatted tables and report outputs (kable)
+  "performance",  # Regression diagnostics and model checks (check_model, check_normality)
+  "lm.beta"       # Computes standardized beta coefficients for linear models
+)
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, dependencies = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+# Apply the function to load the packages 
+lapply(packages, quiet_library)
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'survey.dat')
+
+#Load data
+sdata <- read.table(datapath)
+colnames(sdata) <- tolower(colnames(sdata))
+
+#Filter out the variables of interest to this analysis
+myvars <- c("tpcoiss", "tpstress", "toptim", "tlifesat", "marital", "educ")
+sdata <-sdata[myvars]
+```
+
+
+Notes:
+1: This is an example. It is intended to demonstrate how to put together a report together on multiple linear regression for phase 2 of the CA. This does not mean you should follow it religiously for your report. You are expected to replace content to suit your dataset and replace comments to express your usage of functions. You can change the structure to suit your process as long as you address all the aspects included in this report. 
+
+2: All the statistics generated for the reporting of data exploration and the regression model building and diagnostic checking are included within the analysis, you can include in an Appendix if you wish. 
+
+3: This code uses a set of functions which are imported. These are in MATH9102-W9-Functions.R and this file should be located in the same folder as this rmd script. If you have any problems with this just cut and paste the functions into a R chunk in this script - include them just after where you load the data.
+
+
+# 1. Introduction
+This statistical analysis investigates whether a range of psychological and demographic factors impact on a person's psychological well-being, in particular their level of optimism. This analysis aims to investigate the following research question:
+
+Can psychological factors, in particular perceived sense of control, level of perceived stress and life satisfaction, predict an individual's level of optimism?
+
+Additionally, the analysis seeks to explore whether a differential effect exist in this prediction for respondents of different marital status.
+
+Multiple linear regression is used to investigate these questions. Two linear regression models were built. The first addresses the hypothesis that at least one psychological factor (perceived sense of control, perceived stress and life satisfaction) can be considered to significantly predict an individual's level of optimism. The second that the predictive relationship between psychological factors and optimism varies by marital status. 
+
+The dataset used contains data collected from 439 respondents who completed a survey as part of a study to explore the factors that impact on respondents' psychological adjustment and well-being. The study was distributed to members of the general public in Melbourne, Australia and surrounding districts made available by Pallant (2020).
+
+Section 2 will explain the data used and the steps conducted to prepare it for linear regression. The fitting of the linear regression models built, diagnostic checks conducted, and the interpretation of results from the models will be presented in Section 3. A comparison of the two models will be presented in Section 4 before conclusions drawn from the analysis are discussed in Section 5.  
+
+Throughout the analysis, a significance threshold of 0.05 was used, and effect sizes were reported according to Cohen's conventions(1988). 
+Before interpreting the multiple linear regression results, diagnostic checks were conducted to ensure compliance with the key statistical assumptions underpinning the analysis. These included tests for linearity, normality of residuals, homoscedasticity, multicollinearity, and the presence of outliers, leverage points, or influential observations (Field, Miles, & Field, 2021; Tabachnick & Fidell, 2019). Linearity and homoscedasticity were assessed through examination of residual plots, where a random distribution of residuals around the zero line indicated that the assumptions were met. The normality of residuals was evaluated both visually, using Q–Q plots, and statistically, with small deviations tolerated given the robustness of regression to minor non-normality in larger samples (Field et al., 2021). Standardized residuals were inspected to identify potential outliers, with absolute values exceeding ±3.29 considered cause for further investigation (Tabachnick & Fidell, 2019). To assess influence, Bonferroni-adjusted tests of studentized residuals and Cook’s distance statistics were applied; Cook’s distance values greater than 1.0 were regarded as indicative of influential outliers, while leverage values were examined to identify cases exerting disproportionate influence on the regression coefficients (Belsley, Kuh, & Welsch, 1980; Field et al., 2021). Multicollinearity was assessed using Variance Inflation Factor (VIF) and Tolerance values. Following Field, Miles, and Field (2021), VIF values greater than 5 or Tolerance values below 0.2 were considered indicative of potential multicollinearity, while more extreme thresholds (VIF \> 10, Tolerance \< 0.1) would indicate serious violations. Collectively, these diagnostic procedures confirmed that the data met the necessary assumptions for valid multiple regression analysis, providing confidence in the reliability of the model estimates.
+
+
+# 2. Data Description
+The dataset consists of 439 rows and 134 columns containing the responses from survey respondents. The survey contained a variety of validated scales measuring constructs chosen from the extensive literature on psychological well being. The scales measured respondents' self-esteem, optimism, perceptions of control, perceived stress, positive and negative affect, life satisfaction and tendency to present themselves in a socially desirable manner. In addition a range of demographic information including gender, marital status, parental status, education level and information on smoking habits was also collected. The concepts of interest in this analysis represent only a subset of the dataset. The concepts of interest, their measurement and statistical type are shown in Tables 1 and 2 below.
+
+
+```{r}
+#| label: tbl1
+#| tbl-cap: "Table 1: Psychological Factors of Interest"
+# create the table using kable
+data.frame(
+Concept = c("Optimism",
+"Perceived Control of Internal States",
+"Perceived Stress",
+"Life Satisfaction"),
+`Scale Used` = c(
+"6-item Life Orientation Test (Scheier & Carver, 1985)",
+"18-item PCOISS (Pallant, 2000)",
+"10-item Perceived Stress Test (Cohen, Kamarck & Mermelstein, 1983)",
+"5-item Satisfaction with Life (Diener et al., 1985)"
+),
+Type = "Continuous – Ratio"
+) |>
+kable()
+
+```
+
+
+| Concept           | Possible Values     | Type |
+|-------------------|---------------------|------|
+| Marital Status |   1. single, 2. in a steady relationship, 3. living with partner, 4. married for first time, 5. remarried, 6. separated, 7. divorced, 8. widowed |  Nominal |
+
+```{r}
+#| label: tbl2
+#| tbl-cap: "Table 2: Demographic Factors of Interest"
+#| tbl-cap-location: bottom
+
+data.frame(
+Concept = "Marital Status",
+`Possible Values` = "1. Single, 2. In a steady relationship, 3. Living with partner, 4. Married for first time, 5. Remarried, 6. Separated, 7. Divorced, 8. Widowed",
+Type = "Nominal"
+) |>
+kable()
+
+```
+
+
+## 2.1 Missing Data
+The data for each of the concepts of interest was inspected to establish whether the level of missing data represented a source of bias. Using the guidance of Tabachnick and Fidell (2016) neither the proportion nor pattern of missing data represent a source of concern see Figure 1, and any decision on missing data treatment would not significantly impact the results. All missing data was therefore removed before the analysis.
+
+```{r}
+#| label: missing
+#| fig.cap: "Figure 1: Inspection of Missing Data"
+mdata <- sdata
+colnames(mdata) <- c(
+  "Optimism",
+  "PCOISS",
+  "Stress",
+  "LifeSat",
+  "Marital",
+  "Education"
+)
+res<-summary(VIM::aggr(mdata, sortVar=TRUE, combined=FALSE))$combinations
+```
+```{r}
+sdata <- na.omit(sdata)
+sdata$ztpcoiss  <- abs(scale(sdata$tpcoiss))
+#Removing the two rows with tpcoiss > 3.29
+sdata <- sdata[sdata$ztpcoiss <= 3.29, ]
+
+```
+
+## 2.2 Pyschological Factors
+The distribution of all the psychological factors were inspected to determine if that distribution could be considered to approximate the normal distribution. Using the guidance of Curran, West and Finch (1996) a distribution with standardized skewnesss or kurtosis between +/- 2  was considered approximately normal. Absolute scores were examined to identify  to whether outliers were a problem at a univariate level. Using the guidance of Field, Miles and Field (2012), if 98% of the data fell between +/- 3.29 the distribution was considered to be approximately normal.
+
+Visual inspection of the histograms and Q–Q plots for Total Optimism, Total Perception of Control of Internal State, Perceived Stress Level, and Total Life Satisfaction suggested slight skewness in some variables (see Figures 2–5). The standardized scores for skewness and kurtosis, as well as the percentages of absolute z-scores exceeding ±3.29, were inspected.
+
+Some issues were observed with skewness for Total Optimism, Perceived Stress, and Total Life Satisfaction. However, as 99.7% of z-scores for these variables fell within ±3.29, their distributions were considered approximately normal, with insufficient outliers to be of concern.
+
+For Total Perception of Control, 99.53% of z-scores fell within ±3.29; the two cases exceeding this threshold were removed. The resulting data then met the criterion of 99.7% of scores falling within ±3.29 and were therefore considered normal.
+
+Details of all statistics used to assess the distribution, along with the appropriate descriptive statistics for these variables, are presented in Table 3.
+```{r}
+#| label: assess
+# Generate statistics needed for normality assessment using analyze_ratio_variable function
+result3 <- analyze_ratio_variable(sdata, "toptim")
+result1 <-analyze_ratio_variable(sdata, "tpstress")
+result2 <- analyze_ratio_variable(sdata, "tpcoiss")
+result4 <- analyze_ratio_variable(sdata, "tlifesat")
+```
+
+| Concept                  | Standardized Skew | Standardized Kurtosis | % of Absolute Scores Outside ±3.29 | Descriptive Statistics     |
+|--------------------------|-------------------|-----------------------|------------------------------------|----------------------------|
+| Total Optimism           | `r result3$skewness_rounded` | `r result3$kurtosis_rounded` | `r result3$perc_outside_3_29` | `r result3$central_tendency` |
+| Total Perceived Stress   | `r result1$skewness_rounded` | `r result1$kurtosis_rounded` | `r result1$perc_outside_3_29` | `r result1$central_tendency` |
+| Total Perception of Control | `r result2$skewness_rounded` | `r result2$kurtosis_rounded` | `r result2$perc_outside_3_29` | `r result2$central_tendency` |
+| Total Life Satisfaction  | `r result4$skewness_rounded` | `r result4$kurtosis_rounded` | `r result4$perc_outside_3_29` | `r result4$central_tendency` |
+```{r}
+#| tbl-cap: "Table 3: Statistics for Assessment of Normality of Psychological Factors (n=`r nrow(sdata)`)"
+
+```
+
+
+```{r assess-p1}
+#| label: assess-p1
+# Generate plots using function plot_ratio_variable
+plot_ratio_variable(sdata, "toptim", "Total Optimism", 1)
+plot_ratio_variable(sdata, "tpstress","Total Perceived Stress",2)
+plot_ratio_variable(sdata, "tpcoiss", "Total Perception of Control of Internal States", 3)
+plot_ratio_variable(sdata, "tlifesat", "Total Life Satisfaction", 4)
+```
+
+## 2.3 Marital Status
+The proportions of respondents for each of the eight categories of marital status are shown below in Table 4.
+
+```{r}
+#| label: ftable
+#| tbl-cap: "Table 4: Frequency Table – Marital Status"
+
+# Create and format the frequency table
+count_data <- as.data.frame(table(sdata$marital))
+count_data <- count_data[order(count_data$Freq), ]
+
+# Rename columns (avoid spaces in names)
+colnames(count_data) <- c("Marital_Status", "Count")
+
+# Generate the table
+knitr::kable(count_data, caption = NULL) |>
+  kableExtra::kable_styling(bootstrap_options = c("striped", "hover"))
+
+```
+```{r}
+#| tbl-cap: "Table 4: Number of Respondents in Each Category of Marital Status" 
+```
+
+
+The dataset has a higher proportion of individuals in a relationship (Living with a partner, Married first time, remarried steady relationship). Those not in a relationship (Divorced, Separated, Single, Widowed) are therefore underrepresented. This imbalance may lead to over generalization, as the experiences and perspectives of individuals not in a relationship could differ significantly. Additionally, "Widowed" (7) and "Separated" (10), have small group sizes, which could limit the generalizability of findings for these categories. These limitations will be taken into account when assessing the overall usefulness of the linear models built.
+
+## 2.4 Exploratory Data Analysis
+The relationships between the concepts of interest were investigated before linear regression models were constructed to ensure that a linear relationship could be considered to exist between the proposed dependent variable and proposed predictors.
+
+
+```{r}
+#| label: cortest
+r1=stats::cor.test(sdata$tpstress, sdata$toptim)
+r2=stats::cor.test(sdata$tpcoiss, sdata$toptim)
+r3=stats::cor.test(sdata$tlifesat, sdata$toptim)
+
+```
+Pearson correlations were conducted to asses the level of relationship between total optimism scores and each of the psychological factors total perception of control, total perceived stress level and total life Satisfaction. There is a moderate, negative correlation between total optimism and total stress levels and total life satisfaction. There is a strong, negative correlation with total perception of control.  There is negative association between perceived stress and levels of optimism and positive association between levels of perception of control and life satisfaction and levels of optimism. All correlations are statistically significant at a moderate level (see Table 5).
+
+```{r}
+#| tbl-cap: "Table 5: Correlations between Total Optimism and other Psychological Factors"
+
+# Create a data frame for the correlation results
+
+corr_table <- data.frame(
+Dependent = c("Optimism", "Optimism", "Optimism"),
+Predictor = c("Perceived Stress", "Perception of Control", "Life Satisfaction"),
+`Correlation Coefficient (r)` = c(
+round(r1$estimate, 2),
+round(r2$estimate, 2),
+round(r3$estimate, 2)
+),
+Significance = c("p < 0.001", "p < 0.001", "p < 0.001")
+)
+
+knitr::kable(
+corr_table)
+
+```
+
+
+```{r}
+#| label: Anova-marital
+#Get descriptive statistics by group - output as a matrix
+optdesc<-psych::describeBy(sdata$toptim, sdata$marital, mat=TRUE)
+
+#Conduct Bartlett's test for homogeneity of variance  
+stats::bartlett.test(toptim~ marital, data=sdata)
+
+#Conduct ANOVA using the one-way ANOVA from the stats package
+res <- stats::oneway.test(toptim ~ as.factor(marital), data = sdata, var.equal = TRUE)
+
+#We use Tukey for post-hoc testing
+tukeyres <-rstatix::tukey_hsd(sdata, toptim ~ marital)
+
+#Compute our Eta squared
+effes=effectsize::effectsize(res)
+effes
+
+#Store the relevant pieces of the output from ANOVA in variables to use for reporting
+#Degrees of freedom
+df1=res$parameter[1]
+df2=res$parameter[2]
+#F statistic
+Fstat=round(res$statistic, 3)
+#Pvalue
+pval=round(res$p.value,2)
+```
+A one-way between-groups analysis of variance (ANOVA) was conducted to explore the impact of marital status on levels of optimism. There was a statistically significant difference at the p < .05 level in optimism scores for different marital status: (F(`r df1`, `r df2`)= `r Fstat`, p<0.05. 
+
+Despite reaching statistical significance, the actual difference in mean scores between groups was small, (eta squared = `r round(effes$Eta2,2)`). Post-hoc comparisons using the Tukey HSD test indicated that a statistically significant difference existed only between respondents who were separated (M=`r round(optdesc$mean[5],2)`,SD=`r round(optdesc$sd[5],2)`)  differed significantly from those who were widowed (M=`r round(optdesc$mean[8],2)`,SD=`r round(optdesc$sd[8],2)`). 
+
+
+
+# 3. Predicting Optimism: The Impact of Control, Stress, and Life Satisfaction.
+
+This section discusses the multiple linear regression model developed to investigate the extent to which psychological factors—specifically perceived sense of control, perceived stress levels, and life satisfaction—can be considered to predict an individual's level of optimism. The model's fit and usefulness are examined, followed by a rigorous assessment of how it meets the assumptions of linear regression to ensure the reliability of the findings. Finally, the impact of each psychological factor on optimism and the model's predictive power are evaluated, culminating in a discussion of the implications of these results.
+
+```{r echo=FALSE, include=FALSE}
+# Fit the linear regression model
+model1 <- lm(toptim ~ tpstress + tpcoiss + tlifesat, data = sdata)
+summary(model1)
+```
+
+## 3.1 Model Fitting
+A statistically significant linear regression equation was found (F(3,421)=108.1, p < 0.01) with an adjusted R<sup>2</sup> of 0.379:
+
+***Predicted Total Optimism Score = 12.58 - 0.09 x Total Perceived Stress Score + 0.12 x Total Perception of Control + 0.22 x Total Life Satisfaction score.*** 
+
+All predictors were statistically significant: total perceived stress (p < 0.05), total perception of control (p < 0.001), and total life satisfaction (p < 0.001). 
+
+The adjusted R<sup>2</sup> of 0.379 suggests that 37.9% of the variance in total level of optimism is explained by the combination of total perceived stress, total perception of control, and total life satisfaction. All three predictors contribute significantly to the model.
+
+## 3.2 Model Diagnostics
+```{r}
+# Define the list of model variables
+mvars <- c("toptim", "tpstress", "tpcoiss", "tlifesat")
+
+# Calculate the variance for each  and store it in varp
+varp <- sapply(mvars, function(p) round(var(sdata[[p]], na.rm = TRUE), 2))  # Round the variance to 2 decimal places
+
+```
+
+```{r}
+# Check normality - conducts a Shapiro-Wilks test and checks the standardized residuals for normal distribution
+# A p-value < 0.05 indicates a significant deviation from normal distribution.
+
+performance::check_normality(model1)
+
+```
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 1"
+# Visualize residual distribution
+
+
+# Histogram of Residuals
+ggplot(data.frame(residuals = resid(model1)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20, 
+                 fill = "skyblue", 
+                 color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(resid(model1)), sd = sd(resid(model1))), 
+                color = "red", 
+                linewidth = 1) +
+  labs(title = "Histogram of Residuals",
+       x = "Residuals",
+       y = "Density") +
+  theme_minimal()
+
+# A transformed version of a Q–Q plot displayed horizontally
+plot(check_normality(model1))
+
+# Q-Q plot of standardized residuals
+qqnorm(rstandard(model1))
+qqline(rstandard(model1), col = "red")
+
+```
+
+```{r}
+# Check for outliers or influential points
+
+performance::check_outliers(model1)
+
+```
+
+```{r}
+# Extract residuals
+residuals <- resid(model1)
+
+# Standardize the residuals
+std_residuals <- residuals / sd(residuals)
+
+# Calculate max and min of the standardized residuals
+max_std_residual <- max(std_residuals)
+min_std_residual <- min(std_residuals)
+
+# Print the results
+cat("Max standardized residual:", max_std_residual, "\n")
+cat("Min standardized residual:", min_std_residual, "\n")
+
+#Identify potential outliers in the dataset based on the studentized residuals of the model.
+car::outlierTest(model1) # Bonferonni p-value for most extreme observations - observations with a p value lower than the threshold are consider outliers.
+# In this case there are none
+
+```
+```{r}
+performance::check_heteroscedasticity(model1)
+
+```
+
+```{r}
+# Check multicollinearity
+
+performance::check_collinearity(model1)
+mcresults <-performance::check_collinearity(model1)
+
+```
+
+The data met the assumption of non-zero variances (total perceived stress=`r varp[mvars[1]]`, total perception of control=`r varp[mvars[2]]`, total optimism=`r varp[mvars[3]]`, total life satisfaction = `r varp[mvars[4]]`). 
+
+The residual diagnostic plots are shown in Figure 7. The model residuals showed a satisfactory distribution with a density plot resembling normality although minor deviations were observed in the QQ plot indicating slight non-normality in the residuals (max=`r max_std_residual`, min=`r min_std_residual`).  However, examination of residuals using the guidance of Field, Miles and Field (2012) identified no residual with Cook's distance greater than 1. While one potential leverage point was identified, on inspection, the observation was considered valid and retained. The distribution of residuals can therefore be considered normal.
+
+Heteroscedasticity (p = 0.002) suggests mild violation, though not serious given large n (n = 439). Inspection of the homogeneity diagnostic plots displayed a generally random scatter, with no significant funnel shapes or patterns, which suggests that the assumption of constant variance (homoscedasticity) is met. The slight distortion  was not substantial enough to indicate major concerns with non-linearity or heteroscedasticity. 
+
+Tests to check if the data met the assumption of collinearity indicated that multicollinearity was not a concern (total perceived stress VIF=`r mcresults$VIF[1]`, Tolerance = `r mcresults$Tolerance[1]`; total perception of control VIF=`r mcresults$VIF[2]`, Tolerance = `r mcresults$Tolerance[2]`; total life satisfaction VIF=`r mcresults$VIF[3]`, Tolerance = `r mcresults$Tolerance[3]`). 
+
+The model can be  considered to meet the assumptions of multiple linear regression, including linearity, normality of residuals, homoscedasticity, and low multicollinearity, with minimal concerns about influential points. The model diagnostics suggest therefore that the model provides a reliable estimate of the relationship between total optimism, total perceived stress, total perception of control, and total life satisfaction.
+
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Figure 7 - Diagnostic plots for Model 1"
+# Overall diagnostic plots
+
+# If using R 4.4.x use
+performance::check_model(model1,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model1)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+
+
+```
+
+## 3.3 Results and Interpretation
+Considering the coefficients of the predictors: for each unit increase in total perceived stress, total optimism is expected to decrease by 0.09 units, while total optimism is expected to increase by 0.12 units for each unit increase in total perception of control and by 0.21 units for each unit increase in total life satisfaction, holding all other variables constant. When all predictors equal 1, collectively, including the baseline stress level (β0), the model adds a total of 12.83 units to an individual's total optimism.
+
+Using the mean values for each predictor, the predicted total optimism score is 26.53, which is higher than the observed mean of 22.12. This suggests that the model predicts higher optimism levels using the mean values of the predictors, and this difference is statistically significant.
+
+
+
+# 4.Role of Marital Status in Predicting Optimism from Psychological Factors
+
+This section explores whether marital status moderates the relationship between psychological factors and optimism. The model's fit and usefulness are examined, followed by a rigorous assessment of its assumptions and diagnostics to ensure the reliability of the findings. Finally, the impact of each psychological factor on optimism and the model's predictive power are evaluated, culminating in a discussion of the implications of these results.
+
+```{r}
+#| label: fitmodel
+# Fit the linear regression model
+model2 <- lm(toptim ~ tpstress + tpcoiss + tlifesat + marital, data = sdata)
+summary(model2)
+```
+
+## 4.1 Model Fitting
+
+A multiple linear regression model was built to investigate whether there is a differential effect in predicting total optimism based on psychological factors for respondents with different marital statuses. A statistically significant regression equation was found (F(10,414) = 26.18, p < 0.01) with an adjusted R<sup>2</sup> of 0.373:
+
+***Predicted Total Level of Optimism = 13.28 −0.09 x Total Perceived Stress Level +0.12 x Total Perception of Control + 0.21 x Total Life Satisfaction −0.52* Living with partner-0.44 x married first time−0.64 x remarried −1.60 x separated −0.68 single −0.42 x steady relationship + 0.28 x widowed***
+
+Total perceived stress (p < 0.001), total perception of control (p < 0.05), and total life satisfaction (p < 0.001) are statistically significant predictors of total optimism. However, none of the marital status categories were significant predictors compared to the reference category (divorced).
+
+The adjusted R<sup>2</sup> of 0.373 suggests that 37.3% of the variance in total level of optimism is explained by the combined effects of total perceived stress, total perception of control, total life satisfaction and marital status.
+
+## 4.2 Model Diagnostics
+```{r}
+# Check normality - conducts a Shapiro-Wilks test and checks the standardized residuals for normal distribution
+# A p-value < 0.05 indicates a significant deviation from normal distribution.
+
+performance::check_normality(model2)
+
+```
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 2"
+# Visualize residual distribution
+
+
+# Histogram of Residuals
+ggplot(data.frame(residuals = resid(model2)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20, 
+                 fill = "skyblue", 
+                 color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(resid(model1)), sd = sd(resid(model1))), 
+                color = "red", 
+                linewidth = 1) +
+  labs(title = "Histogram of Residuals",
+       x = "Residuals",
+       y = "Density") +
+  theme_minimal()
+
+# A transformed version of a Q–Q plot displayed horizontally
+plot(check_normality(model2))
+
+# Q-Q plot of standardized residuals
+qqnorm(rstandard(model2))
+qqline(rstandard(model2), col = "red")
+
+```
+
+```{r}
+# Check for outliers or influential points
+
+performance::check_outliers(model2)
+
+```
+
+```{r}
+# Extract residuals
+residuals <- resid(model2)
+
+# Standardize the residuals
+std_residuals <- residuals / sd(residuals)
+
+# Calculate max and min of the standardized residuals
+max_std_residual <- max(std_residuals)
+min_std_residual <- min(std_residuals)
+
+# Print the results
+cat("Max standardized residual:", max_std_residual, "\n")
+cat("Min standardized residual:", min_std_residual, "\n")
+
+#Identify potential outliers in the dataset based on the studentized residuals of the model.
+car::outlierTest(model2) # Bonferonni p-value for most extreme observations - observations with a p value lower than the threshold are consider outliers.
+# In this case there are none
+
+```
+```{r}
+performance::check_heteroscedasticity(model2)
+
+```
+
+```{r}
+# Check multicollinearity
+
+performance::check_collinearity(model2)
+mcresults <-performance::check_collinearity(model2)
+
+```
+
+
+The data met the assumption of non-zero variances (total optimism =`r varp[mvars[1]]`, total perceived stress=`r varp[mvars[2]]`, total perception  of control=`r varp[mvars[3]]`, total life satisfaction = `r varp[mvars[4]]`). 
+
+The residual diagnostic plots are shown in Figure 8. The model residuals showed a satisfactory distribution resembling normality.  Although minor deviations were observed in the QQ plot indicating slight non-normality in the residuals (max=`r max_std_residual`, min=`r min_std_residual`).  However, examination of residuals using the guidance of Field, Miles and Field (2012) identified no residual with Cook's distance greater than 1 and while one potential leverage point was identified, on inspection the observation was considered valid and retained. In addition, the normality test indicated that the residuals did not significantly deviate from normality (p = 0.534). Therefore, the residuals can be considered normally distributed.
+
+Heteroscedasticity (p = 0.002) suggests mild violation, though not serious given large n (n = 439). Inspection of the homogeneity diagnostic plots  suggest that the assumption of constant variance (homoscedasticity) is met. The slight distortion was not substantial enough to indicate major concerns with non-linearity or heteroscedasticity. 
+
+Tests to check if the data met the assumption of collinearity indicated that multicollinearity was not a concern (total perceived stress VIF=`r mcresults$VIF[1]`, Tolerance = `r mcresults$Tolerance[1]`; total perception of control VIF=`r mcresults$VIF[2]`, Tolerance = `r mcresults$Tolerance[2]`; total life satisfaction VIF=`r mcresults$VIF[3]`, Tolerance = `r mcresults$Tolerance[3]`). 
+
+The model can be considered to meet the assumptions of multiple linear regression, including linearity, normality of residuals, homoscedasticity, and low multicollinearity, with minimal concerns about influential points. The model diagnostics suggest therefore that the model provides a reliable estimate of the relationship between total optimism, total perceived stress, total perception of control, and total life satisfaction across respondents of different marital status.
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Figure 8 - Diagnostic plots for Model 2"
+# Overall diagnostic plots
+# If using R 4.4.x use
+performance::check_model(model2,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model2)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+
+
+
+```
+
+## 4.3 Results and Interpretation
+
+Considering the coefficients of the predictors: for each unit increase in total perceived stress, total optimism is expected to decrease by 0.09 units, while total optimism is expected to increase by 0.12 units for each unit increase in total perception of control and by 0.21 units for each unit increase in total life satisfaction, holding all other variables constant. Compared to being divorced, all categories of marital status are associated with lower levels of optimism—living with a partner (0.52), married for the first time (0.44), remarried (0.64), separated (1.60), single (0.68), and in a steady relationship (0.42)—except for being widowed, which is associated with a slight increase in optimism (0.28). However, as none of these associations are statistically significant, there is no strong evidence to suggest that marital status meaningfully influences levels of optimism. This is also illustrated in Table 5, which shows the impact of including the different marital status categories in the regression equation for mean values of all the psychological predictors. For all categories of marital status, the model predicts higher levels of optimism using the mean values of the predictors compared to the observed mean of 22.12. However, this difference is not statistically significant.
+
+| Marital Status	| Contribution of predictors (all psychological predictors are set to 1) |	Predicted Optimism (using mean values of psychological factors) |
+|-----------------|--------------------|-------------------------|
+| Divorced (reference category)	| 13.52 | 27.23	|
+| Living with Partner|	13.00	| 26.71 |
+| Married for the First Time |	13.08	| 26.79 |
+| Remarried	| 12.88 | 26.59 |	
+| Separated	| 11.92	| 25.63 |
+| Single | 12.84	| 26.55 |
+| In a Steady Relationship | 13.10 | 26.81 | 	
+| Widowed	| 13.8	| 27.51 |
+
+```{r}
+#| tbl-cap: "Table 6: Interpretation of Regression Model Including Different Marital Status Categories"
+```
+
+
+
+ 
+# 5. Model Comparison 
+
+Perceived stress levels and perceived control and life satisfaction consistently showed strong and significant associations with optimism (p < 0.001) in both models and their coefficients remained stable across both models.  Including marital status in the second model did not reveal any significant differential effects for the various marital status categories relative to the reference category (divorced). Furthermore, the addition of marital status to the linear regression model slightly reduced the proportion of the variance in optimism explained by the model (adjusted R<sup>2</sup> = 0.379 vs. 0.376), indicating that it did not enhance the model’s overall explanatory power. This is not surprising given that the only difference in means identified during the exploratory data analysis identified differences between only two of the categories (separated and widowed) both of which have extremely small numbers of respondents (n=7, n=10 respectively) (see Section 2.4 for details).
+
+
+# 6. Conclusion
+
+This multiple linear regression analysis provided insights into whether psychological factors can be considered to predict an individual's level of optimism and whether a differential effect exists for different marital status. Two statistically significant models were built to investigate and the check of the models against the assumptions of multiple linear regression were met, indicating robustness of the findings. The first model demonstrates strong predictive power with psychological factors alone, closely aligning with the observed mean optimism levels. This remained consistent in the second model when marital status was included. While different marital statuses did impact on the predictive relationship, its influence was not statistically significant. Further it decreased the explanatory power of the psychological factors decreasing adjusted R<sup>2</sup> slightly (by 0.006 or 0.3%).
+
+Further research could explore additional variables or potential moderating factors that may influence the relationship between marital status and optimism. For example, examining for example the role of education level and age could provide more nuanced insights. Additionally, future studies could reorganize marital status into fewer categories, for example combining 'married' (including both 'remarried' and 'married for the first time'), 'in a relationship' (combining 'steady relationship' and 'living with a partner'), and 'separated/divorced' (combining 'separated' and 'divorced'). It would also be valuable to explore multi-level modeling to account for potential interactions between marital status and other predictors, such as stress and life satisfaction. 
+
+# References
+Belsley, D. A., Kuh, E., & Welsch, R. E. (1980). Regression diagnostics: Identifying influential data and sources of collinearity. New York, NY: Wiley.
+
+Cohen, S., Kamarck, T. & Mermelstein, R. (1983).  A global measure of perceived stress. Journal of Health and Social Behavior, 24, 385–96.
+
+Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillside, NJ: Lawrence Erlbaum Associates.
+
+Crowne, D.P. & Marlowe, D. (1960). A new scale of social desirability independent of psychopathology. Journal of Consulting Psychology, 24, 349–54.
+
+Curran, Patrick J., Stephen G. West, and John F. Finch. (1996). "The robustness of test statistics to nonnormality and specification error in confirmatory factor analysis." Psychological methods 1.1 (1996): 16.
+
+Diener, E., Emmons, R.A., Larson, R.J. & Griffin, S. (1985). The Satisfaction with Life scale. Journal of Personality Assessment, 49, 71–6.
+
+Field, A., Miles, J., & Field, Z. (2021). Discovering statistics using IBM SPSS Statistics (5th ed.). London, UK: SAGE. 
+
+Pallant, J. (2000). Development and validation of a scale to measure perceived control of internal states. Journal of Personality Assessment, 75, 2, 308–37.
+
+Pallant, J. (2020). Survival manual. A step by step guide to data analysis using SPSS. 7th Edition. Taylor and Francis.
+
+Scheier, M.F. & Carver, C.S. (1985). Optimism, coping and health: An assessment and implications of generalized outcome expectancies. Health Psychology, 4, 219–47.
+
+Tabachnick, B. G., & Fidell, L. S. (2019). Using multivariate statistics (7th ed.). Boston, MA: Pearson.

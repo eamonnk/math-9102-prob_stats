@@ -1,0 +1,543 @@
+---
+title: "MATH9102-W9-Assumptions"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+    code-fold: true
+    toc: true
+    toc_float: true
+    toc_depth: 3
+editor: visual
+---
+
+```{=html}
+<style>
+/* Center figure and table captions in Quarto HTML */
+.quarto-figure .figure-caption, figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold;
+}
+.table-caption, caption {
+  caption-side: bottom;
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r}
+#| label: setup
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+suppressMessages(suppressWarnings({
+if (!requireNamespace(pkg, quietly = TRUE)) install.packages(pkg, quiet = TRUE)
+library(pkg, character.only = TRUE)
+}))
+}
+
+# Load necessary libraries
+
+quiet_library("tidyverse")      # Loads the tidyverse suite (ggplot2, dplyr, etc.) for data handling and visualisation
+quiet_library("performance")    # Loads tools for checking model assumptions and diagnostics (e.g., normality, collinearity)
+quiet_library("ppcor")          # Provides functions for calculating partial and semi-partial correlations
+quiet_library("car")            # Companion to Applied Regression – includes functions for influence tests and outlier detection
+quiet_library("see")            # Needed for plots
+quiet_library("pastecs")        #Needed for descriptive stats
+
+# Load dataset (update the path as needed)
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'survey.dat')
+sdata <- read.table(datapath)
+sdata <- na.omit(sdata) #Previously we found missing data was not an issue
+```
+
+## For information Only: Look at partial and zero order correlations
+
+```{r}
+#Look first at partial correlation
+#First filter out variables of interest and filter out na
+myvars <- c("tpcoiss", "tpstress", "toptim", "tmarlow")
+ydata <-sdata[myvars]
+ydata <-na.omit(ydata)
+#perception of control and stress controlling for social desirability
+ppcor::spcor.test(ydata$tpstress, ydata$tpcoiss,ydata$tmarlow)
+#optimism and stress controlling for social desirability
+ppcor::spcor.test(ydata$tpstress, ydata$toptim, ydata$tmarlow)
+
+#Get zero order correlations as well to fully explore the effect 
+cor.test(ydata$tpcoiss, ydata$tpstress)
+cor.test(ydata$tpstress, ydata$toptim)
+
+
+```
+
+# Assessing Assumptions
+
+## How to Report
+
+Before interpreting the multiple linear regression results, diagnostic checks were conducted to ensure compliance with the key statistical assumptions underpinning the analysis. These included tests for linearity, normality of residuals, homoscedasticity, multicollinearity, and the presence of outliers, leverage points, or influential observations (Field, Miles, & Field, 2021; Tabachnick & Fidell, 2019). Linearity and homoscedasticity were assessed through examination of residual plots, where a random distribution of residuals around the zero line indicated that the assumptions were met. The normality of residuals was evaluated both visually, using Q–Q plots, and statistically, with small deviations tolerated given the robustness of regression to minor non-normality in larger samples (Field et al., 2021). Standardized residuals were inspected to identify potential outliers, with absolute values exceeding ±3.29 considered cause for further investigation (Tabachnick & Fidell, 2019). To assess influence, Bonferroni-adjusted tests of studentized residuals and Cook’s distance statistics were applied; Cook’s distance values greater than 1.0 were regarded as indicative of influential outliers, while leverage values were examined to identify cases exerting disproportionate influence on the regression coefficients (Belsley, Kuh, & Welsch, 1980; Field et al., 2021). Multicollinearity was assessed using Variance Inflation Factor (VIF) and Tolerance values. Following Field, Miles, and Field (2021), VIF values greater than 5 or Tolerance values below 0.2 were considered indicative of potential multicollinearity, while more extreme thresholds (VIF \> 10, Tolerance \< 0.1) would indicate serious violations. Collectively, these diagnostic procedures confirmed that the data met the necessary assumptions for valid multiple regression analysis, providing confidence in the reliability of the model estimates.
+
+# Model1- Outcome variable: Perceived Stress Predictors: Perception of Control and Social Desirability
+
+```{r}
+#Baseline model perception of control and social desirability as predictors
+model1=lm(sdata$tpstress~sdata$tpcoiss+sdata$tmarlow)
+summary(model1)
+
+```
+
+## Assess Model 1 for Assumptions of MLR
+
+### Step 1: Generate Summary Statistics
+
+```{r}
+#Generate summary statistics
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scienfitic notation
+pastecs::stat.desc(sdata$tpstress, basic=F)
+pastecs::stat.desc(sdata$tpcoiss, basic=F)
+pastecs::stat.desc(sdata$toptim, basic=F)
+pastecs::stat.desc(sdata$tmarlow, basic=F)
+
+```
+
+### Step 2: Residual Analysis
+
+### Step 2a: Conduct a Normality Test
+
+```{r}
+# Check normality - conducts a Shapiro-Wilks test and checks the standardized residuals for normal distribution
+# A p-value < 0.05 indicates a significant deviation from normal distribution.
+
+performance::check_normality(model1)
+
+```
+
+## Step 2b: Visualize residual distribution
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 1"
+# Visualize residual distribution
+
+
+# Histogram of Residuals
+ggplot(data.frame(residuals = resid(model1)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20, 
+                 fill = "skyblue", 
+                 color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(resid(model1)), sd = sd(resid(model1))), 
+                color = "red", 
+                linewidth = 1) +
+  labs(title = "Histogram of Residuals",
+       x = "Residuals",
+       y = "Density") +
+  theme_minimal()
+
+# A transformed version of a Q–Q plot displayed horizontally
+plot(check_normality(model1))
+
+# Q-Q plot of standardized residuals
+qqnorm(rstandard(model1))
+qqline(rstandard(model1), col = "red")
+
+```
+
+### Step 2c: Check outliers or influential points
+
+```{r}
+# Check for outliers or influential points
+
+performance::check_outliers(model1)
+
+```
+
+### Step 2d: Examine the residuals
+
+```{r}
+# Extract residuals
+residuals <- resid(model1)
+
+# Standardize the residuals
+std_residuals <- residuals / sd(residuals)
+
+# Calculate max and min of the standardized residuals
+max_std_residual <- max(std_residuals)
+min_std_residual <- min(std_residuals)
+
+# Print the results
+cat("Max standardized residual:", max_std_residual, "\n")
+cat("Min standardized residual:", min_std_residual, "\n")
+
+#Identify potential outliers in the dataset based on the studentized residuals of the model.
+car::outlierTest(model1) # Bonferonni p-value for most extreme observations - observations with a p value lower than the threshold are consider outliers.
+# In this case there is only one row 
+
+```
+
+### Step 3: Check homoscedasticity (equal variance)
+
+```{r}
+performance::check_heteroscedasticity(model1)
+
+```
+
+### Step 4: Check multi-colinearity
+
+```{r}
+# Check multicollinearity
+
+performance::check_collinearity(model1)
+
+```
+
+### Step 5: Report
+
+The data met the assumption of non-zero variances (Perceived Stress = 34.78, Perception of Control = 146.50, Social Desirability = 4.02). Examination of diagnostic plots indicated that the residuals were approximately normally distributed, with a density plot resembling normality, although the formal test suggested a slight deviation (p = 0.003). The standardized residuals ranged from –3.95 to 3.36, with one observation exceeding ±3 standard deviations. The Bonferroni-adjusted outlier test (p = 0.020) indicated that this single case may be a mild outlier, but its influence was not substantial, as Cook’s distance remained below the conservative threshold of 1.0. The residuals-versus-fitted values plot displayed a generally random scatter around the zero line, with no evidence of heteroscedasticity (p = 0.101), supporting the assumption of constant variance. Collinearity statistics showed low intercorrelations between predictors (Perception of Control VIF = 1.10, Tolerance = .91; Social Desirability VIF = 1.10, Tolerance = .91), confirming that multicollinearity was not a concern. Overall, the model met the key assumptions of multiple linear regression—linearity, independence, homoscedasticity, and low multicollinearity—with only a minor departure from normality and a single non-influential outlier. The model can therefore be considered to provide a reliable estimate of the relationship between perceived stress, perception of control, and social desirability.
+
+### Step 6: Generate Summary Diagnostic Plots
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Diagnostic plots for Model 1"
+# Overall diagnostic plots
+
+# If using R 4.4.x use
+performance::check_model(model1,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model1)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+
+```
+
+# Model2- Outcome variable: Perceived Control, Predictors: Optimism, Social Desirability and Perceived Stress
+
+```{r}
+#Second model adding in stress
+model2=lm(sdata$tpstress~sdata$toptim+sdata$tmarlow+sdata$tpcoiss)
+summary(model2)
+```
+
+## Assess Model2 for Assumptions of MLR
+
+### Step 1: Generate Summary Statistics
+
+```{r}
+#Generate summary statistics
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scienfitic notation
+pastecs::stat.desc(sdata$tpstress, basic=F)
+pastecs::stat.desc(sdata$tpcoiss, basic=F)
+pastecs::stat.desc(sdata$toptim, basic=F)
+pastecs::stat.desc(sdata$tmarlow, basic=F)
+
+```
+
+### Step 2: Residual Analysis
+
+### Step 2a: Conduct a normality test
+
+```{r}
+# Check normality - conducts a Shapiro-Wilks test and checks the standardized residuals for normal distribution
+# A p-value < 0.05 indicates a significant deviation from normal distribution.
+
+performance::check_normality(model2)
+
+```
+
+## Step 2b: Visualize residual distribution
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 1"
+# Visualize residual distribution
+
+
+# Histogram of Residuals
+ggplot(data.frame(residuals = resid(model2)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20, 
+                 fill = "skyblue", 
+                 color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(resid(model1)), sd = sd(resid(model1))), 
+                color = "red", 
+                linewidth = 1) +
+  labs(title = "Histogram of Residuals",
+       x = "Residuals",
+       y = "Density") +
+  theme_minimal()
+
+
+# A transformed version of a Q–Q plot displayed horizontally
+plot(check_normality(model2))
+
+# Q-Q plot of standardized residuals
+qqnorm(rstandard(model2))
+qqline(rstandard(model2), col = "red")
+
+```
+
+### Step 2c: Check outliers or influential points
+
+```{r}
+# Check for outliers or influential points
+
+performance::check_outliers(model2)
+
+```
+
+### Step 2d: Examine the residuals
+
+```{r}
+# Extract residuals
+residuals <- resid(model2)
+
+# Standardize the residuals
+std_residuals <- residuals / sd(residuals)
+
+# Calculate max and min of the standardized residuals
+max_std_residual <- max(std_residuals)
+min_std_residual <- min(std_residuals)
+
+# Print the results
+cat("Max standardized residual:", max_std_residual, "\n")
+cat("Min standardized residual:", min_std_residual, "\n")
+
+#Identify potential outliers in the dataset based on the studentized residuals of the model.
+car::outlierTest(model2) # Bonferonni p-value for most extreme observations - observations with a p value lower than the threshold are consider outliers.
+# In this case there is only one row 
+
+```
+
+### Step 3: Check homoscedasticity (equal variance)
+
+```{r}
+performance::check_heteroscedasticity(model2)
+
+```
+
+### Step 3: Check homoscedasticity (equal variance)
+
+```{r}
+performance::check_heteroscedasticity(model2)
+
+```
+
+### Step 4: Check multi-colinearity
+
+```{r}
+# Check multicollinearity
+
+performance::check_collinearity(model2)
+
+```
+
+### Step 5: Report
+
+The data met the assumption of non-zero variances (Perceived Stress = 34.78, Perception of Control = 146.50, Total Optimism = 20.55, Social Desirability = 4.02). Examination of diagnostic plots indicated that the residuals were approximately normally distributed, with only minor deviation detected (p = 0.007). Standardized residuals ranged from –3.65 to 3.34, and no cases exceeded the ±3 standard deviation range substantially. The Bonferroni-adjusted outlier test returned no significant outliers (p \> 0.05), indicating that none of the observations had an undue influence on the model’s estimates. Cook’s distance values were all well below 1.0, confirming the absence of influential points. The residuals-versus-fitted values plot showed random scatter around the zero line, with the homoscedasticity test confirming equal variance (p = 0.878). Multicollinearity was minimal, with all VIFs below 1.5 (Perception of Control VIF = 1.43, Tolerance = .70; Optimism VIF = 1.32, Tolerance = .76; Social Desirability VIF = 1.10, Tolerance = .91). The model thus met the key assumptions of multiple linear regression, with no influential observations and stable variance. Overall, the model provided a valid and reliable estimation of the relationship between perceived stress, perception of control, optimism, and social desirability.
+
+### Step 6: Generate Summary Diagnostic Plots
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Diagnostic plots for Model 2"
+# Overall diagnostic plots
+
+# If using R 4.4.x use
+performance::check_model(model2,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model2)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+
+
+```
+
+# Model3- Outcome variable: Perceived Control, Predictors: Optimism, Social Desirability, Perceived Stress and gender
+
+```{r}
+# Recode gender (0 = male, 1 = female)
+sdata$gender <- ifelse(sdata$sex == "MALES", 0, ifelse(sdata$sex == "FEMALES", 1, NA))
+
+model3 <- lm(tpstress ~ tpcoiss + tmarlow + toptim + gender, data = sdata)
+summary(model3)
+```
+
+## Assess Model2 for Assumptions of MLR
+
+### Step 1: Generate Summary Statistics
+
+```{r}
+#Generate summary statistics
+#stat.desc is a function from pastecs - make sure you include the basic switch=F to ensure you don't get scienfitic notation
+pastecs::stat.desc(sdata$tpstress, basic=F)
+pastecs::stat.desc(sdata$tpcoiss, basic=F)
+pastecs::stat.desc(sdata$toptim, basic=F)
+pastecs::stat.desc(sdata$tmarlow, basic=F)
+
+# Check coding
+table(sdata$gender, useNA = "ifany")
+
+# Add proportions
+prop.table(table(sdata$gender))
+
+
+```
+
+### Step 2: Residual Analysis
+
+### Step 2a: Conduct a Normality Test
+
+```{r}
+# Check normality - conducts a Shapiro-Wilks test and checks the standardized residuals for normal distribution
+# A p-value < 0.05 indicates a significant deviation from normal distribution.
+
+performance::check_normality(model3)
+
+```
+
+## Step 2b: Visualize residual distribution
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 3"
+# Visualize residual distribution
+
+
+# Histogram of Residuals
+ggplot(data.frame(residuals = resid(model3)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20, 
+                 fill = "skyblue", 
+                 color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(resid(model1)), sd = sd(resid(model1))), 
+                color = "red", 
+                linewidth = 1) +
+  labs(title = "Histogram of Residuals",
+       x = "Residuals",
+       y = "Density") +
+  theme_minimal()
+
+# A transformed version of a Q–Q plot displayed horizontally
+plot(check_normality(model3))
+
+# Q-Q plot of standardized residuals
+qqnorm(rstandard(model3))
+qqline(rstandard(model3), col = "red")
+
+```
+
+### Step 2c: Check outliers or influential points
+
+```{r}
+# Check for outliers or influential points
+
+performance::check_outliers(model3)
+
+```
+
+### Step 2d: Examine the residuals
+
+```{r}
+# Extract residuals
+residuals <- resid(model3)
+
+# Standardize the residuals
+std_residuals <- residuals / sd(residuals)
+
+# Calculate max and min of the standardized residuals
+max_std_residual <- max(std_residuals)
+min_std_residual <- min(std_residuals)
+
+# Print the results
+cat("Max standardized residual:", max_std_residual, "\n")
+cat("Min standardized residual:", min_std_residual, "\n")
+
+#Identify potential outliers in the dataset based on the studentized residuals of the model.
+car::outlierTest(model3) # Bonferonni p-value for most extreme observations - observations with a p value lower than the threshold are consider outliers.
+# In this case there is only one row 
+
+```
+
+### Step 3: Check homoscedasticity (equal variance)
+
+```{r}
+performance::check_heteroscedasticity(model3)
+
+```
+
+### Step 4: Check multi-colinearity
+
+```{r}
+# Check multicollinearity
+
+performance::check_collinearity(model3)
+
+```
+
+### Step 5: Report
+
+The data met the assumption of non-zero variances (Perceived Stress = 34.78, Perception of Control = 146.50, Total Optimism = 20.55, Social Desirability = 4.02). Diagnostic plots suggested that the residuals were approximately normally distributed, though a mild deviation was detected (p = 0.042). Standardized residuals ranged from –3.47 to 3.23, with no values exceeding the ±3 threshold substantially. The Bonferroni-adjusted outlier test did not identify any significant outliers (p \> 0.05), confirming that no individual case exerted undue influence on the regression results. All Cook’s distance values were below 1.0, and leverage values were within acceptable limits. The residuals-versus-fitted plot exhibited a random scatter pattern, confirming homoscedasticity (p = 0.738). Multicollinearity checks revealed low intercorrelations among predictors (Perception of Control VIF = 1.46, Tolerance = .68; Optimism VIF = 1.33, Tolerance = .75; Social Desirability VIF = 1.11, Tolerance = .90; Gender VIF = 1.03, Tolerance = .97). Overall, the model met the assumptions of multiple linear regression, including linearity, normality of residuals, homoscedasticity, and low multicollinearity, with no evidence of influential observations. The model therefore provides a robust and reliable estimate of the relationship between perceived stress, perception of control, optimism, social desirability, and gender.
+
+### Step 6: Generate Summary Diagnostic Plots
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Diagnostic plots for Model 3"
+# Overall diagnostic plots
+# If using R 4.4.x use
+performance::check_model(model3,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+# If using R 4.5.x use
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model3)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+```
+
+# References
+
+Belsley, D. A., Kuh, E., & Welsch, R. E. (1980). Regression diagnostics: Identifying influential data and sources of collinearity. New York, NY: Wiley.
+
+Field, A., Miles, J., & Field, Z. (2021). Discovering statistics using IBM SPSS Statistics (5th ed.). London, UK: SAGE.
+
+Tabachnick, B. G., & Fidell, L. S. (2019). Using multivariate statistics (7th ed.). Boston, MA: Pearson.

@@ -1,0 +1,596 @@
+---
+title: "MATH9102-W10-DimRed"
+format:
+    html:
+      self-contained: true
+      toc: true      # Enables table of contents
+      toc_float: true # Makes the TOC float on the side
+      toc_depth: 3   # Specifies the depth of headers to include in TOC
+---
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+
+/* Center and bold table captions, force them below tables */
+.table-caption, 
+caption {
+  caption-side: bottom;  /* caption below table */
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r echo=FALSE, include=FALSE}
+
+# Set CRAN mirror for non-interactive sessions
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+# tidyverse: For data manipulation (dplyr), wrangling (tidyr), and plotting (ggplot2),
+# essential for preparing datasets before running PCA/EFA.
+quiet_library("tidyverse")
+
+# psych: Core package for PCA, EFA, reliability analysis (Cronbach's alpha),
+# factor extraction, rotation, and interpreting loadings.
+quiet_library("psych")
+
+# REdaS: Provides KMO (Kaiser-Meyer-Olkin) and Bartlett's test functions
+# used to assess whether the dataset is suitable for dimension reduction.
+quiet_library("REdaS")
+
+# Hmisc: Contains correlation tools and functions for handling missing data,
+# useful for computing correlation matrices required for PCA/EFA.
+quiet_library("Hmisc")
+
+# corrplot: Produces visual correlation matrix heatmaps,
+# helping identify clusters of variables and collinearity patterns.
+quiet_library("corrplot")
+
+# ggcorrplot: ggplot-based correlation matrix visualisation,
+# offering cleaner, publication-ready heatmaps.
+quiet_library("ggcorrplot")
+
+# factoextra: Visualisation tools for PCA and EFA outputs,
+# including scree plots, biplots, eigenvalue charts, and clustering plots.
+quiet_library("factoextra")
+
+# nFactors: Helps determine the number of factors/components to retain
+# using methods like parallel analysis and eigenvalue comparisons.
+quiet_library("nFactors")
+
+# knitr: Enables clean rendering of tables, outputs, and formatted results
+# inside R Markdown or Quarto reports.
+quiet_library("knitr")
+
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'raq.dat')
+
+#Read in the file
+raqData<-read.delim(datapath)
+#Setting the column names to be that used in the dataset
+colnames(raqData) <- tolower(colnames(raqData))
+
+
+```
+
+# Introduction
+This uses the raq.dat dataset from Andy Field - represents answers to a questionnaire on feelings about studying statistics
+
+```{r}
+# ++++++++++++++++++++++++++++
+# flattenCorrMatrix
+# ++++++++++++++++++++++++++++
+# Function to make a correlation matrix more readable
+# cormat : matrix of the correlation coefficients
+# pmat : matrix of the correlation p-values
+# Source: http://www.sthda.com/
+flattenCorrMatrix <- function(cormat, pmat, cutoff = 0.05) {
+  
+  ut <- upper.tri(cormat)
+  
+  df <- data.frame(
+    row    = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor    = cormat[ut],
+    p      = pmat[ut],
+    stringsAsFactors = FALSE
+  )
+  
+  # Round correlation + p to 3 digits
+  df$cor <- round(df$cor, 3)
+  df$p   <- round(df$p, 3)
+  
+  # Format p for printing (non-bold)
+  df$p_text <- ifelse(df$p < 1e-4,
+                      format(df$p, scientific = FALSE, digits = 3),
+                      sprintf("%.4f", df$p))
+  
+  # Markdown bold formatting for Quarto / Rmd tables
+  df$p_md <- ifelse(df$p < cutoff,
+                    paste0("**", df$p_text, "**"),
+                    df$p_text)
+  
+  return(df)
+}
+
+
+```
+
+# STEP 1: Screen the correlation matrix
+## STEP 1a: Generate Correlation Matrix
+### Approach A: Using cor to create a matrix
+```{r,warning = FALSE}
+#create a correlation matrix (these are just some methods)
+raqMatrix<-cor(raqData)
+round(raqMatrix, 2)
+```
+### Approach B: Using Hmisc:rcorr and using flattenCorrMatrix function
+```{r}
+#Showing significance levels also
+#Make the matrix more readable
+cor_matrix <- Hmisc::rcorr(as.matrix(raqData))
+
+# Extract the correlation and p-value matrices
+r_mat <- cor_matrix$r
+p_mat <- cor_matrix$P
+
+# Call your function flattenCorrMatrix
+flat <- flattenCorrMatrix(r_mat, p_mat, cutoff = 0.05)
+
+# Rename the columns
+flat_out <- flat %>%
+  dplyr::select(
+    row, column, cor, p_md   # keep only these
+  ) %>%
+  dplyr::rename(
+    `Variable A` = row,
+    `Variable B` = column,
+    `Cor. Coef`  = cor,
+    `p-value`    = p_md
+  )
+
+knitr::kable(flat_out, escape = FALSE)
+
+```
+q23 is problematic - It only correlates meaningfully with q09 = 0.171 (below .30) and q22 = 0.230 (below .30). We can remove it.
+
+```{r}
+raqData <- raqData |> dplyr::select(-q23)
+raqMatrix<-cor(raqData)
+```
+
+
+## STEP 1b: Visualize Correlation Matrix
+### Option A: Create a visualization using ggcorrplot (multiple options)
+```{r }
+#| fig.cap:  "Figure 1: Basic Correlation Matrix"
+# Generate the p-value matrix for significance testing
+p.mat <- ggcorrplot::cor_pmat(raqData)
+
+# 1. Basic correlation matrix plot
+ggcorrplot::ggcorrplot(raqMatrix)
+```
+
+
+```{r }
+#| fig.cap:  "Figure 2: Xs indicate non-significant correlations (p > 0.05)"
+# 2. Correlation matrix with Xs for non-significant correlations
+ggcorrplot::ggcorrplot(raqMatrix, 
+                       p.mat = p.mat, 
+                       sig.level = 0.05) 
+```
+
+
+```{r }
+#| fig.cap: "Figure 3: Lower triangular matrix with significance"
+# 3. Display only the lower diagonal of the correlation matrix
+ggcorrplot::ggcorrplot(raqMatrix, 
+                       p.mat = p.mat, 
+                       sig.level = 0.05, 
+                       type = "lower") 
+```
+
+
+```{r }
+#| fig.cap: "Figure 4: Customized correlation matrix with non-significant indicators"
+# 4. Overlay plot with a white grid for spacing and customized styles
+ggcorrplot::ggcorrplot(raqMatrix, 
+                       sig.level = 0.05, 
+                       lab_size = 4.5, 
+                       insig = c("pch", "blank"), 
+                       pch = 1, 
+                       pch.col = "black", 
+                       pch.cex = 1, 
+                       tl.cex = 10) +
+  theme(axis.text.x = element_text(margin = margin(-2, 0, 0, 0)),
+        axis.text.y = element_text(margin = margin(0, -2, 0, 0)),
+        panel.grid.minor = element_line(size = 10)) + 
+  geom_tile(fill = "white") +
+  geom_tile(height = 0.8, width = 0.8) 
+```
+
+
+```{r}
+#| fig.cap: "Figure 5: Correlation matrix with coefficients"
+# 5. Correlation matrix showing coefficients with labels
+# Note: This can become cluttered with a high number of variables
+#| fig-width: 16
+#| fig-height: 16
+
+ggcorrplot::ggcorrplot(
+  raqMatrix,
+  lab = TRUE,
+  lab_size = 2.5,
+  tl.cex = 8,
+  tl.srt = 45,
+  type = "lower"
+)
+
+```
+### Option B: Create a visualization using corrplot
+```{r}
+#| fig.cap: "Figure 6: Correlation Matrix (Circle Method)"
+#| fig.width: 12
+#| fig.height: 12
+#corrplot parameters 
+#method = c("circle", "square", "ellipse", "number", "shade","color", "pie")
+#type = c("full", "lower", "upper"),
+
+# 1. Basic correlation matrix with circle method
+corrplot(
+  raqMatrix,
+  method = "circle",
+  tl.cex = 0.8,        # variable labels size
+  tl.srt = 45,         # rotate column labels
+  tl.col = "black"     # label colour
+)
+ 
+```
+
+
+```{r}
+#| fig.cap: "Figure 7: Upper Triangular Correlation Matrix (Circle Method)"
+# 2. Upper triangular correlation matrix with circle method
+corrplot::corrplot(raqMatrix, 
+                         method = "circle", 
+                         type = "upper")
+```
+
+
+```{r}
+#| fig.cap: "Figure 8: Correlation Matrix (Number Method)"
+#| fig.width: 14
+#| fig.height: 14
+# 3. Visualization using numbers
+corrplot(
+  raqMatrix,
+  method = "number",
+  number.cex = 0.5,      # shrink numbers
+  tl.cex = 0.7,          # shrink axis labels
+  tl.srt = 45,           # rotate top labels
+  tl.col = "black",      # readable label colour
+  cl.cex = 0.7,          # legend text size
+  mar = c(2, 2, 2, 2)    # margins
+)
+```
+
+
+```{r}
+#| fig.cap: "Figure 9: Significant Correlations (Lower Triangle)"
+# 4. Visualization of significance levels at 0.05
+# Generate p-values for the significance test
+res1 <- corrplot::cor.mtest(raqMatrix, conf.level = 0.95)
+corrplot::corrplot(raqMatrix, 
+                         p.mat = res1$p, 
+                         type = "lower", 
+                         sig.level = 0.05)
+```
+
+
+```{r}
+#| fig.cap: "Figure 10: Correlation Matrix with Non-Significant P-Values"
+# 5. Show p-values for non-significant correlations
+corrplot::corrplot(
+  raqMatrix,
+  p.mat = res1$P,
+  type = "lower",
+  insig = "p-value",
+  sig.level = 0.05,      # only show p for non-significant cells
+  pch.cex = 0.6,         # smaller p-values
+  number.digits = 2,     # round p-values
+  pch.col = "black"      # readable colour
+)
+
+```
+
+
+```{r}
+#| fig.cap: "Figure 11: Correlation Matrix (Square Method)"
+# Alternate Visualization: Using square method and full matrix
+ corrplot::corrplot(raqMatrix, 
+                         method = "square", 
+                         type = "full" )
+
+```
+
+# STEP 2: Generate Statistics to Check if Data is Suitable for Dimension Reduction
+## STEP 2a: Check that your variables are sufficiently correlated for dimension reduction (Bartlett's Test)
+
+If Bartlett's test is  statistically significant it suggests that the variables are correlated and a PCA/FA would be useful (i.e. you are highly unlikely to have obtained the observed correlation matrix from a population with zero correlation)
+Bartlett, Maurice S. "Tests of significance in factor analysis." British journal of psychology (1950).
+
+```{r}
+psych::cortest.bartlett(raqData)
+psych::cortest.bartlett(raqMatrix, n=nrow(raqData))
+```
+
+
+## STEP 2b: Check that there is enough variance in your variables that could be caused by an underlying factor/dimension (KMO)
+
+High values close to 1 suggest that PCA/FA might be useful. Values over 0.8 or over are considered strong. Anything less than 0.5 suggests that PCA/FA won’t be useful.
+Kaiser put together the following descriptors:
+0.00 to 0.49 unacceptable, 0.50 to 0.59 miserable, 0.60 to 0.69 mediocre, 0.70 to 0.79 middling, 0.80 to 0.89 meritorious, 0.90 to 1.00 marvellous.
+
+Kaiser, H. F., & Rice, J. (1974). Little jiffy, mark IV. Educational and psychological measurement, 34(1), 111-117.
+
+```{r}
+#KMO (execute one of these):
+REdaS::KMOS(raqData)
+psych::KMO(raqData)
+```
+
+
+## STEP 2c:  Check for collinearity and redundancy (Determinant)
+Check if it will be difficult to extract factors as they will not be distinct enough. Inspect determinant and check to see if it is greater than 0.00001, Field (2024).
+
+```{r}
+#Determinant (execute one of these):
+det(raqMatrix)
+det(cor(raqData))
+```
+
+## STEP 2d : Report (for both PCA and EFA:
+Using the advice of Field (2024) the questionnaire data was examined to determine its suitability for use in dimension reduction. Bartlett's test of sphericity revealed a significant result, χ²(253) = 19334.49, p < .001, indicating that the correlation matrix is not an identity matrix and thus suitable for factor analysis. The Kaiser-Meyer-Olkin (KMO) Measure of Sampling Adequacy was 0.93 which can be considered marvellous according to Kaiser's criteria, indicating that the data is highly suitable for dimension reduction. The determinant of the correlation matrix was 0.0005, also suggesting that the data is suitable.
+
+# Pincipal Components Analysis (PCA)
+## STEP 3: Do the Dimension Reduction Using PCA (without rotation)
+Form: pcModel<-principal(dataframe/R-matrix, nfactors = number of factors, rotate = "method of rotation", scores = TRUE)
+For PCA we know how many components it is possible to find
+The principal function will work out the loadings of each variable onto each component, i.e. the proportion each component explained and the cumulative proportion of variance explained.
+
+```{r}
+pc1 <-  principal(raqData, nfactors = length(raqData), rotate = "none")#Conduct the PCA extracting the same number of components as there are variables
+pc1#output all details of the PCA
+
+```
+
+## STEP 4: Decide which components to retain (PCA)
+### STEP 4a: Look at the loadings
+```{r}
+#Create the scree plot
+plot(pc1$values, type = "b", main="Scree Plot of Statistics Survey Questions - PCA") 
+#Print the variance explained by each component
+pc1$Vaccounted 
+#Print the Eigenvalues
+pc1$values
+
+
+#Another way to look at the eigenvalues plus variance explained (need to use princomp function of PCA to get right class for use with factoextra functions)
+pcf=princomp(raqData)
+factoextra::get_eigenvalue(pcf)
+factoextra::fviz_eig(pcf, addlabels = TRUE, ylim = c(0, 50))#Visualize the Eigenvalues
+factoextra::fviz_pca_var(pcf, col.var = "black")
+factoextra::fviz_pca_var(pcf, col.var = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), 
+             repel = TRUE # Avoid text overlapping
+             )
+
+#Print the loadings above the level of 0.3
+psych::print.psych(pc1, cut = 0.3, sort = TRUE)
+
+#create a diagram showing the components and how the manifest variables load
+fa.diagram(pc1) 
+
+#Show the loadings of variables on to components
+fa.sort(pc1$loading)
+```
+
+
+
+
+### STEP 4b: Look at the communalities
+```{r}
+#Output the communalities of variables across components (will be one for PCA since all the variance is used)
+pc1$communality 
+#Visualize contribution of variables to each component
+var <- factoextra::get_pca_var(pcf)
+corrplot::corrplot(var$contrib, is.corr=FALSE) 
+
+# Contributions of variables to PC1
+factoextra::fviz_contrib(pcf, choice = "var", axes = 1, top = 10)
+# Contributions of variables to PC2
+factoextra::fviz_contrib(pcf, choice = "var", axes = 2, top = 10)
+# Contributions of variables to PC3
+factoextra::fviz_contrib(pcf, choice = "var", axes = 3, top = 10)
+# Contributions of variables to PC4
+factoextra::fviz_contrib(pcf, choice = "var", axes = 4, top = 10)
+```
+
+## STEP 5: Apply rotation (PCA)
+Rotate options: varimax,  quartimax, bentlerT, geominT, and bifactor do orthogonal rotations.  oblimin, quartimin, simplimax, bentlerQ, geominQ and biquartimin are oblique transformations. 
+
+```{r}
+#Apply rotation to try to refine the component structure
+pc2 <-  principal(raqData, nfactors = 4, rotate = "varimax")#Extracting 4 factors
+#output the components
+psych::print.psych(pc2, cut = 0.3, sort = TRUE)
+#output the communalities
+pc2$communality
+#NOTE: you can do all the other things done for the model created in pc1
+
+```
+Review again to decide which components to retain
+
+## STEP 5b: Report PCA:
+
+A Principal Components Analysis (PCA) was conducted on the 22 items of the revised RAQ dataset using orthogonal rotation (varimax). Prior to extraction, an initial unrotated PCA was performed to obtain eigenvalues for all possible components. Four components had eigenvalues greater than Kaiser’s criterion of 1, and together these components explained 52% of the total variance. The scree plot displayed a clear drop after the first component but showed smaller inflexions that supported retaining either two or four components. Given the large sample size and the convergence of retention criteria, a four-component solution was adopted.
+
+The rotated solution yielded a clear and interpretable structure. Component 1 was characterised by items reflecting fear of computers, while Component 2 was defined by items reflecting fear of statistics. Component 3 represented fear of mathematics, and Component 4 captured concerns relating to negative peer evaluation. The loadings for each item within the four-component structure are shown in Figure 12.
+
+Communalities indicated that most items were well represented by the four components. Several items displayed high communalities (e.g. q06 = 0.65, q08 = 0.75, q11 = 0.72, q17 = 0.68), demonstrating strong shared variance with the retained components. Others were more modestly represented (e.g. q10 = 0.34, q19 = 0.35, q20 = 0.48), but still within acceptable ranges for PCA. 
+
+```{r}
+#| fig.cap: "Figure 12: Loadings on to Components"
+#create a diagram showing the components and how the manifest variables load
+fa.diagram(pc2) 
+```
+
+# Exploratory Factor Analysis (EFA) 
+Note: In reality you will choose PCA or factor analysis and only do one. This is included to ensure you understand both techniques.
+
+## STEP 3 Factor Analysis (witout rotation)
+Form: facsol<-psych::fa(correlationmatrix, nfactors = number of factors to extract, n.iter= number of iterations, rotate = "method of rotation", fm=factor analysis extraction method\
+n.iter - controls the number of iterations for the factor extraction process when using maximum likelihood (ML) estimation
+Rotation options:
+"none", "varimax", "quartimax", "bentlerT", "equamax", "varimin", "geominT" and "bifactor" are orthogonal rotations. "Promax", "promax", "oblimin", "simplimax", "bentlerQ, "geominQ" and "biquartimin" and "cluster" are possible oblique transformations of the solution.
+```{r}
+#Factor Analysis - the default here is principal axis factoring fm=pa
+#If we know our data going in is normally distributed we use maximum likelihood
+# Determine the optimal number of factors using parallel analysis
+psych::fa.parallel(raqMatrix)
+# Do the factor reduction
+facsol <- psych::fa(raqMatrix, nfactors=length(raqData), obs=NA, n.iter=1, rotate="none", fm="ml")
+```
+
+## STEP 4: Decide which factors/components to retain (FACTOR ANALYSIS)
+
+### STEP 4a: Examine the loadings
+```{r}
+
+#Create the scree plot
+plot(facsol$values, type = "b", main="Scree Plot of Statistics Survey Questions - PCA") 
+#Print the variance explained by each component
+facsol$Vaccounted 
+#Print the Eigenvalues
+facsol$values
+
+
+#Another way to look at the eigenvalues plus variance explained (need to use princomp function of PCA to get right class for use with factoextra functions)
+pcf=princomp(raqData)
+factoextra::get_eigenvalue(pcf)
+factoextra::fviz_eig(pcf, addlabels = TRUE, ylim = c(0, 50))#Visualize the Eigenvalues
+factoextra::fviz_pca_var(pcf, col.var = "black")
+factoextra::fviz_pca_var(pcf, col.var = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), 
+             repel = TRUE # Avoid text overlapping
+             )
+
+#Print the loadings above the level of 0.3
+psych::print.psych(facsol, cut = 0.3, sort = TRUE)
+
+#create a diagram showing the components and how the manifest variables load
+fa.diagram(facsol) 
+ 
+#Show the loadings of variables on to components
+fa.sort(facsol$loading)
+```
+
+
+### STEP 4b: Look at the communalities
+```{r}
+#Output the communalities of variables across components (will be one for PCA since all the variance is used)
+facsol$communality 
+#Visualize contribution of variables to each component
+var <- factoextra::get_pca_var(pcf)
+corrplot::corrplot(var$contrib, is.corr=FALSE) 
+
+# Contributions of variables to factor 1
+factoextra::fviz_contrib(pcf, choice = "var", axes = 1, top = 10)
+# Contributions of variables to factor 2
+factoextra::fviz_contrib(pcf, choice = "var", axes = 2, top = 10)
+# Contributions of variables to factor 3
+factoextra::fviz_contrib(pcf, choice = "var", axes = 3, top = 10)
+# Contributions of variables to factor 3
+factoextra::fviz_contrib(pcf, choice = "var", axes = 3, top = 10)
+```
+
+
+## STEP 5a: Apply rotation for EFA
+```{r}
+#Apply rotation to try to refine the component structure
+# Determine the optimal number of factors using parallel analysis
+psych::fa.parallel(raqMatrix)
+
+# Use the determined nfactors value (e.g., 4) in the factor analysis
+facsolrot <- psych::fa(raqMatrix, nfactors=4, obs=NA, n.iter=1, rotate="varimax", fm="ml")
+
+#output the components
+psych::print.psych(facsolrot, cut = 0.3, sort = TRUE)
+#output the communalities
+facsolrot$communality
+
+```
+
+
+##  STEP 5b: Report EFA:
+An Exploratory Factor Analysis (EFA) was conducted on the 22 items of the RAQ using maximum likelihood extraction and varimax rotation. Prior to rotation, the initial unrotated maximum likelihood solution was examined to determine the number of factors to retain. Four factors had eigenvalues greater than 1, and together these factors accounted for approximately 42% of the total variance. Although the scree plot displayed a dominant first factor and a gradual decrease thereafter, the Kaiser criterion supported the retention of four underlying factors, and this solution was therefore adopted for interpretation.
+
+Following varimax rotation, the four-factor solution produced a clear and interpretable structure. Factor 1 consisted primarily of items reflecting fear of studying statistics (e.g., q01, q04, q12, q16, q21), capturing evaluative and emotional responses to statistics coursework. Factor 2 was characterised by items relating to fear of computers (e.g., q06, q07, q13, q14, q18), reflecting anxiety or discomfort with technology. Factor 3 represented fear of mathematics, with items loading strongly on cognitive and affective reactions to mathematical tasks (q08, q11, q17). Factor 4 was defined by items associated with fear of negative peer evaluation, such as q02, q09, q19, and q22, indicating concerns about judgement in learning contexts. The loadings for each item within the four-factor structure are shown in Figure 13.
+
+
+Communality values indicated that most items were reasonably well explained by the four-factor model. Strongly represented items included q06 (h² = 0.62), q08 (h² = 0.65), q11 (h² = 0.65), q16 (h² = 0.47), q17 (h² = 0.57), and q21 (h² = 0.44). Some items, however, exhibited relatively lower communalities, such as q10 (h² = 0.19), q19 (h² = 0.24), q20 (h² = 0.25), and q22 (h² = 0.19), suggesting that these items shared less variance with the underlying factors. Nonetheless, these values remained interpretable within the context of psychological questionnaire data.
+
+
+```{r}
+#| fig.cap: "Figure 13: Loadings on to Factors"
+#create a diagram showing the components and how the manifest variables load
+fa.diagram(facsolrot) 
+```
+
+
+# STEP 6: Reliability Analysis (Both PCA and EFA)
+```{r}
+#If you know that variables are grouped, test each group as a separate scale
+computerFear<-raqData[,c(6, 7, 10, 13, 14, 15, 18)]
+statisticsFear <- raqData[, c(1, 3, 4, 5, 12, 16, 20, 21)]
+mathFear <- raqData[, c(8, 11, 17)]
+peerEvaluation <- raqData[, c(2, 9, 19, 22)]
+
+#Output our Cronbach Alpha values
+psych::alpha(computerFear)
+#If some items are to be reversed keyed, then either recode or get alpha to reverse code as needed by setting check.keys=TRUE (be careful with this - make sure you know it makes sense)
+psych::alpha(statisticsFear, check.keys=TRUE)
+
+psych::alpha(mathFear)
+psych::alpha(peerEvaluation)
+psych::alpha(statisticsFear) #for illustrative proposes
+```
+
+## Report the reliability:
+
+Cronbach’s alpha was used to assess the internal consistency of the PCA-derived components.
+The fear of computers, and fear of math subscales of the RAQ all had high reliabilities, all Cronbach’s  α = .82.  The fear of statistics had an acceptable reliability of Cronbach’s α = .61 of However, the fear of negative peer evaluation subscale had a relatively low reliability, Cronbach’s α = .57.
+Overall, these results suggest that most RAQ subscales function as coherent and reliable measures, but the negative peer evaluation subscale may require refinement before it can be used confidently in further analysis.
+
+# References
+
+Field, A. (2024). Discovering statistics using IBM SPSS statistics. Sage publications limited.

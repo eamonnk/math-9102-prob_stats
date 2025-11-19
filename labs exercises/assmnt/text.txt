@@ -50,7 +50,8 @@ River Foyle		2016	Oct	25.8		6.400	1.20		1.100		270.00
 Extreme outlier, tempertaure values which are not realistic or plaussible. removed outliers. We havhe a min value 0.6, so anything in the range of 0 and 40 C we will deem realistic and acceptable. the will result int he removal of 5 rows of data where temp valeus xceed this. Given we have 29, 159 rows of data this less than 0.001 % of date and is deemed aceptable.
 
 
-Visual inspection of the Q–Q plot (Figure X) indicated substantial deviation from normality due to several extreme temperature readings (up to 637 °C). These values are physically implausible and were removed (values > 35 °C). After trimming, the temperature distribution approximated normality and was retained in its untransformed form for further analyses.
+Visual inspection of the histogram and Q–Q plot indicated a symmetrical, unimodal distribution of temp values with the QQ plot shows minor deviations from normal at the tails. Standardized skewness (z = 17.06) and kurtosis (z = -7.39) were not statistically significant, only 4,2 % of standardized scores exceeded ±1.96 and 0.065 % exceeded ±3.29, using the criteria proposed by Curran, West and Finch (1996). As 99.35% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution.
+
 
 Water temperature values were re-examined for normality after removing implausible readings (> 40 °C). Visual inspection of the histogram and Q–Q plot showed an approximately symmetric, bell-shaped distribution centred around 10.8 °C. The standardized skewness (`r round(temp_skew_z,2)`) and kurtosis (`r round(temp_kurt_z,2)`) were within acceptable ranges based on the criteria of Curran, West, and Finch (1996). Approximately `r round(FSA::perc(as.numeric(ztemp), 1.96, "gt"),2)`% of standardized scores exceeded ±1.96 and `r round(FSA::perc(as.numeric(ztemp), 3.29, "gt"),2)`% exceeded ±3.29, consistent with expectations for a normal distribution (Field et al., 2012). The temperature data were therefore considered to approximate normality for subsequent analyses.
 
@@ -229,3 +230,88 @@ For comparison, a perfectly normal distribution would have roughly:
 Following log10 transformation, the distribution of Biochemical Oxygen Demand (BOD) values closely approximated normality. The standardized skewness (z = 184.15) and kurtosis (z = 676.68) were markedly reduced compared with the untransformed data. Quantitatively, 96.9 % of standardized scores lay within ±1.96 z, and 98.6 % lay within ±3.29 z, consistent with expectations for normally distributed data (Field, Miles, & Field, 2012). Visual inspection of the histogram and Q–Q plot confirmed a near-symmetric, bell-shaped pattern, and the transformed BOD variable was therefore retained for parametric analyses
 
 
+
+Visual inspection of the histogram and Q–Q plot indicated a symmetrical, unimodal distribution of temp values with the QQ plot shows minor deviations from normal at the tails. Standardized skewness (z = 17.06) and kurtosis (z = -7.39) were not statistically significant, only 4.2 % of standardized scores exceeded ±1.96 and 0.065 % exceeded ±3.29, using the criteria proposed by Curran, West and Finch (1996). As 99.35% of standardized scores fall within the bounds of +/- 3.29, using the guidance of Field, Miles and Field (2012), the data can be considered to approximate a normal distribution.
+
+
+=====dissolved.oxygen ====
+dissolved.oxygen
+Min.   :  0.00  
+1st Qu.: 49.40  
+Median : 54.90  
+Mean   : 58.29  
+3rd Qu.: 75.00  
+Max.   :198.00
+
+
+
+
+ # --- Descriptive statistics ---
+> # pastecs::stat.desc() gives detailed descriptive info
+> pastecs::stat.desc(wqi_dsubset_clean_t_bod$dissolved.oxygen, basic = FALSE)
+      median         mean      SE.mean CI.mean.0.95          var      std.dev     coef.var 
+  54.9000000   58.2888228    0.1578220    0.3093383  726.1614193   26.9473824    0.4623079 
+> 
+> # psych::describe() gives mean, sd, median, skew, kurtosis, etc.
+> psych::describe(wqi_dsubset_clean_t_bod$dissolved.oxygen)
+> 
+> # --- Skewness and Kurtosis (standardised) ---
+> # semTools::skew() and semTools::kurtosis() return [value, SE]
+> do_skew <- semTools::skew(wqi_dsubset_clean_t_bod$dissolved.oxygen)
+> do_kurt <- semTools::kurtosis(wqi_dsubset_clean_t_bod$dissolved.oxygen)
+> 
+> # Standardised (z) skewness and kurtosis
+> do_skew_z <- do_skew[1] / do_skew[2]
+> do_kurt_z <- do_kurt[1] / do_kurt[2]
+> 
+> cat("Standardised skewness (z):", round(do_skew_z, 2), "\n")
+Standardised skewness (z): -1.88 
+> cat("Standardised kurtosis (z):", round(do_kurt_z, 2), "\n")
+Standardised kurtosis (z): -4.66 
+> 
+> # --- Percent of cases outside typical z-score thresholds ---
+> # Absolute z-scores for Dissolved Oxygen
+> zdo <- abs(scale(wqi_dsubset_clean_t_bod$dissolved.oxygen))
+> 
+> # % beyond ±1.96 (approx 5% expected in normal data)
+> FSA::perc(as.numeric(zdo), 1.96, "gt")
+[1] 6.012897
+> 
+> # % beyond ±3.29 (approx 0.1% expected in normal data)
+> FSA::perc(as.numeric(zdo), 3.29, "gt")
+[1] 0.0171503
+> 
+The distribution of dissolved oxygen values is approximately symmetric, with two visible peaks — one around 50 mg/L and another near 90–100 mg/L.
+These may reflect different waterbody types or sampling conditions (e.g., lakes vs rivers, temperature effects, or sensor saturation at high DO).
+
+🔹 Q–Q Plot
+
+The points follow the red line fairly closely except for minor curvature at both tails, suggesting mild deviations but no severe non-normality.
+The tails show slightly lighter kurtosis (negative z-kurtosis).
+
+🔹 Statistical normality indicators
+
+Both standardised skewness (−1.88) and standardised kurtosis (−4.66) are well within acceptable limits (±1.96 or even ±3.29 are typical cut-offs).
+
+Only 6 % of cases lie outside ±1.96 z (close to the 5 % expected for a normal distribution).
+
+Only 0.02 % beyond ±3.29 z, meaning over 99.98 % of observations fall within normal bounds.
+
+✅ Interpretation:
+Dissolved oxygen can therefore be treated as approximately normally distributed without requiring transformation.
+The slight bimodality likely reflects environmental differences, not statistical error, and is acceptable for parametric testing (e.g., correlations, ANOVA).
+
+
+Dissolved oxygen values were approximately normally distributed (M = 58.29 mg/L, SD = 26.95).
+The standardized skewness (z = −1.88) and kurtosis (z = −4.66) fell well within acceptable ranges (Curran, West & Finch, 1996).
+Approximately 94 % of scores lay within ± 1.96 z and > 99.9 % within ± 3.29 z, indicating good conformity to a normal distribution (Field, Miles & Field, 2012).
+The histogram and Q–Q plot (Figures X–Y) supported this conclusion, with only minor deviations at both tails.
+Accordingly, the variable was retained in its untransformed form for subsequent parametric analyses.
+
+
+Visual inspection of the histogram and Q–Q plot of log₁₀-transformed Biochemical Oxygen Demand (BOD) values indicated an approximately symmetrical, unimodal distribution. The Q–Q plot showed only minor deviations from normality at the tails, suggesting substantial improvement over the untransformed data. Standardized skewness (z = 6.58) and kurtosis (z = 2.04) were within acceptable bounds and not statistically significant, as fewer than 5% of standardized scores exceeded ±1.96 and none exceeded ±3.29 (Curran, West, & Finch, 1996). Following the guidance of Field, Miles, and Field (2012), these results indicate that the log₁₀-transformed BOD data can be considered to approximate a normal distribution suitable for parametric analyses.
+
+
+======
+
+The boxplots indicate expected relationships between physicochemical parameters and water quality classes — higher BOD and temperature, and variable DO levels, are associated with poorer water quality ratings. pH shows minor variation but remains within ecologically acceptable limits.

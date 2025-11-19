@@ -1,0 +1,599 @@
+---
+title: "MATH9102-W10-DimRed-Exercise"
+format:
+    html:
+      self-contained: true
+      toc: true      # Enables table of contents
+      toc_float: true # Makes the TOC float on the side
+      toc_depth: 3   # Specifies the depth of headers to include in TOC
+---
+
+
+```{=html}
+<style>
+/* Center figure and table captions in Quarto HTML */
+.quarto-figure .figure-caption, figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold;
+}
+.table-caption, caption {
+  caption-side: bottom;
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+# Introduction
+In this lab you will be conducting a Principal Component Analysis (PCA) and an Exploratory Factor Analysis (EFA). 
+
+You will use a wine dataset. It contains the results of a chemical analysis of wines grown in the same region in Italy but derived from three different cultivars. The analysis determined the quantities of 13 constituents found in each of the three types of wines. More information is available at https://search.r-project.org/CRAN/refmans/HDclassif/html/wine.html.
+
+| **Variable Name**        | **Description**                                                                                                | **Type**             | **Higher Values Indicate…**                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- | -------------------- | ------------------------------------------- |
+| **Wine**                 | Wine class/cultivar identifier (1, 2, or 3), representing three grape varieties from the same region in Italy. | Categorical (factor) | Not applicable (group label)                |
+| **Alcohol**              | Alcohol content (% by volume) of the wine sample.                                                              | Continuous           | Higher alcohol concentration                |
+| **Malic.acid**           | Amount of malic acid, contributing to tartness and acidity.                                                    | Continuous           | More malic acid (greater sour/tart profile) |
+| **Ash**                  | Total ash content (mineral residue after combustion).                                                          | Continuous           | Higher mineral content                      |
+| **Acl**                  | Alkalinity of ash (buffering capacity/basicity measure).                                                       | Continuous           | Greater alkalinity level                    |
+| **Mg**                   | Magnesium concentration (mg/L).                                                                                | Continuous           | Higher magnesium content                    |
+| **Phenols**              | Total phenolic compounds affecting flavour and antioxidant properties.                                         | Continuous           | Higher total phenolic content               |
+| **Flavanoids**           | Subclass of phenols contributing to flavour, colour, and antioxidant profile.                                  | Continuous           | Higher flavonoid concentration              |
+| **Nonflavanoid.phenols** | Non-flavonoid phenolic compounds contributing to colour and astringency.                                       | Continuous           | Higher non-flavonoid phenol content         |
+| **Proanth**              | Proanthocyanins (tannins) related to colour stability and astringency.                                         | Continuous           | Higher tannin content                       |
+| **Color.int**            | Intensity of wine colour, measured spectrophotometrically.                                                     | Continuous           | Darker, more intense wine colouring         |
+| **Hue**                  | Shade/tone of wine colour (ratio measure).                                                                     | Continuous           | Shift toward lighter/yellower hue           |
+| **OD**                   | Optical density (OD280/OD315) indicating total polyphenol concentration.                                       | Continuous           | Higher polyphenol content                   |
+| **Proline**              | Proline concentration (amino acid), often linked to ripeness and wine quality.                                 | Continuous           | Higher proline levels                       |
+
+
+```{r echo=FALSE, include=FALSE}
+# Set CRAN mirror for non-interactive sessions
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+# tidyverse: For data manipulation (dplyr), wrangling (tidyr), and plotting (ggplot2),
+# essential for preparing datasets before running PCA/EFA.
+quiet_library("tidyverse")
+
+# psych: Core package for PCA, EFA, reliability analysis (Cronbach's alpha),
+# factor extraction, rotation, and interpreting loadings.
+quiet_library("psych")
+
+# REdaS: Provides KMO (Kaiser-Meyer-Olkin) and Bartlett's test functions
+# used to assess whether the dataset is suitable for dimension reduction.
+quiet_library("REdaS")
+
+# Hmisc: Contains correlation tools and functions for handling missing data,
+# useful for computing correlation matrices required for PCA/EFA.
+quiet_library("Hmisc")
+
+# corrplot: Produces visual correlation matrix heatmaps,
+# helping identify clusters of variables and collinearity patterns.
+quiet_library("corrplot")
+
+# ggcorrplot: ggplot-based correlation matrix visualisation,
+# offering cleaner, publication-ready heatmaps.
+quiet_library("ggcorrplot")
+
+# factoextra: Visualisation tools for PCA and EFA outputs,
+# including scree plots, biplots, eigenvalue charts, and clustering plots.
+quiet_library("factoextra")
+
+# nFactors: Helps determine the number of factors/components to retain
+# using methods like parallel analysis and eigenvalue comparisons.
+quiet_library("nFactors")
+
+# knitr: Enables clean rendering of tables, outputs, and formatted results
+# inside R Markdown or Quarto reports.
+quiet_library("knitr")
+
+quiet_library("readr")
+```
+
+
+```{r echo=FALSE, include=FALSE}
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+# Load the winedataset (update the path as needed)
+datapath <- file.path(datalocation,'wine.csv')
+wine <- read.csv(datapath)
+
+# Remove the variable that won't be used in the dimension reduction
+wine <- wine %>%
+  dplyr::select(-Wine)
+
+
+```
+
+
+
+
+```{r}
+# ++++++++++++++++++++++++++++
+# flattenCorrMatrix
+# ++++++++++++++++++++++++++++
+# Function to make a correlation matrix more readable
+# cormat : matrix of the correlation coefficients
+# pmat : matrix of the correlation p-values
+# Source: http://www.sthda.com/
+# ++++++++++++++++++++++++++++
+# flattenCorrMatrix
+# ++++++++++++++++++++++++++++
+# Function to make a correlation matrix more readable
+# cormat : matrix of the correlation coefficients
+# pmat : matrix of the correlation p-values
+# Source: http://www.sthda.com/
+flattenCorrMatrix <- function(cormat, pmat, cutoff = 0.05) {
+  
+  ut <- upper.tri(cormat)
+  
+  df <- data.frame(
+    row    = rownames(cormat)[row(cormat)[ut]],
+    column = rownames(cormat)[col(cormat)[ut]],
+    cor    = cormat[ut],
+    p      = pmat[ut],
+    stringsAsFactors = FALSE
+  )
+  
+  # Round correlation + p to 3 digits
+  df$cor <- round(df$cor, 3)
+  df$p   <- round(df$p, 3)
+  
+  # Format p for printing (non-bold)
+  df$p_text <- ifelse(df$p < 1e-4,
+                      format(df$p, scientific = FALSE, digits = 3),
+                      sprintf("%.4f", df$p))
+  
+  # Markdown bold formatting for Quarto / Rmd tables
+  df$p_md <- ifelse(df$p < cutoff,
+                    paste0("**", df$p_text, "**"),
+                    df$p_text)
+  
+  return(df)
+}
+
+```
+
+# TASK ONE - Insepect Wine Quality dataset for suitability
+We are using this dataset for PCA. Use PCA when you are certain there are underlying factors.
+You are using the approach to reduce the number of variables you need to use to represent concepts.
+
+## STEP 1: Create and screen the correlation matrix for the wine dataset
+### Step 1a: Create the matrix 
+
+Choose one of the other approaches given in MATH9102-W10-DimRed.qmd
+
+```{r corscreen}
+#create a correlation matrix  
+wineMatrix<-cor(wine)
+round(wineMatrix, 2)
+```
+
+Are there any variables that do not correlate at or above .3 with at least one other variable(absolute values)?
+If you find any you should remove them.
+
+
+### Step 1b: Visualize the correlation matrix
+Choose one of the other approaches given in MATH9102-W10-DimRed.qmd
+```{r }
+#| fig.cap:  "Figure 1: Basic Correlation Matrix"
+
+# 1. Basic correlation matrix plot
+ggcorrplot::ggcorrplot(wineMatrix)
+```
+
+## STEP2: Check if the data is suitable for dimension reduction (there is enough variance of the right kind)
+You want to do the following:
+
+  * Check that your variables are correlated by doing Bartlett's test of Sphericity.
+    + Check that the result is statistically significant.
+  
+  * Check that variables are not too highly correlated for PCA.
+    + Calculate and inspect the determinant.
+    + Check to see if it is greater than 0.00001.
+  
+  * Check that there is enough variance in your variables that could be caused by an underlying factor/dimension.
+    + Use the Kaiser-Meyer-Olkin Measure of Sampling Adequacy (MSA) test.
+    + High values close to 1 suggest that PCA/FA might be useful.
+    + Values over 0.8 or over are considered strong.
+    + Anything less than 0.5 suggests that PCA/FA won’t be useful.
+    + 0.00 to 0.49 unacceptable, 0.50 to 0.59 miserable, 0.60 to 0.69 mediocre ,0.70 to 0.79 middling, 0.80 to 0.89 meritorious, 0.90 to 1.00 marvellous.
+
+
+### Step 2a Check Bartlett's Test
+```{r}
+#Bartlett's test 
+```
+
+### Step 2b Check KMO
+```{r}
+#Measure of Sampling Accuracy 
+```
+
+### Step 2c Check the determinant
+```{r}
+#Determinant 
+
+```
+### Step 2d: Report
+Report the findings replace every ? by values you obtain:
+
+Using the guidance of Field (2024), the chemical composition data from the wine dataset was assessed for its suitability for dimension reduction. Bartlett’s test of sphericity produced a significant result, χ²(?) = ?, p < ?, indicating that the observed correlation matrix is not an identity matrix and therefore contains sufficient shared variance for factor extraction. The Kaiser–Meyer–Olkin (KMO) Measure of Sampling Adequacy was ?, which falls within the “?” range according to Kaiser and Rice’s (1974) criteria, suggesting that the dataset is well suited for dimension reduction techniques. Examination of the determinant of the correlation matrix yielded a value of ?, which is above the recommended minimum threshold of ?, further indicating that the data is not affected by multicollinearity or singularity issues. Collectively, these diagnostics demonstrate that the wine dataset is appropriate for principal component analysis or exploratory factor analysis.
+ 
+
+
+# TASK TWO Conduct PCA - Wine Dataset
+
+
+Form: pcModel<-principal(dataframe/R-matrix, nfactors = number of factors, rotate = "method of rotation", scores = TRUE)
+
+For PCA we know how many components it is possible to find.
+The principal function will work out the loadings of each variable onto each component, i.e. the proportion each component explained and the cumulative proportion of variance explained.
+
+## STEP 3: Execute the PCA
+In this step, we run the PCA using all of the remaining variables in the wine dataset. The purpose here is simply to let R extract all possible components so we can see the complete structure of the data. You should focus on the loading matrix that is produced. 
+A loading tells you how strongly each variable relates to a component. For example, you will notice that variables such as Flavanoids, Phenols, OD, and Proanth load very highly on the first component. This shows that these variables share a lot of variance and are likely measuring a similar underlying idea (in this case, something like “phenolic content”). 
+Other components will have smaller or weaker loadings, and that’s expected — because PCA is extracting every possible component, not just the meaningful ones. At this stage we are not trying to interpret all components; instead, we are trying to understand the overall structure so that we can make decisions in the next step.
+
+
+```{r}
+#do the reduction
+pc1 <-  principal(wine, nfactors = length(wine), rotate = "none")#Conduct the PCA extracting the same number of components as there are variables
+
+pc1#output all details of the PCA
+
+```
+
+## STEP 4:  Decide on which components to retain
+Once the full PCA is run, we need to decide how many components to keep for interpretation. There are two main things to look at:
+
+The scree plot – This helps you visually identify where the “elbow” or point of inflexion is. After this point, the components explain very little additional variance.
+
+Eigenvalues – A common guideline is to keep components with eigenvalues greater than 1 (Kaiser’s criterion) or greater than 0.7 (Joliffe's criterion).
+
+The factor diagram visualises how variables relate to each factor.
+Thicker lines = stronger loadings. Red indicates negative loading
+This helps you see which variables group together naturally.
+
+
+
+```{r}
+#Create the scree plot
+plot(pc1$values, type = "b", main="Scree Plot of Statistics Survey Questions - PCA") 
+
+#Print the variance explained by each component
+pc1$Vaccounted 
+
+#Print the Eigenvalues
+pc1$values
+
+
+#Another way to look at the eigenvalues plus variance explained (need to use princomp function of PCA to get right class for use with factoextra functions)
+pcf=princomp(wine)
+factoextra::get_eigenvalue(pcf)
+factoextra::fviz_eig(pcf, addlabels = TRUE, ylim = c(0, 50))#Visualize the Eigenvalues
+factoextra::fviz_pca_var(pcf, col.var = "black")
+factoextra::fviz_pca_var(pcf, col.var = "cos2",
+             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"), 
+             repel = TRUE # Avoid text overlapping
+             )
+
+#Print the loadings above the level of 0.3
+psych::print.psych(pc1, cut = 0.3, sort = TRUE)
+
+#Create a diagram showing the components and how the manifest variables load
+fa.diagram(pc1) 
+
+#Show the loadings of variables on to components
+fa.sort(pc1$loading)
+```
+
+
+Communalities - tell us how much of each variable’s variance is captured by the components we keep.
+A communality close to 1 means the retained components represent that variable very well.
+A communality below about 0.4 may indicate that the variable is not well represented.
+
+In the initial (unrestricted) PCA, each communality is exactly 1 because PCA uses all available variance. But once we extract only four components and apply rotation (in Step 5), the communalities will drop to realistic values.
+
+For this dataset, you will see that the first four components meet this threshold, and the scree plot shows a clear drop after the fourth component. Together, these components explain over 75% of the total variance, which means they capture most of the meaningful information in the dataset. Everything after Component 4 explains very little and mostly reflects noise. Therefore, in step 5, we extract **three** components and work with those.
+```{r}
+#Output the communalities of variables across components (will be one for PCA since all the variance is used)
+pc1$communality 
+#Visualize contribution of variables to each component
+var <- factoextra::get_pca_var(pcf)
+corrplot::corrplot(var$contrib, is.corr=FALSE) 
+
+# Contributions of variables to PC1
+factoextra::fviz_contrib(pcf, choice = "var", axes = 1, top = 10)
+# Contributions of variables to PC2
+factoextra::fviz_contrib(pcf, choice = "var", axes = 2, top = 10)
+
+# Contributions of variables to PC3
+factoextra::fviz_contrib(pcf, choice = "var", axes = 3, top = 10)
+```
+
+## STEP 5: Repeat with reduced components and rotation
+
+After deciding how many components to retain, we re-run the PCA asking for only those components (in this case, three). We then apply a rotation — usually varimax when doing PCA. Rotation does not change the amount of variance explained, but it helps make the components much easier to interpret. Rotation works by trying to maximise high loadings and minimise low ones so that each variable loads strongly on only one component whenever possible.
+
+Once you apply rotation, you will find that the structure becomes much clearer. For example:
+
+One component is mainly defined by phenolic variables (Flavanoids, Phenols, OD, Proanth).
+
+Another is defined by Alcohol, Proline, and Colour Intensity.
+
+A third captures variables related to acidity (Malic.acid, Acl, Hue).
+
+
+The rotated solution gives you a clearer picture of the underlying dimensions in the dataset, and this is the version you would normally interpret.
+
+```{r}
+#Apply rotation to try to refine the component structure
+pc2 <-  principal(wine, nfactors = 3, rotate = "varimax")#Extracting 3 factors
+#output the components
+psych::print.psych(pc2, cut = 0.3, sort = TRUE)
+#output the communalities
+pc2$communality
+#NOTE: you can do all the other things done for the model in step 4 if you want to
+
+```
+
+
+
+## Report PCA - replace ? by values you obtain/your conclusions:
+Report on your rotated solution
+
+
+A principal component analysis (PCA) was conducted on the 12 chemical variables of the wine dataset using varimax rotation. An initial unrotated PCA was first performed to obtain eigenvalues for all components. Although four components initially exceeded Kaiser’s criterion (eigenvalues > 1), the fourth component lacked substantive interpretability, as it was defined almost entirely by a single variable (Mg). The scree plot also showed a steep decline after the second component and a minor inflexion around the third, with no meaningful justification for retaining a fourth component, see Figure 2. On this basis, a three-component solution was selected as the most parsimonious and conceptually coherent model. The three retained components together explained approximately ?% of the total variance in the dataset (Component 1 = ?%, Component 2 = ?%, Component 3 = ?%). 
+
+Component 1,Phenolic–Tannin Composition , showed very strong positive loadings from Flavanoids, Phenols, OD, and Proanth, with moderate loading from Nonflavanoid.phenols. These variables all relate to polyphenolic content, antioxidant properties, and tannin structure. Communalities for these items were high (e.g., Flavanoids h² ≈ .88; Phenols h² ≈ .79), indicating that this component captures a substantial proportion of the variance in phenolic compounds. This reflects a clear phenolic richness dimension in the wines.
+
+Component 2, Alcohol and Ripeness, was defined primarily by Alcohol, Proline, and Color.int. These variables are strongly linked to grape ripeness, fermentation processes, and extraction. Proline in particular is a biochemical marker of ripeness, while alcohol content and colour intensity also reflect production and fermentation effects. Communalities were high for these variables (e.g., Proline h² ≈ .77; Alcohol h² ≈ .75). This component can be interpreted as an alcohol–ripeness dimension.
+
+
+Component 3, Acidity and Colour Tone, captured variables associated with acidity and spectral colour characteristics. Malic.acid, Acl (alkalinity of ash), and Hue loaded strongly on this component. Together, these variables index acidity, buffering capacity, and colour tone shifts. Communalities were moderate to high (e.g., Hue h² ≈ .70), supporting the interpretation of this factor as an acidity–colour tone dimension.
+
+Most variables were well represented by the three-component solution, with communalities exceeding 0.40 for the majority of indicators. Only a few variables—most notably Mg (h² ≈ .31)—were less strongly captured. However, unlike the rejected four-component model, no component in the three-factor solution was defined by only one or two variables, see Figure 3, enhancing interpretability and theoretical coherence.
+
+
+```{r}
+#| fig.cap: "Figure 2 : Scree Plot Unrotated Solution"
+#Create the scree plot
+plot(pc1$values, type = "b") 
+```
+
+```{r}
+#| fig.cap: "Figure 3 : Loading of manifest variables onto components"
+#create a diagram showing the components and how the manifest variables load
+fa.diagram(pc2) 
+```
+
+
+# TASK THREE: Conduct the Exploratory Factor Analysis
+
+
+We now move from PCA (a data-reduction technique) to Exploratory Factor Analysis (EFA), which attempts to uncover *latent factors* that may be causing the observed correlations.
+Here, we run an EFA using maximum likelihood extraction.
+This method assumes multivariate normality and allows us to evaluate model fit.
+Rotation (varimax) is applied AFTER deciding the number of factors to make interpretation clearer.
+
+
+## STEP 3: Execute the EFA with rotation
+
+Before choosing how many factors to keep, we perform a parallel analysis.
+This compares the size of our eigenvalues to those expected by chance.
+The number of factors where our data’s eigenvalues exceed random-data eigenvalues is recommended as the optimal number of factors.
+
+We run an initial EFA extracting the maximum possible number of factors.
+This unrotated solution is NOT used for interpretation.
+Instead, we use it to inspect the eigenvalues, communalities, and loading structure before applying rotation and choosing a final factor model.
+
+```{r}
+#Factor Analysis - the default here is principal axis factoring fm=pa
+#If we know our data going in is normally distributed we use maximum likelihood
+# Determine the optimal number of factors using parallel analysis
+psych::fa.parallel(wineMatrix)
+# Do the factor reduction
+facsol <- psych::fa(wineMatrix, nfactors=length(wine), obs=NA, n.iter=1, rotate="none", fm="ml")
+```
+
+## STEP 4: Decide which factors/components to retain (FACTOR ANALYSIS)
+### STEP 4a: Look at the loadings
+
+Generate a scree plot to see where the “elbow” occurs.
+This helps determine how many factors explain meaningful variance.
+Higher eigenvalues indicate stronger factors.
+
+The factor diagram visualises how variables relate to each factor.
+Thicker lines = stronger loadings. 
+This helps see which variables group together naturally.
+
+```{r}
+#Create your scree plot
+plot(facsol$values, type = "b") #scree plot
+
+#Print the Variance accounted for by each factor/component
+facsol$Vaccounted
+#Output the Eigenvalues
+facsol$values 
+
+#Print the components with loadings
+psych::print.psych(facsol,cut=0.3, sort=TRUE)
+
+#Print sorted list of loadings
+fa.sort(facsol$loading)
+
+#create a diagram showing the factors and how the manifest variables load
+fa.diagram(facsol)
+
+```
+
+### STEP 4b: Look at the communalities
+```{r}
+#Output the communalities of variables across components 
+facsol$communality 
+
+# Contributions of variables to factor solution
+factoextra::fviz_contrib(pcf, choice = "var", axes = 1, top = 10)
+# Contributions of variables to factor solution
+factoextra::fviz_contrib(pcf, choice = "var", axes = 2, top = 10)
+```
+
+## STEP 5: Apply rotation for EFA
+
+Parallel analysis compares:
+
+Actual Data (solid blue lines)
+– PC Actual Data: eigenvalues from PCA
+– FA Actual Data: eigenvalues from Factor Analysis
+
+Simulated Data (dotted red lines)
+– these simulate what eigenvalues would look like if the data contained NO underlying structure (i.e., random noise)
+
+A component/factor should be retained only if the actual eigenvalue is larger than the simulated (random) eigenvalue at the same component number.
+
+In this plot:
+The blue triangles exceed the red line for only the first two factors.
+
+The line drops below the simulated values at factor 3 and onwards.
+
+
+After deciding how many factors to retain, we rerun the EFA using varimax rotation.
+Rotation does NOT change total variance explained—it only makes patterns clearer.
+Varimax rotation tries to ensure each variable loads strongly onto ONE factor, simplifying interpretation of the factor structure.
+
+```{r}
+#Apply rotation to try to refine the component structure
+# Determine the optimal number of factors using parallel analysis
+psych::fa.parallel(wineMatrix)
+
+# Use the determined nfactors value (e.g., 3) in the factor analysis
+facsolrot <- psych::fa(wineMatrix, nfactors=3, obs=NA, n.iter=1, rotate="varimax", fm="ml")
+
+#output the components
+psych::print.psych(facsolrot, cut = 0.3, sort = TRUE)
+#output the communalities
+facsolrot$communality
+
+```
+
+## Report EFA - Replace ? with your own results
+
+Report your findings
+
+An exploratory factor analysis (EFA) was conducted on the 12 chemical variables of the wine dataset using maximum likelihood extraction with varimax rotation.  Parallel analysis suggested the retention of two factors, whereas Kaiser’s eigenvalue criterion indicated up to four, see Figure 2. Given these mixed indicators, solutions with two, three, and four factors were explored, and the three-factor rotated solution was selected based on its interpretability and conceptual coherence. The three retained factors together explained approximately ?% of the total variance. The rotated loading matrix revealed a clear and interpretable structure, with each factor representing a distinct chemical dimension of the wine composition, see Figure 3.
+
+Factor 1, Phenolic–Tannin Structure, showed strong positive loadings from Flavanoids, Phenols, OD, and Proanth, with a moderate negative loading from Nonflavanoid.phenols. These variables relate to phenolic concentration, antioxidant properties, colour density, and tannin content. Communalities for these variables were high (e.g., Flavanoids h² = .94; Phenols h² = .81), indicating that this factor captures a substantial proportion of their variance. This factor represents a core polyphenolic–tannin dimension distinguishing wines with richer phenolic profiles.
+
+Factor 2,  Alcohol–Ripeness, reflected variables associated with ripeness, alcohol production, and fermentation by-products. Strong loadings were observed for Alcohol, Proline, and Color.int, with a smaller loading from Mg. These variables typically increase with grape ripeness and fermentation processes. Communalities for these indicators were generally high (e.g., Proline h² ≈ .80; Color.int h² ≈ .82), suggesting these characteristics are well represented by this factor.
+
+Factor 3, Acidity–Colour Tone, captured acidity-related characteristics and the spectral qualities of the wine. High loadings were obtained for Hue, Malic.acid, and Acl (alkalinity of ash), with a smaller loading for OD. Together, these variables reflect the chemical balance of acidity, buffering capacity, and colour tone. Communalities ranged from moderate to high (Malic.acid h² ≈ .29; Hue h² ≈ .63), indicating that these variables were reasonably explained by this factor. Although Malic.acid had a lower communality, the factor remained interpretable and theoretically grounded.
+
+Most variables showed communalities above 0.40, indicating adequate representation by the three-factor model. A few variables had lower values (e.g., Mg h² = .17; Acl h² = .31), suggesting they may not be strongly implicated in the broader latent structure. However, their loadings contributed meaningfully to the interpretation of Factor 2 and Factor 3 and so they were retained.
+
+
+```{r}
+#| fig.cap: "Figure 2 : Parallel Analysis"
+# Determine the optimal number of factors using parallel analysis
+psych::fa.parallel(wineMatrix)
+```
+
+```{r}
+#| fig.cap: "Figure 3 : Loading of manifest variables onto Factors"
+#create a diagram showing the components and how the manifest variables load
+fa.diagram(facsolrot) 
+```
+
+# TASK FOUR: Reliability Analysis
+
+Now that we have identified components (from PCA) and factors (from EFA), we need to check whether the variables within each proposed group consistently measure the same underlying construct.
+
+Cronbach's alpha is used to evaluate internal consistency:
+   α > .80 = good
+   α ~ .70 = acceptable
+   α < .60 = poor
+
+ Note: Dimension reduction does NOT guarantee reliability.
+ A component/factor may be statistically valid but not reliable as a scale.
+ If we are just trying to reduce the number of variables we may still be able to use. If however we want to use the component/factor as a reliable measure of a concept it will cause use problems if it is not considered reliabl
+
+## STEP 6: Reliability Analysis PCA 
+```{r}
+#If you know that certain sections should be treated as groups, test these separately
+#Output Cronbach alpha values - use pysch::alpha
+
+# Component 1: Phenolic–Tannin Composition
+comp1_vars <- wine[, c("Flavanoids", "Phenols", "OD", "Proanth", "Nonflavanoid.phenols")]
+
+# Component 2: Alcohol–Ripeness
+comp2_vars <- wine[, c("Alcohol", "Proline", "Color.int")]
+
+# Component 3: Acidity–Colour Tone
+comp3_vars <- wine[, c("Malic.acid", "Acl", "Hue")]
+
+# Compute Cronbach's Alpha for each PCA-derived component
+psych::alpha(comp1_vars)   # Phenolic–Tannin Composition
+psych::alpha(comp2_vars)   # Alcohol–Ripeness
+psych::alpha(comp3_vars)   # Acidity–Colour Tone
+
+
+```
+
+## Report - replace ? by values you obtain/your conclusions:
+Cronbach’s alpha was used to assess the internal consistency of the PCA-derived components.
+The Phenolic–Tannin Composition component showed acceptable reliability, Cronbach’s α = .?, indicating ?. The Alcohol–Ripeness component demonstrated very poor reliability, Cronbach’s α = .?, suggesting that ?. The Acidity–Colour Tone component also had ?reliability, Cronbach’s α = .?, indicating ?.
+Overall, while the Alchohol-Ripeness component forms a coherent and internally consistent construct, The other components do not achieve acceptable reliability and and therefore should not be interpreted as robust measurement scales for the underlying concepts.
+
+
+## STEP 6: Reliability Analysis - EFA dataset
+```{r}
+# -------------------------------------------------
+# Factor 1: Phenolic–Tannin Composition
+# Variables with strong F1 loadings:
+# Flavanoids, Phenols, OD, Proanth, Nonflavanoid.phenols
+# -------------------------------------------------
+efa_comp1 <- wine[, c("Flavanoids", "Phenols", "OD", "Proanth", "Nonflavanoid.phenols")]
+
+psych::alpha(efa_comp1)                # Raw alpha
+psych::alpha(efa_comp1, check.keys=TRUE)  # Auto-reverse if needed
+
+
+# -------------------------------------------------
+# Factor 2: Alcohol–Ripeness
+# Variables with strong F2 loadings:
+# Alcohol, Proline, Color.int, Mg
+# -------------------------------------------------
+efa_comp2 <- wine[, c("Alcohol", "Proline", "Color.int", "Mg")]
+
+psych::alpha(efa_comp2)
+psych::alpha(efa_comp2, check.keys=TRUE)
+
+# -------------------------------------------------
+# Factor 3: Acidity–Colour Tone
+# Strong F3 variables:
+# Malic.acid, Acl, Hue
+# -------------------------------------------------
+efa_comp3 <- wine[, c("Malic.acid", "Acl", "Hue")]
+
+psych::alpha(efa_comp3)
+psych::alpha(efa_comp3, check.keys=TRUE)
+
+```
+
+## Report the reliability:
+
+Cronbach’s alpha was used to evaluate the internal consistency of the three factors identified in the exploratory factor analysis. The Phenolic–Tannin Composition factor demonstrated good internal consistency, Cronbach’s α = .? (after automatic reverse-keying). This indicates that the items reflect a coherent underlying construct, with strong inter-item correlations once the negatively oriented variable (Nonflavanoid.phenols) was reversed.
+The Alcohol–Ripeness factor showed poor reliability, Cronbach’s α = .?, suggesting that the variables grouped under this factor do not form a consistent scale. Although these variables co-loaded statistically in the factor analysis, their heterogeneity (e.g., Alcohol %, Proline concentration, Colour intensity, and Magnesium) means they do not behave as a unified latent construct.
+The Acidity–Colour Tone factor demonstrated questionable reliability, Cronbach’s α = .? (after reverse-keying Hue). This low reliability indicates that, despite these variables loading together in the factor solution, they do not consistently measure the same underlying dimension and should not be treated as a reliable scale.
+Overall, while Factor 1 forms a coherent and internally consistent construct, Factors 2 and 3 do not achieve acceptable reliability and therefore should not be interpreted as robust scales for the underlying concepts.
+
+
