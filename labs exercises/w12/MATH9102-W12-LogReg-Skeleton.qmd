@@ -1,0 +1,427 @@
+---
+title: "MATH9102-W11-LogReg-Skeleton"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+editor: source
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+
+/* Center and bold table captions, force them below tables */
+.table-caption, 
+caption {
+  caption-side: bottom;  /* caption below table */
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r echo=FALSE, include=FALSE}
+
+# Set CRAN mirror for non-interactive sessions
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+# Data manipulation and plotting (includes dplyr, ggplot2, tidyr, etc.)
+quiet_library("tidyverse")
+
+# Epidemiology tools, including ROC curves used in logistic regression diagnostics
+quiet_library("Epi")
+
+# Effect size statistics, pseudo R-squared for logistic regression models
+quiet_library("DescTools")
+
+# Produces nicely formatted model output tables
+quiet_library("stargazer")
+
+# Likelihood ratio tests and other model comparison tools
+quiet_library("lmtest")
+
+# Variance Inflation Factor (VIF) for checking multicollinearity
+quiet_library("car")
+
+# Hosmer–Lemeshow goodness-of-fit test for logistic regression
+quiet_library("generalhoslem")
+
+# Classification diagnostics (e.g., collinearity checks, model assumptions)
+quiet_library("regclass")
+
+# Confusion matrices and classification metrics (sensitivity, specificity, etc.)
+quiet_library("yardstick")
+
+# Quick and tidy frequency tables for descriptive statistics
+quiet_library("janitor")
+
+# Additional model performance measures, including pseudo R-squared
+quiet_library("performance")
+
+# Extracts tidy model coefficients, odds ratios, and confidence intervals
+quiet_library("parameters")
+
+
+# Code to load file
+datalocation <- file.path("C:","Path", "to", "yourfiles")
+datapath <- file.path(datalocation,'filename')
+dataframename <- read.table(datapath) # change .table to .csv etc as needed
+
+
+# Complete any manipulation/cleaning needed
+```
+
+
+
+# Model 1 Binary Logistic Regression
+
+## Step 1: Build the model
+```{r buildmodel1}
+# Outcome must be 0/1
+logmodel1 <- glm(outcome ~ pred1+pred2+pred3, data =dataframename, na.action = na.exclude, family = binomial(link=logit))
+```
+
+## Step 2: Generate Summary Statisics to Assess model fit
+
+### Step 2a: Summary of Model
+This includes all information needed about the model but requires some calculation and additional information to fully assess the fit and usefulness. Additional tests will provide easier access to some parts, we will use elements of this when looking at the odds ratios.
+```{r summarymdl1}
+#Full summary of the model
+summary(logmodel1)
+```
+
+### Step 2b: Omnibus Test of Model
+Tells us whether the model as a whole is significant. Gives us the Chi Square statistic to report for the model as a whole.
+```{r chimdl1}
+#Chi-square plus significance
+lmtest::lrtest(logmodel1)
+```
+
+## (Optional): Use Stargazer to Report
+```{r stargmdl1}
+#Summary of the model with co-efficients
+stargazer(logmodel1, type="text", star.cutoffs = c(0.05, 0.01, 0.001))
+```
+### Step 2c: Pseudo R2 Statistics
+Pseudo R2 statistics tell us how much better does the model fit the data compared to a baseline model (a model with no predictors)?
+
+```{r pr2md1}
+#Pseudo R Squared 
+DescTools::PseudoR2(logmodel1, which="CoxSnell")
+DescTools::PseudoR2(logmodel1, which="Nagelkerke")
+performance::r2(logmodel1) # Will return Tujur's Pseudo R2
+```
+
+
+## Step 3: Calculate Odds Ratios and Probability of Co-efficients
+```{r predictorsmdl1}
+# Odds ratios only 
+parameters::parameters(logmodel1, exponentiate = TRUE) %>%
+  as.data.frame() %>%
+  dplyr::select(Parameter, OddsRatio = Coefficient)
+
+# Predicted probabilities by pred1
+emmeans::emmeans(logmodel1, ~ pred1, type = "response")
+# Predicted probabilities by pred2
+emmeans::emmeans(logmodel1, ~ pred2, type = "response")
+# Predicted probabilities by pred3
+emmeans::emmeans(logmodel1, ~ pred3, type = "response")
+
+
+# Full grid of predictions for ALL combinations
+
+pred_grid <- emmeans::emmeans(
+  logmodel1,
+  ~ outcome * pred1+pred2+pred3,   # <-- interaction in predictions, even if not in model
+  type = "response"
+)
+
+summary(pred_grid)
+
+
+```
+
+
+When interpreting the **odds ratios**, there are two things to look for:
+
+(a) Is the odds ratio greater than 1 or less than 1?
+
+OR > 1 → higher odds of sitting French compared to the reference group
+
+OR < 1 → lower odds compared to the reference group
+
+(b) Is the effect statistically significant?
+
+Look at the p-value for each coefficient
+
+p < .05 → statistically significant
+
+Remember for categorical predictors you are comparing to the reference category.
+
+Odds ratios tell us how the odds increase or decrease, but ** predicted probabilities** are easier  to understand. Calculate predicted probabilities for each value of a categorical variable
+
+The predgrid will give you the calculated predicted probabilities for each combination of the predictors. 
+
+## Step 4: Assess Classification Performance
+### Step 4a: Generate a ROC curve and Calculate Sensitivity, Specificity and AUC
+```{r}
+#| fig.cap: "ROC curve for Model1"
+
+# Generate predicted probabilities for Model 1
+p_hat <- stats::predict(logmodel1, type = "response")
+
+# Build results1 data frame for Epi::ROC
+results1 <- youthdf %>%
+  dplyr::mutate(
+    satfren_num = satfren_num,   # already created earlier
+    p_hat = p_hat                # predicted probabilities
+  ) %>%
+  dplyr::select(satfren_num, p_hat) %>%     # only keep needed columns
+  dplyr::filter(!is.na(satfren_num))        # remove NA cases
+
+# Generate the curve
+roc1 <-Epi::ROC(
+  form = satfren_num ~ p_hat,
+  data = results1,
+  plot = "ROC"
+)
+
+```
+A ROC curve (Receiver Operating Characteristic curve) is a way of checking how well the model can distinguish between the two outcome groups:
+
+- Sat French (1)
+
+- Did not sit French (0)
+
+The important result is the AUC (Area Under the Curve).
+
+What does AUC mean?
+
+- AUC = 0.50 → model performs no better than random guessing
+
+- AUC = 1.00 → perfect prediction
+
+- AUC between 0.5 and 0.7 → poor discrimination
+
+- AUC between 0.7 and 0.8 → acceptable
+
+In our model AUC = 0.56. The model performs only slightly better than chance.
+
+Even though parental education is statistically significant, it does not help the model separate students who took French from those who didn’t.
+
+Hey point: Statistical significance does not guarantee good prediction. A predictor can be statistically related to the outcome but still be weak at classifying individual cases.
+
+### Step 4b: Generate a Confusion Matrix
+```{r}
+#| tbl-cap: "Table 4: Confusion Matrix Model 1"
+results1 <- youthdf %>%
+  dplyr::mutate(
+    actual = factor(satfren_num, levels = c(0,1)),
+    pred_class = factor(
+      ifelse(stats::predict(logmodel1, type = "response") > 0.5, 1, 0),
+      levels = c(0,1)
+    )
+  )
+
+
+cm <- yardstick::conf_mat(
+  data = results1,
+  truth = actual,
+  estimate = pred_class
+)
+
+cm
+
+
+```
+
+A Confusion Matrix compares:
+
+- Actual values (category of interest for the outcome variable?)
+with
+
+- Predicted values (what the model says at a probability cutoff, usually 0.5)
+
+The matrix gives:
+
+- True Positives (TP): predicted Yes & actually Yes
+
+- True Negatives (TN): predicted No & actually No
+
+- False Positives (FP): predicted Yes but actually No
+
+- False Negatives (FN): predicted No actually Yes
+
+
+Sensitivity measures how well the model identifies the category of interest (1) cases: Of all the rows with the value 1, how many did the model correctly identify?
+High sensitivity means the model is good at detecting these.
+Low sensitivity means the model misses many of these.
+
+
+Specificity measures how well the model identifies the rows with 0: how many did the model correctly identify as 0?
+High specificity means the model is good at detecting cases with 0. Low specificity means the model predicts 1 too often.
+
+
+## Step 5: Check Model Meets Assumptions of Logistic Regression
+### Step 5a: Linearity of Independent Variables and Log Odds
+```{r hlml1}
+#Check the assumption of linearity of independent variables and log odds using a Hosmer-Lemeshow test, if this is not statistically significant we are ok
+generalhoslem::logitgof(youthdf$satfren_num, fitted(logmodel1))
+```
+
+### Step 5b: Collinearity 
+```{r clmdl1}
+#We would check for collinearity here but as we only have one predictor it doesn't make sense - check model 2 to see how to do this
+
+```
+
+### Step 5c: Outliers and Influential Cases
+Although logistic regression does not require the residuals to be normally distributed, it is still important to check for outliers and influential cases. Individual observations with unusually large residuals, high leverage, or strong influence can distort coefficient estimates, odds ratios, and overall model fit. Minimal diagnostic checks—such as Cook’s Distance, leverage values, standardised residuals, and DFBetas—help identify whether any single case is exerting undue influence on the model. These checks do not require the removal of observations but allow us to confirm that the results are not being driven by a small number of extreme or unusual cases.
+- **Cook’s Distance**: Measures how much each individual observation influences the overall model; large values indicate cases that may disproportionately affect the results.
+
+- **Leverage (Hat values)**: Identifies observations with unusual predictor values; high-leverage cases have the potential to pull the model toward themselves.
+
+- **Standardised (Pearson) residuals**: Show how poorly each observation is predicted by the model; large residuals (e.g., > |2|) indicate unusual or poorly fitted cases.
+
+- **Deviance residuals**: Reflect how much each observation contributes to the model’s deviance; large values highlight observations the model struggles to accurately classify.
+
+- **DFBetas**: Measure how much each observation influences individual regression coefficients; large DFBetas indicate that removing the case would substantially change a coefficient estimate.
+
+
+```{r olmodel1}
+# 1. Cook's Distance
+cook <- cooks.distance(logmodel1)
+
+# View largest Cook's D values
+head(sort(cook, decreasing = TRUE))
+
+# Flag influential cases (common threshold: D > 1)
+which(cook > 1)
+
+
+# 2. Leverage (Hat values)
+lev <- hatvalues(logmodel1)
+
+# View highest leverage cases
+head(sort(lev, decreasing = TRUE))
+
+# Flag high leverage cases
+# Rule of thumb: h_i > 2*(k+1)/n
+k <- length(coef(logmodel1)) - 1  # number of predictors
+n <- nobs(logmodel1)
+lev_threshold <- 2*(k+1)/n
+which(lev > lev_threshold)
+
+
+# 3. DFBetas (influence on individual coefficients)
+dfb <- dfbeta(logmodel1)
+
+# Identify cases with large DFBetas (|DFB| > 1 is concerning)
+which(abs(dfb) > 1, arr.ind = TRUE)
+
+
+# 4. Standardised (Pearson) residuals
+pearson_resid <- rstandard(logmodel1, type = "pearson")
+
+# Flag large residuals (|residual| > 2 or > 3)
+which(abs(pearson_resid) > 2)
+
+# Optional: look at the largest ones
+head(sort(abs(pearson_resid), decreasing = TRUE))
+
+
+# 5. Deviance residuals
+dev_resid <- residuals(logmodel1, type = "deviance")
+
+# Flag extreme deviance residuals
+which(abs(dev_resid) > 2)
+
+```
+
+
+
+
+## Step 6: Report
+
+Replace the content in italics with content relevant to your analysis (does not need to be italicised).
+
+
+A binary logistic regression was conducted to _explain what you are trying to investigate_. The analysis was based on a sample of _sample size_ rows. The outcome variable was coded _0 = X and 1 = X_. _Explain the predictors, possible values where relevant_.
+
+The overall model _was/was not_ statistically significant, χ²(_df1, N = ?) = ? 166.19, _p = pvalue/p < cut-off (0.05, 0.01 or .001)_, indicating _explain what this indicates_. Effect-size measures (pseudo R²) showed that the inclusion of the predictors improved model fit only slightly when compared to the baseline (intercept-only) model (Cox–Snell R² = _?_, Nagelkerke R² = _?_, Tjur’s R² = _?_), indicating that the predictors _contributed/did not contribute_ to the model’s explanatory power.  This suggests _explain what this suggests_.
+
+_Illustrate the meaning for the relevant combinations of predictors_
+
+
+Predicted probabilities followed a similar pattern:
+
+_include your predicted probabilities_.
+
+These results show _explain what this shows_.
+
+The model’s predictive performance was evaluated using a ROC curve and confusion matrix. The AUC was _?_, indicating _poor/moderate/good_ discrimination. Using a 0.5 classification threshold, the model predicted _what is it able to predict_.
+This led to:
+
+- _High/Low/Very Low_ sensitivity ( _what does this mean in terms of the outcome_), and
+
+- _High/Low/Very low_ specificity ( _what does this mean in terms of the outcome_)
+
+_If you have an explanation include it here_
+
+The Hosmer–Lemeshow goodness-of-fit test indicate _concerns/no concerns_ with linearity.  Multicollinearity _was/was not_ and issue (_VIF values and Tolerance for each predictor_). Influence diagnostics were examined to ensure that the logistic regression results _were/were not_ affected by individual cases. 
+
+To assess the presence of influential data points, Cook’s Distance values were _all extremely small / mostly small but with some larger values_, with a maximum of D = …, which is _well below / close to / above_ the conventional influence threshold of 1. This suggests that _no single observation / one or more observations_ exerted unusual influence on the model.
+
+Leverage values were _uniformly low / variable / high in a few cases_, indicating that _no / some cases_ had unusual combinations of predictor values ( _max leverage = …_).
+
+Standardised Pearson residuals and deviance residuals ranged from _…_ to _…_, meaning that _no observations / some observations_ exceeded the common cutoff of ±3, and therefore _no / some_ unusual outcome patterns were detected.
+
+Inspection of DFBETAs revealed _no / some_ instances in which the removal of a case would substantially alter any regression coefficient (_maximum DFBETA = …_).
+
+Taken together, these diagnostics indicate that the results of this logistic regression model are _stable/not stable_ and _driven/not driven_ by a small number of influential points _and may be somewhat sensitive to a few influential observations and should be interpreted with caution_.
+
+Overall, _conclude about the assumptions._
+
+
+| Reporting element                             | Where to find it in R output                             | Code chunk label            |     |                      |
+| --------------------------------------------- | -------------------------------------------------------- | --------------------------- | --- | -------------------- |
+| **Sample size (N)**                           | Output of `summary(logmodel1)` or number of rows in data | `summarymdl1`               |     |                      |
+| **Outcome coding (0 = ?, 1 = ?)**             | Data dictionary / column description in dataset          | Data preparation step       |     |                      |
+| **Overall model significance (χ², df, p)**    | Likelihood Ratio Test output                             | `chimdl1`                   |     |                      |
+| **Pseudo R² (Cox–Snell, Nagelkerke, Tjur’s)** | Pseudo R² results                                        | `pr2md1`                    |     |                      |
+| **Interpretation of significance**            | Use χ² and p-value + narrative rules                     | `chimdl1`                   |     |                      |
+| **Odds ratios (effect direction)**            | `parameters()` table → Odds Ratio column                 | `predictorsmdl1`            |     |                      |
+| **Statistical significance of predictors**    | p-values in `summary(logmodel1)` or stargazer output     | `summarymdl1` / `stargmdl1` |     |                      |
+| **Predicted probabilities statement**         | `emmeans()` predicted probabilities                      | `predictorsmdl1` pred_grid           |     |                      |
+| **AUC — discriminatory ability**              | Value labeled `AUC` under ROC output                     | Step 4a ROC curve           |     |                      |
+| **ROC interpretation**                        | Based on AUC interpretation rules                        | Step 4a narrative           |     |                      |
+| **Sensitivity & Specificity**                 | Confusion matrix (`conf_mat()` output)                   | Step 4b                     |     |                      |
+| **Linearity with log odds**                   | Hosmer–Lemeshow p-value                                  | `hlml1`                     |     |                      |
+| **Multicollinearity (VIF / Tolerance)**       | VIF and tolerance values                                 | Step 5b (Model 2 example)   |     |                      |
+| **Cook’s Distance (influence)**               | max(D) and flagged indices                               | Step 5c → `olmodel1`        |     |                      |
+| **Leverage values**                           | max leverage and flagged cases                           | Step 5c → `olmodel1`        |     |                      |
+| **Standardised Pearson residuals**            | Ranged values and flagged cases                          | Step 5c → `olmodel1`        |     |                      |
+| **Deviance residuals**                        | Ranged values and flagged cases                          | Step 5c → `olmodel1`        |     |                      |
+| **DFBETAs (influence on coefficients)**       | Flagged cases with                                       | DFB                         | > 1 | Step 5c → `olmodel1` |
+| **Final statement on assumptions**            | Based on all diagnostics above                           | Step 6 narrative            |     |                      |
+

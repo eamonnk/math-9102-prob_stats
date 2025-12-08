@@ -102,7 +102,7 @@ quiet_library("readr")
 
 
 ```{r echo=FALSE, include=FALSE}
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 # Load the winedataset (update the path as needed)
 datapath <- file.path(datalocation,'wine.csv')
 wine <- read.csv(datapath)

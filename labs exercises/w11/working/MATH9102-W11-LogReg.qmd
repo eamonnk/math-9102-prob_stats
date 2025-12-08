@@ -1,0 +1,945 @@
+---
+title: "MATH9102-W11-LogReg"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+editor: source
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+
+/* Center and bold table captions, force them below tables */
+.table-caption, 
+caption {
+  caption-side: bottom;  /* caption below table */
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r echo=FALSE, include=FALSE}
+
+# Set CRAN mirror for non-interactive sessions
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+# Data manipulation and plotting (includes dplyr, ggplot2, tidyr, etc.)
+quiet_library("tidyverse")
+
+# Epidemiology tools, including ROC curves used in logistic regression diagnostics
+quiet_library("Epi")
+
+# Effect size statistics, pseudo R-squared for logistic regression models
+quiet_library("DescTools")
+
+# Produces nicely formatted model output tables
+quiet_library("stargazer")
+
+# Likelihood ratio tests and other model comparison tools
+quiet_library("lmtest")
+
+# Variance Inflation Factor (VIF) for checking multicollinearity
+quiet_library("car")
+
+# Hosmer–Lemeshow goodness-of-fit test for logistic regression
+quiet_library("generalhoslem")
+
+# Classification diagnostics (e.g., collinearity checks, model assumptions)
+quiet_library("regclass")
+
+# Confusion matrices and classification metrics (sensitivity, specificity, etc.)
+quiet_library("yardstick")
+
+# Quick and tidy frequency tables for descriptive statistics
+quiet_library("janitor")
+
+# Additional model performance measures, including pseudo R-squared
+quiet_library("performance")
+
+# Extracts tidy model coefficients, odds ratios, and confidence intervals
+quiet_library("parameters")
+
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'youthcohort.dat')
+
+youthdf <- read.table(datapath)
+
+#remove nas
+youthdf <- youthdf %>% 
+  filter(!is.na(satfren) & 
+         !is.na(s1pared) & 
+         !is.na(pcschtype))
+
+#Check your proportions of the outcome variable for bias - are these representative?
+table(youthdf$satfren)
+
+#Convert the variable to be used as the outcome variable - satfren yes/no - to a factor 1/0
+youthdf <- youthdf %>%
+  dplyr::mutate(
+    satfren_num = dplyr::case_when(
+      satfren == "Yes" ~ 1,
+      satfren == "No"  ~ 0,
+      TRUE ~ NA_real_
+    )
+  )
+# Reset the levels so that Neither Parent with an Alevel will be the reference
+youthdf$s1pared <- relevel(factor(youthdf$s1pared),
+                           ref = "Neither parent with A-level")
+
+```
+
+In this lab we will be using the Youth Cohort Dataset (from Paul Connolly’s Quantitative Data Analysis in Education). This dataset is drawn from a large-scale survey of young people carried out in the UK. It contains demographic, educational, and attitudinal variables. The dataset includes information such as gender, social class, schooling experiences, academic attainment, and post-school aspirations.
+
+We will examine how well we can predict educational attainment — specifically whether a student sat French at GCSE level — using broader social factors such as parental education and school type.
+
+Participation in modern foreign languages (MFLs) such as French is widely used in educational research as an indicator of both academic engagement and curricular opportunity. Unlike core subjects, MFL entry is not compulsory in many schools, meaning that a student’s decision (or ability) to take French often reflects a combination of:
+
+- School characteristics (e.g., whether MFL is strongly promoted or timetabled in ways that facilitate uptake)
+
+- Family background and resources (e.g., parental education, expectations, and cultural capital)
+
+- Student academic confidence and aspirations, particularly in more academically aligned pathways
+
+Because MFL subjects tend to be taken more often by students on higher-attainment or academically oriented tracks, uptake in subjects like French has consistently been shown to correlate with broader patterns of educational advantage, expectations of further study, and school-level guidance practices.
+
+
+# Model 1; Simple Binary Logistic Regression
+This model explores whether parental educational achievement helps predict a young person’s likelihood of answering yes to whether they sat French at GCSE level. 
+- satfren is the binary outcome (Yes = sat GCSE French, No = did not - converted to a factor satfren_num 1 = sat GCSE maths, 0 = No did not)
+- s1pared is the sole predictor (At least one parent with degree, 2 At least one parent with A-level, 3 Neither parent with A-level)
+- 
+This will allow us to estimate how differences in parental education are associated with the probability that a student sat GCSE French. 
+
+## Step 0: Descriptives and Visuals
+
+```{r}
+#| tbl-cap: "Table 1: Frequency Answers to Sat French GCSE Level"
+youthdf %>%
+janitor::tabyl(satfren) %>%
+adorn_percentages("col") %>%
+adorn_pct_formatting(digits = 1)
+
+```
+```{r}
+#| fig-cap: "Figure 1: Distribution of GCSE French Participation"
+
+ggplot(youthdf, aes(x = satfren)) +
+geom_bar() +
+labs(x = "Sat GCSE Maths", y = "Count")
+
+```
+
+```{r}
+#| tbl-cap: "Table 2: Frequency Parental Education Levels"
+youthdf %>%
+janitor::tabyl(s1pared) %>%
+adorn_percentages("col") %>%
+adorn_pct_formatting(digits = 1)
+
+```
+
+```{r}
+#| fig-cap: "Figure 2: Distribution of Parental Education Levels"
+ggplot(youthdf, aes(x = s1pared)) +
+geom_bar() +
+labs(x = "Parental Education", y = "Count") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+```{r}
+#| tbl-cap: "Table 3: Cross Tabulatation: Answers to Sat Frenchand Parental Education Levels"
+
+youthdf %>% 
+  tabyl(satfren, s1pared) %>% 
+  adorn_percentages("col") %>% 
+  adorn_pct_formatting(digits = 1)
+```
+
+
+```{r}
+#| fig-cap: "Figure 3: Proportion Sitting GCSE French by Parental Education"
+ggplot(youthdf, aes(x = s1pared, fill = satfren)) +
+geom_bar(position = "fill") +
+scale_y_continuous(labels = scales::percent_format()) +
+labs(x = "Parental Education", y = "Proportion", fill = "Sat French") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+#| label: chisq-test
+# Chi square test
+chisq.test(table(youthdf$satfren_num, youthdf$s1pared, useNA = "no"))
+
+# Get the sample size
+sum(complete.cases(youthdf[, c("satfren", "s1pared")]))
+
+#Calculate effect size
+
+tab <- table(youthdf$satfren, youthdf$s1pared)
+
+chi2 <- 165.05       # your chi-square value
+n    <- sum(tab)     # total sample size
+k    <- min(nrow(tab), ncol(tab))
+
+cramers_v <- sqrt(chi2 / (n * (k - 1)))
+cramers_v
+```
+
+A chi-square test of independence was conducted to examine the association between parental education level (s1pared) and whether students sat GCSE French (satfren). The association was statistically significant, χ²(2, N = 13,201) = 165.05, p < .001.  However, the effect size was very small (Cramer’s V = .01), indicating that although the relationship is statistically significant, parental education explains only a very small proportion of the variability in GCSE French participation.
+
+## Step 1: Build the model
+```{r buildmodel1}
+# Outcome must be 0/1
+logmodel1 <- glm(satfren_num ~ s1pared, data =youthdf, na.action = na.exclude, family = binomial(link=logit))
+```
+
+## Step 2: Generate Summary Statisics to Assess model fit
+
+### Step 2a: Summary of Model
+This includes all information needed about the model but requires some calculation and additional information to fully assess the fit and usefulness. Additional tests will provide easier access to some parts, we will use elements of this when looking at the odds ratios.
+```{r summarymdl1}
+#Full summary of the model
+summary(logmodel1)
+```
+
+### Step 2b: Omnibus Test of Model
+Tells us whether the model as a whole is significant. Gives us the Chi Square statistic to report for the model as a whole.
+```{r chimdl1}
+#Chi-square plus significance
+lmtest::lrtest(logmodel1)
+```
+
+## (Optional): Use Stargazer to Report
+```{r stargmdl1}
+#Summary of the model with co-efficients
+stargazer(logmodel1, type="text", star.cutoffs = c(0.05, 0.01, 0.001))
+```
+### Step 2c: Pseudo R2 Statistics
+Pseudo R2 statistics tell us how much better does the model fit the data compared to a baseline model (a model with no predictors)?
+
+```{r pr2md1}
+#Pseudo R Squared 
+DescTools::PseudoR2(logmodel1, which="CoxSnell")
+DescTools::PseudoR2(logmodel1, which="Nagelkerke")
+performance::r2(logmodel1) # Will return Tujur's Pseudo R2
+```
+The logistic regression model examining whether parental education predicts GCSE French participation was statistically significant. A likelihood ratio test comparing the fitted model to the null model indicated improved fit,
+χ²(2, N = 13,201) = 166.19, p < .001.
+
+However, effect size indices showed that parental education contributed only modest explanatory power:
+
+Cox–Snell R² = .013
+
+Nagelkerke R² = .017
+
+Tjur’s R² = .013
+
+These values indicate that parental education explains between 1.3% and 1.7% of the variation in whether students sat French at GCSE. The predictor is statistically significant due to the large sample size, but its practical impact on prediction is small.
+
+
+## Step 3: Calculate Odds Ratios and Probability of Co-efficients
+```{r predictorsmdl1}
+# Odds ratios only 
+parameters::parameters(logmodel1, exponentiate = TRUE) %>%
+  as.data.frame() %>%
+  dplyr::select(Parameter, OddsRatio = Coefficient)
+
+# Predicted probabilities by s1pared
+emmeans::emmeans(logmodel1, ~ s1pared, type = "response")
+
+```
+
+When we run the logistic regression, R automatically chooses a reference category for our categorical predictor.
+In this model, the reference group is:
+
+“Neither parent with A-level”
+
+This means that all odds ratios compare each other parental-education group to this baseline group.
+
+When interpreting the **odds ratios**, there are two things to look for:
+
+(a) Is the odds ratio greater than 1 or less than 1?
+
+OR > 1 → higher odds of sitting French compared to the reference group
+
+OR < 1 → lower odds compared to the reference group
+
+(b) Is the effect statistically significant?
+
+Look at the p-value for each coefficient
+
+p < .05 → statistically significant
+
+**Group: At least one parent with a degree**
+
+OR ≈ 1.70
+
+This means:
+Students whose parents have a degree have 70% higher odds of taking GCSE French than students whose parents do not have an A-level.
+
+The effect is statistically significant.
+
+
+**Group: At least one parent with an A-level**
+
+OR ≈ 1.28 
+
+This means:
+Students with a parent who has an A-level have higher odds of taking French than the reference group - 28% higher odds.
+
+Also statistically significant.
+
+**Reference Group: Neither parent has an A-level**
+
+OR = 1.00, because this is the baseline.
+
+Every other group is compared to this one.
+
+
+
+Odds ratios tell us how the odds increase or decrease, but ** predicted probabilities** are easier  to understand.
+
+R gives us predicted probabilities for each group:
+
+- Parents with degree: ~0.63
+
+- At least one parent with A-level: ~0.57
+
+- Neither parent with A-level: ~0.51
+
+What does this tell us?
+
+- Students with more highly educated parents are more likely to have taken GCSE French.
+
+- The differences are real but modest: only about a 12-percentage-point difference between the highest and lowest groups.
+
+
+## Step 4: Assess Classification Performance
+### Step 4a: Generate a ROC curve and Calculate Sensitivity, Specificity and AUC
+```{r}
+#| fig.cap: "Figure 4: ROC curve for Model1"
+
+# Generate predicted probabilities for Model 1
+p_hat <- stats::predict(logmodel1, type = "response")
+
+# Build results1 data frame for Epi::ROC
+results1 <- youthdf %>%
+  dplyr::mutate(
+    satfren_num = satfren_num,   # already created earlier
+    p_hat = p_hat                # predicted probabilities
+  ) %>%
+  dplyr::select(satfren_num, p_hat) %>%     # only keep needed columns
+  dplyr::filter(!is.na(satfren_num))        # remove NA cases
+
+# Generate the curve
+roc1 <-Epi::ROC(
+  form = satfren_num ~ p_hat,
+  data = results1,
+  plot = "ROC"
+)
+
+```
+A ROC curve (Receiver Operating Characteristic curve) is a way of checking how well the model can distinguish between the two outcome groups:
+
+- Sat French (1)
+
+- Did not sit French (0)
+
+The important result is the AUC (Area Under the Curve).
+
+What does AUC mean?
+
+- AUC = 0.50 → model performs no better than random guessing
+
+- AUC = 1.00 → perfect prediction
+
+- AUC between 0.5 and 0.7 → poor discrimination
+
+- AUC between 0.7 and 0.8 → acceptable
+
+In our model AUC = 0.56. The model performs only slightly better than chance.
+
+Even though parental education is statistically significant, it does not help the model separate students who took French from those who didn’t.
+
+Hey point: Statistical significance does not guarantee good prediction. A predictor can be statistically related to the outcome but still be weak at classifying individual cases.
+
+### Step 4b: Generate a Confusion Matrix
+```{r}
+#| tbl-cap: "Table 4: Confusion Matrix Model 1"
+results1 <- youthdf %>%
+  dplyr::mutate(
+    actual = factor(satfren_num, levels = c(0,1)),
+    pred_class = factor(
+      ifelse(stats::predict(logmodel1, type = "response") > 0.5, 1, 0),
+      levels = c(0,1)
+    )
+  )
+
+
+cm <- yardstick::conf_mat(
+  data = results1,
+  truth = actual,
+  estimate = pred_class
+)
+
+cm
+
+
+```
+
+A Confusion Matrix compares:
+
+- Actual values (did the student take French?)
+with
+
+- Predicted values (what the model says at a probability cutoff, usually 0.5)
+
+The matrix gives:
+
+- True Positives (TP): predicted Yes & actually Yes
+
+- True Negatives (TN): predicted No & actually No
+
+- False Positives (FP): predicted Yes but actually No
+
+
+In our model, using the standard 0.5 cutoff, the model predicted almost everyone as “Yes” (sat French)
+
+This creates very high sensitivity (we catch almost all the Yes cases) and very low specificity (we miss almost all the No cases). Why:  The predicted probabilities from the model are all very close together (around 0.51 to 0.63). Since most probabilities are above 0.5, the model classifies nearly everyone as “Yes”
+
+Sensitivity measures how well the model identifies the Yes cases: Of all the students who actually sat French, how many did the model correctly identify as “Yes”?
+High sensitivity means the model is good at detecting students who did take French.
+Low sensitivity means the model misses many Yes cases.
+
+
+Specificity measures how well the model identifies the No cases: Of all the students who did not sit French, how many did the model correctly identify as “No”?
+High specificity means the model is good at detecting students who did not take French. Low specificity means the model predicts “Yes” too often.
+
+
+In our model because almost all predicted probabilities were slightly above 0.5, the model predicted nearly every student as “Yes”. This produces High sensitivity - the  model correctly identifies almost all the students who actually sat French, because it predicts “Yes” for nearly everyone. So nearly all true Yes cases get caught. And Very low specificity - the model almost never predicts “No”. So it fails to identify students who did not take French. These become false positives
+
+## Step 5: Check Model Meets Assumptions of Logistic Regression
+### Step 5a: Linearity of Independent Variables and Log Odds
+```{r hlml1}
+#Check the assumption of linearity of independent variables and log odds using a Hosmer-Lemeshow test, if this is not statistically significant we are ok
+generalhoslem::logitgof(youthdf$satfren_num, fitted(logmodel1))
+```
+
+### Step 5b: Collinearity 
+```{r clmdl1}
+#We would check for collinearity here but as we only have one predictor it doesn't make sense - check model 2 to see how to do this
+
+```
+
+### Step 5c: Outliers and Influential Cases
+Although logistic regression does not require the residuals to be normally distributed, it is still important to check for outliers and influential cases. Individual observations with unusually large residuals, high leverage, or strong influence can distort coefficient estimates, odds ratios, and overall model fit. Minimal diagnostic checks—such as Cook’s Distance, leverage values, standardised residuals, and DFBetas—help identify whether any single case is exerting undue influence on the model. These checks do not require the removal of observations but allow us to confirm that the results are not being driven by a small number of extreme or unusual cases.
+- **Cook’s Distance**: Measures how much each individual observation influences the overall model; large values indicate cases that may disproportionately affect the results.
+
+- **Leverage (Hat values)**: Identifies observations with unusual predictor values; high-leverage cases have the potential to pull the model toward themselves.
+
+- **Standardised (Pearson) residuals**: Show how poorly each observation is predicted by the model; large residuals (e.g., > |2|) indicate unusual or poorly fitted cases.
+
+- **Deviance residuals**: Reflect how much each observation contributes to the model’s deviance; large values highlight observations the model struggles to accurately classify.
+
+- **DFBetas**: Measure how much each observation influences individual regression coefficients; large DFBetas indicate that removing the case would substantially change a coefficient estimate.
+
+
+```{r olmodel1}
+# 1. Cook's Distance
+cook <- cooks.distance(logmodel1)
+
+# View largest Cook's D values
+head(sort(cook, decreasing = TRUE))
+
+# Flag influential cases (common threshold: D > 1)
+which(cook > 1)
+
+
+# 2. Leverage (Hat values)
+lev <- hatvalues(logmodel1)
+
+# View highest leverage cases
+head(sort(lev, decreasing = TRUE))
+
+# Flag high leverage cases
+# Rule of thumb: h_i > 2*(k+1)/n
+k <- length(coef(logmodel1)) - 1  # number of predictors
+n <- nobs(logmodel1)
+lev_threshold <- 2*(k+1)/n
+which(lev > lev_threshold)
+
+
+# 3. DFBetas (influence on individual coefficients)
+dfb <- dfbeta(logmodel1)
+
+# Identify cases with large DFBetas (|DFB| > 1 is concerning)
+which(abs(dfb) > 1, arr.ind = TRUE)
+
+
+# 4. Standardised (Pearson) residuals
+pearson_resid <- rstandard(logmodel1, type = "pearson")
+
+# Flag large residuals (|residual| > 2 or > 3)
+which(abs(pearson_resid) > 2)
+
+# Optional: look at the largest ones
+head(sort(abs(pearson_resid), decreasing = TRUE))
+
+
+# 5. Deviance residuals
+dev_resid <- residuals(logmodel1, type = "deviance")
+
+# Flag extreme deviance residuals
+which(abs(dev_resid) > 2)
+
+```
+
+The Hosmer-Lemeshow test checks goodness of fit by grouping data into deciles of predicted probability.
+
+For our model,the test could not be computed properly because
+the data are highly imbalanced, almost all predicted probabilities are very similar. This causes problems when trying to form groups for the test
+
+
+It does not necessarily indicate a bad model. It just tells us that the data structure prevents this test from working
+
+
+Multicollinearity is not applicable here because there is only one predictor.
+
+
+## Step 6: Report
+
+A binary logistic regression was conducted to examine whether parental education level predicted the likelihood that a student sat GCSE French. The analysis was based on a sample of 13,201 students. The outcome variable was coded 0 = Did not sit French and 1 = Sat French. Parental education had three levels 
+- At least one parent with degree
+- At least one parent with A-level
+- Neither parent with A-level with Neither (reference category).
+
+The overall model was statistically significant, χ²(2, N = 13,201) = 166.19, p < .001, indicating that parental education improved prediction compared to a null model with no predictors. However, effect-size measures (pseudo R²) showed that the inclusion of parental education as a predictor improved model fit only slightly when compared to the baseline (intercept-only) model (Cox–Snell R² = .013, Nagelkerke R² = .017, Tjur’s R² = .013), indicating that the predictor contributed minimally to the model’s explanatory power.  This suggests that although parental education is related to the outcome, its practical contribution to predicting who takes French is limited.
+
+Using “Neither parent with an A-level” as the reference category:
+
+- Students with at least one parent holding a degree had significantly higher odds of taking French
+(OR ≈ 1.70, p < .001).
+
+- Students with at least one parent holding an A-level also had higher odds of taking French
+(OR ≈ 1.28, p < .001).
+
+Predicted probabilities followed a similar pattern:
+
+- At least one parent with a degree: ~0.64
+
+- At least one parent with an A-level: ~0.57
+
+- Neither parent with an A-level (reference): ~0.51
+
+These results show that higher parental education is associated with a greater likelihood of taking GCSE French, but the differences between groups remain modest.
+
+The model’s predictive performance was evaluated using a ROC curve and confusion matrix. The AUC was 0.56, indicating poor discrimination. Using a 0.5 classification threshold, the model predicted nearly all students as having taken French.
+This led to:
+
+- High sensitivity (correctly identifying most students who did take French), but
+
+- Very low specificity (failing to identify those who did not take French)
+
+This pattern occurred because predicted probabilities for all students were close to the overall base rate, leaving very little separation between the Yes and No groups. As a result, the model performed poorly as a classifier.
+
+The Hosmer–Lemeshow goodness-of-fit test could not be meaningfully applied due to the distribution of the outcome and the similarity in predicted probabilities across groups. This reflects the structure of the dataset rather than model misfit. Multicollinearity was not assessed because the model contained only one predictor, making it impossible. Influence diagnostics were examined to ensure that the logistic regression results were not unduly affected by individual cases. Cook’s Distance values were all extremely small (D < 0.001), and no observations exceeded the common influence threshold of 1, indicating that no single case exerted unusual influence on the overall model. Leverage values were uniformly low suggesting that no observations had unusual combinations of predictor values. Standardised Pearson residuals and deviance residuals showed no cases of concern DFBetas revealed no instances where the removal of a case would substantially alter any regression coefficient. Taken together, these diagnostics indicate that the results of Model 1 are stable and not driven by a small number of influential points.
+
+Overall, there were no clear indications of violations of logistic regression assumptions.
+
+**Conclusion**
+
+Parental education is statistically associated with whether students take GCSE French. Students from more highly educated families are somewhat more likely to take the subject, and the relationship is significant in the regression model. However, the effect is small, predicted probabilities differ modestly across groups, and the model has weak classification performance.
+
+In practical terms, this means that while parental education plays a role in French participation, it is far from the only factor, and on its own it provides poor predictive accuracy for identifying which students take GCSE French.
+
+# Model2: Binary Logistic Regression with Multiple Predictors
+This model explores whether the combination of parental educational achievement and the type of school they attended helps predict a young person’s likelihood of answering yes to whether they sat French at GCSE level. 
+- satfren is the binary outcome (Yes = sat GCSE French, No = did not - converted to a factor satfren_num 1 = sat GCSE maths, 0 = No did not)
+- s1pared is a predictor (At least one parent with degree, 2 At least one parent with A-level, 3 Neither parent with A-level (reference category))
+- pcschtype is a predictor (Comprehensive 16 -standard comprehensive schools that admit students regardless of academic ability (reference category), typically with a school-leaving age of 16; Comprehensive 18 - also admit students without academic selection, but they offer education up to age 18, including A-level programmes or sixth-form provision. Students may remain at the same school for post-16 study; Modern Schools -  part of the tripartite system (Grammar–Technical–Modern) and typically educate students who did not gain admission to grammar schools; Grammar Schools - highly academically selective, admitting students based on performance in the 11-plus exam or other entrance tests; Independent Schools  - operate outside the state system and are funded through tuition fees; CTC / Other Maintained - City Technology Colleges (CTCs) were government-funded but independently managed schools focused on science, technology, and vocational education. The “Other maintained” label includes other state-funded schools that do not fit neatly into the main categories.)
+
+## Step 0: Descriptives and Visuals
+
+```{r}
+#| tbl-cap: "Table 5: Frequency Secondary School Types"
+youthdf %>%
+janitor::tabyl(pcschtype) %>%
+adorn_percentages("col") %>%
+adorn_pct_formatting(digits = 1)
+
+```
+
+```{r}
+#| fig-cap: "Figure 5: Distribution of Secondary School Types"
+ggplot(youthdf, aes(x = pcschtype)) +
+geom_bar() +
+labs(x = "Secondary School Type", y = "Count") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+#| tbl-cap: "Table 6: Cross Tabulatation: Answers to Sat French and Secondary School Type"
+
+youthdf %>% 
+  janitor::tabyl(satfren, pcschtype) %>%
+  adorn_percentages("col") %>%
+  adorn_pct_formatting(1)
+
+```
+
+
+```{r}
+#| fig-cap: "Figure 6: Proportion Sitting GCSE French by Secondary  School Type"
+ggplot(youthdf, aes(x = pcschtype, fill = satfren)) +
+geom_bar(position = "fill") +
+scale_y_continuous(labels = scales::percent_format()) +
+labs(x = "Secondary School Type", y = "Proportion", fill = "Sat French") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+#| fig-cap: "Figure 7: Faceted Plot - Sat French x Parental Education for each Secondary School Type "
+ggplot(youthdf, aes(x = s1pared, fill = satfren)) +
+  geom_bar(position = "fill") +
+  facet_wrap(~ pcschtype) +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(
+    x = "Parental Education",
+    y = "Proportion Sat French",
+    fill = "Sat French"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+## Step 1: Build the model
+```{r buildmodel2}
+
+# Fit the model
+logmodel2 <- glm(
+  satfren_num ~ s1pared + pcschtype,
+  data = youthdf,
+  family = stats::binomial(link = "logit"),
+  na.action = stats::na.exclude
+)
+```
+
+
+## Step 2: Generate Summary Statistics to Assess Model Fit
+
+### Step 2a: Summary of Model
+```{r sumdmodel2}
+#Full summary of the model
+summary(logmodel2)
+```
+
+### Step 2b: Omnibus Test of Model
+```{r chitmodel2}
+#Chi-square plus significance
+lmtest::lrtest(logmodel2)
+```
+
+### Step 2c: Pseudo R2 Statistics
+```{r pr2model2}
+#Pseudo Rsquared 
+DescTools::PseudoR2(logmodel2, which="CoxSnell")
+DescTools::PseudoR2(logmodel2, which="Nagelkerke")
+performance::r2(logmodel1) # Will return Tujur's Pseudo R2
+```
+
+## (Optional): Generate a Stargazer Report
+```{r starmdl2}
+#Summary of the model with co-efficients
+stargazer(logmodel2, type="text", star.cutoffs = c(0.05, 0.01, 0.001))
+
+```
+## Step 3: Calculate Odds Ratios and Predicted Probabilities
+```{r}
+# Odds ratios only (clean output)
+parameters::parameters(logmodel2, exponentiate = TRUE) %>%
+  as.data.frame() %>%
+  dplyr::select(Parameter, OddsRatio = Coefficient)
+
+# Predicted probabilities by s1pared
+emmeans::emmeans(logmodel2, ~ s1pared, type = "response")
+
+# Predicted probabilities by pcschtype
+emmeans::emmeans(logmodel2, ~ pcschtype, type = "response")
+
+# Full grid of predictions for ALL combinations
+
+pred_grid <- emmeans::emmeans(
+  logmodel2,
+  ~ s1pared * pcschtype,   # <-- interaction in predictions, even if not in model
+  type = "response"
+)
+
+summary(pred_grid)
+
+```
+
+## Step 4: Assess Classification Performance
+### Step 4a: Generate a ROC Curve, Sensistivity, Specificity and AUC
+```{r rocmodel2}
+#| fig-cap: "Figure 8: ROC Curve Model 2"
+ 
+# Generate predicted probabilities for Model 2
+p_hat <- stats::predict(logmodel2, type = "response")   
+
+
+# Build results2 data frame for Epi::ROC
+results2 <- youthdf %>%
+  dplyr::mutate(
+    satfren_num = satfren_num,   # already created earlier
+    p_hat = p_hat                # predicted probabilities
+  ) %>%
+  dplyr::select(satfren_num, p_hat) %>%     # only keep needed columns
+  dplyr::filter(!is.na(satfren_num))        # remove NA cases
+
+# Generate the curve
+roc2 <-Epi::ROC(
+  form = satfren_num ~ p_hat,
+  data = results2,
+  plot = "ROC"
+)
+
+```
+
+
+### Step 4b: Generate a Confusion Matrix
+
+```{r cmmodel2}
+#| tbl-cap: "Table 6: Confusion Matrix Model 2"
+results2 <- youthdf %>%
+  dplyr::mutate(
+    actual = factor(satfren_num, levels = c(0,1)),
+    pred_class = factor(
+      ifelse(stats::predict(logmodel2, type = "response") > 0.5, 1, 0),
+      levels = c(0,1)
+    )
+  )
+
+
+cm <- yardstick::conf_mat(
+  data = results2,
+  truth = actual,
+  estimate = pred_class
+)
+
+cm
+```
+
+## Step 5: Check the Model meets the Assumptions of Logistic Regression
+### Step 5a: Linearity of Independent Variables with Log Odds
+```{r hl2}
+#Check the assumption of linearity of independent variables and log odds using a Hosmer-Lemeshow test, if this is not statistically significant we are ok
+
+generalhoslem::logitgof(youthdf$satfren_num, fitted(logmodel2))
+```
+
+### Step 5b: Collinearity
+```{r clmdl2}
+#Collinearity
+vifmodel<-car::vif(logmodel2)
+# You can ignore the warning messages
+# GVIF^(1/(2*Df)) is the value of interest
+
+vifmodel
+#Tolerance
+1/vifmodel
+
+#Guidelines:
+#Tolerance < 0.1 → Serious multicollinearity
+#Tolerance < 0.2 → Potential multicollinearity problem
+#VIF > 10 → Serious multicollinearity (widely used rule of thumb)
+#VIF > 5 → Concerning / needs investigation
+#VIF between 1 and 5 → Acceptable
+
+```
+
+### Step 5c: Outliers and Influential Cases
+```{r olmodel2}
+# 1. Cook's Distance
+cook <- cooks.distance(logmodel2)
+
+# View largest Cook's D values
+head(sort(cook, decreasing = TRUE))
+
+# Flag influential cases (common threshold: D > 1)
+which(cook > 1)
+
+
+# 2. Leverage (Hat values)
+lev <- hatvalues(logmodel2)
+
+# View highest leverage cases
+head(sort(lev, decreasing = TRUE))
+
+#Count how many exceed threshold
+sum(lev > lev_threshold)
+
+#Count how many > .2
+sum(lev > 0.2)
+
+
+# Flag high leverage cases
+# Rule of thumb: h_i > 2*(k+1)/n
+k <- length(coef(logmodel2)) - 1  # number of predictors
+n <- nobs(logmodel2)
+lev_threshold <- 2*(k+1)/n
+
+
+print(paste("Threshold is: ", lev_threshold))
+
+
+
+which(lev > lev_threshold)
+
+
+
+# 3. DFBetas (influence on individual coefficients)
+dfb <- dfbeta(logmodel2)
+
+# Identify cases with large DFBetas (|DFB| > 1 is concerning)
+which(abs(dfb) > 1, arr.ind = TRUE)
+
+
+# 4. Standardised (Pearson) residuals
+pearson_resid <- rstandard(logmodel2, type = "pearson")
+
+# Flag large residuals (|residual| > 2 or > 3)
+which(abs(pearson_resid) > 2)
+
+# Optional: look at the largest ones
+head(sort(abs(pearson_resid), decreasing = TRUE))
+
+
+# 5. Deviance residuals
+dev_resid <- residuals(logmodel2, type = "deviance")
+
+# Flag extreme deviance residuals
+which(abs(dev_resid) > 2)
+
+```
+
+## Step 6: Report
+
+A binary logistic regression analysis was conducted to examine whether parental education level and secondary school type predicted the likelihood that a student sat GCSE French. The dataset contained 13,201 observations, with the outcome variable coded 0 = Did not sit French and 1 = Sat French.
+
+Two predictors were entered into the model:
+
+- Parental education:
+  - Neither parent with A-level (reference category)
+  - At least one parent with A-level
+  - At least one parent with degree
+
+- School type:
+  - Comprehensive 16 (reference category)
+  - Comprehensive 18
+  - CTC/Other maintained
+  - Grammar
+  - Independent
+  - Modern
+
+A likelihood ratio test indicated that the full model fit significantly better than the intercept-only model,  
+χ²(7, N = 13,201) = 387.88, p < .001. Pseudo-R² values suggested modest explanatory power (Cox–Snell R² = .029, Nagelkerke R² = .039, Tjur’s R² ≈ .02–.03). Although these values indicate that both predictors contribute to explaining the outcome, the overall strength of the model is moderate.
+
+Higher parental education was associated with higher odds of taking GCSE French relative to students whose parents did not have an A-level:
+
+- At least one parent with A-level: OR ≈ 1.23, p < .001  
+- At least one parent with degree: OR ≈ 1.46, p < .001  
+
+
+School type also showed meaningful differences compared with Comprehensive 16:
+
+- Comprehensive 18: OR ≈ 1.08, p = .052  
+- CTC/Other maintained: OR ≈ 0.68, p = .041  
+- Grammar: OR ≈ 1.35, p < .001  
+- Independent: OR ≈ 2.82, p < .001  
+- Modern: OR ≈ 1.38, p = .004  
+
+Students attending independent schools had the highest odds of taking French, more than doubling those of the reference group.
+
+Estimated probabilities (averaged over the other predictor) showed clear group differences.
+
+- By parental education:
+  - Neither parent with A-level: 0.54
+  - At least one parent with A-level: 0.59
+  - At least one parent with degree: 0.63
+
+- By school type:
+  - Comprehensive 16: 0.53
+  - Comprehensive 18: 0.55  
+  - CTC/Other maintained: 0.44
+  - Grammar: 0.61
+  - Independent: 0.76
+  - Modern: 0.61
+
+The full prediction grid demonstrated that the lowest probabilities (≈0.39–0.48) occurred for students in CTC/Other maintained schools with lower parental education, while the highest probabilities (≈0.79) were observed for students with degree-educated parents attending independent schools.
+
+ROC analysis indicated limited classification accuracy, with AUC ≈ 0.56–0.58, reflecting poor discrimination between students who did and did not take French. Using a standard 0.5 threshold resulted in reasonable sensitivity but low specificity, as predicted probabilities clustered closely together and did not separate the two outcome groups well.
+
+A Hosmer–Lemeshow test indicated no evidence of poor fit (χ²(6) = 3.09, p = .798).   VIF values were close to 1, indicating no concerns about multicollinearity. ### Influence Diagnostics (Step 5c)
+
+Diagnostic checks for influential observations indicated that Model 2 was also stable. Cook’s Distance values were very small (D < 0.002), and no observation approached the threshold typically used to indicate undue influence. All leverage values were  below the standard cutoff, suggesting that no cases had unusually extreme predictor patterns. Standardised Pearson residuals and deviance residuals showed no observations  of concern. DFBetas  confirmed that no single case meaningfully affected the magnitude or direction of any coefficient. Overall, the influence diagnostics provide no evidence of problematic outliers or influential observations, and the results of Model 2 can be interpreted with confidence.
+
+
+***Conclusion**
+
+Both parental education and school type were statistically significant predictors of GCSE French participation. Students from more highly educated families and those attending grammar, modern, or especially independent schools were more likely to take French. Although the predictors provided clear group differences in odds and predicted probabilities, the overall explanatory power of the model remained modest, and classification performance was limited. This suggests that while family background and school context contribute to French participation, additional individual and institutional factors are likely to play an important role.
+
+
+
+# Comparison Model 1 v Model 2
+
+Model 1 provided a statistically significant improvement over the intercept-only model, but it explained only a very small proportion of the variance in GCSE French participation (Cox–Snell R² = .013, Nagelkerke R² = .017, Tjur’s R² = .013). In contrast, Model 2 showed a substantially stronger model fit, with pseudo-R² values more than doubling (Cox–Snell R² = .029, Nagelkerke R² = .039, Tjur’s R² ≈ .02–.03). This indicates that school type contributed additional explanatory value that was not captured by parental education alone.
+Model 2 showed substantially better fit, with pseudo-R² values more than doubling (Cox–Snell R² = .029, Nagelkerke R² = .039, Tjur’s R² ≈ .02–.03). Critically, 
+
+Model 2 also demonstrated a notable reduction in AIC in comparison to Model 1, decreasing from 17964 to 17752. This indicates that model2 achieved better explanatory power while balancing model complexity more efficiently providing strong evidence that adding school type improves the model quality.
+
+In both models, parental education remained a statistically significant predictor. However, the size of the effects was reduced in Model 2 once school type was included, suggesting that part of the apparent influence of parental education in Model 1 may be explained by differences in school environment.
+
+School type itself exhibited meaningful variation. Students attending grammar, modern, and especially independent schools had higher odds of taking GCSE French than those in Comprehensive 16 schools. Independent school students showed the largest effect, with odds more than twice as high. Conversely, students in CTC/Other maintained schools had lower odds of taking French. These differences revealed that school context contributes significant additional information beyond family background.
+
+Model 1 produced a narrow range of predicted probabilities (approximately 0.51–0.64), reflecting the limited variability captured by parental education alone. Model 2 generated a much wider range (approximately 0.39–0.79 across combinations of parental education and school type), demonstrating that the addition of school type substantially increased the model’s ability to differentiate between higher- and lower-probability groups.
+
+Influence diagnostics for both models showed no evidence that individual cases distorted the parameter estimates, and neither model contained observations with high leverage or large influence values; thus, differences in model performance cannot be attributed to atypical or extreme cases.
+
+Despite improved fit, Model 2 did not substantially outperform Model 1 in classification accuracy. Both models produced AUC values around 0.56–0.58, indicating poor discrimination. At a 0.5 probability threshold, both models predicted most students as having taken French, leading to high sensitivity but low specificity. Thus, while Model 2 better explains variation in the outcome, neither model provides strong individual-level predictions.
+
+## Conclusion
+
+Overall, Model 2 represents a clearer and more informative explanation of GCSE French participation. While parental education alone showed a statistically significant association with uptake, adding school type revealed much larger and more meaningful group differences. However, the predictive usefulness of both models remained limited. This suggests that although family background and school environment are important, there are other factors likely play a substantial role in determining whether students take GCSE French.
+
+
+# References
+Connolly, P. (2007). Quantitative Data Analysis in Education: A Critical Introduction Using SPSS. Routledge.

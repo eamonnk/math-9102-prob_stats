@@ -1,0 +1,538 @@
+---
+title: "MATH9102-W11-LogReg-Exercise"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+editor: source
+---
+
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+
+/* Center and bold table captions, force them below tables */
+.table-caption, 
+caption {
+  caption-side: bottom;  /* caption below table */
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r echo=FALSE, include=FALSE}
+# Set CRAN mirror for non-interactive sessions
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+# Data manipulation and plotting (includes dplyr, ggplot2, tidyr, etc.)
+quiet_library("tidyverse")
+
+# Epidemiology tools, including ROC curves used in logistic regression diagnostics
+quiet_library("Epi")
+
+# Effect size statistics, pseudo R-squared for logistic regression models
+quiet_library("DescTools")
+
+# Produces nicely formatted model output tables
+quiet_library("stargazer")
+
+# Likelihood ratio tests and other model comparison tools
+quiet_library("lmtest")
+
+# Variance Inflation Factor (VIF) for checking multicollinearity
+quiet_library("car")
+
+# Hosmer–Lemeshow goodness-of-fit test for logistic regression
+quiet_library("generalhoslem")
+
+# Classification diagnostics (e.g., collinearity checks, model assumptions)
+quiet_library("regclass")
+
+# Confusion matrices and classification metrics (sensitivity, specificity, etc.)
+quiet_library("yardstick")
+
+# Quick and tidy frequency tables for descriptive statistics
+quiet_library("janitor")
+
+# Additional model performance measures, including pseudo R-squared
+quiet_library("performance")
+
+# Extracts tidy model coefficients, odds ratios, and confidence intervals
+quiet_library("parameters")
+
+#Amend this to reflect your folder structure 
+datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datapath <- file.path(datalocation,'sleep.rdata')
+
+sleepdf <- read.table(datapath)
+
+
+
+sleepdf <- sleepdf %>%
+  mutate(
+    trubslep_num = case_when(
+      trubslep == "yes" ~ 1,
+      trubslep == "no"  ~ 0,
+      TRUE ~ NA_real_
+    )
+  )
+
+# remove NAs
+sleepdf <- sleepdf %>% 
+  filter(!is.na(trubslep_num) & !is.na(smoke) & !is.na(caffeine))
+
+#Check your proportions of the outcome variable for bias - are these representative?
+table(sleepdf$trubslep_num)
+
+```
+
+# Task 1: Build a Simple Logistic Regression: Can trouble sleeping be predicted by whether someone is a smoker?
+
+## Step 1: Build the model
+```{r buildmodel1}
+#Make sure categorical data is used as factors
+
+logmodel1 <- glm(trubslep_num~ smoke, data =sleepdf, na.action = na.exclude, family = binomial(link=logit))
+```
+
+## Step 2: Generate Summary Statistics to Assess Model Fit
+### Step 2a: Summary of Model
+```{r summarymodel1}
+#Full summary of the model
+summary(logmodel1)
+```
+
+### Step 2b: Omnibus Test of Model
+```{r lrtestmodel1}
+#Chi-square plus significance
+lmtest::lrtest(logmodel1)
+```
+
+### Step 2c: Pseudo R2 Statistics
+```{r pr2model1}
+#Pseudo Squared 
+DescTools::PseudoR2(logmodel1, which="CoxSnell")
+DescTools::PseudoR2(logmodel1, which="Nagelkerke")
+performance::r2(logmodel1) # Will return Tujur's Pseudo R2
+```
+
+## (Optional): Use Stargazer to Report
+```{r stargmdl1}
+#Summary of the model with co-efficients
+stargazer(logmodel1, type="text", star.cutoffs = c(0.05, 0.01, 0.001))
+```
+
+
+### Your task: Interpret the fit and usefulness
+
+
+## Step 3: Calculate Odds Ratios and Probability of Co-efficients
+```{r predictorsmdl1}
+# Odds ratios only 
+parameters::parameters(logmodel1, exponentiate = TRUE) %>%
+  as.data.frame() %>%
+  dplyr::select(Parameter, OddsRatio = Coefficient)
+
+# Predicted probabilities by smoke
+emmeans::emmeans(logmodel1, ~ smoke, type = "response")
+
+```
+
+### Your task: Interpret the odds ratios and predicted probabilities
+
+
+
+## Step 4: Assess Classification Performance
+## Step 4a: Generate a ROC curve and Calculate Sensitivity, Specificity and AUC
+```{r rocm1}
+#| fig.cap: "Figure 1: ROC curve for Model1"
+
+# Generate predicted probabilities for Model 1
+p_hat <- stats::predict(logmodel1, type = "response")
+
+# Build results1 data frame for Epi::ROC
+results1 <- sleepdf %>%
+  dplyr::mutate(
+    trubslep_num = trubslep_num,   # already created earlier
+    p_hat = p_hat                # predicted probabilities
+  ) %>%
+  dplyr::select(trubslep_num, p_hat) %>%     # only keep needed columns
+  dplyr::filter(!is.na(trubslep_num))        # remove NA cases
+
+# Generate the curve
+roc1 <-Epi::ROC(
+  form = trubslep_num ~ p_hat,
+  data = results1,
+  plot = "ROC"
+)
+
+```
+### Your Task: Interpret the ROC curve, sensitivity, specificity, AUC
+
+
+
+### Step 4b: Generate a Confusion Matrix
+```{r}
+#| tbl-cap: "Table 1: Confusion Matrix Model 1"
+results1 <- sleepdf %>%
+  dplyr::mutate(
+    actual = factor(trubslep_num, levels = c(0,1)),
+    pred_class = factor(
+      ifelse(stats::predict(logmodel1, type = "response") > 0.5, 1, 0),
+      levels = c(0,1)
+    )
+  )
+
+
+cm <- yardstick::conf_mat(
+  data = results1,
+  truth = actual,
+  estimate = pred_class
+)
+
+cm
+
+
+```
+### Your task: Interpret the Confusion Matrix
+
+
+## Step 5: Check Model Meets Assumptions of Logistic Regression
+### Step 5a: Linearity of Independent Variables and Log Odds
+```{r hlml1}
+#Check the assumption of linearity of independent variables and log odds using a Hosmer-Lemeshow test, if this is not statistically significant we are OK
+generalhoslem::logitgof(sleepdf$trubslep_num, fitted(logmodel1))
+```
+### Step 5b: Collinearity 
+```{r clmdl1}
+#We would check for collinearity here but as we only have one predictor it doesn't make sense - check model 2 to see how to do this
+
+```
+
+
+### Step 5c: Outliers and Influential Cases
+- **Cook’s Distance**: Measures how much each individual observation influences the overall model; large values indicate cases that may disproportionately affect the results.
+
+- **Leverage (Hat values)**: Identifies observations with unusual predictor values; high-leverage cases have the potential to pull the model toward themselves.
+
+- **Standardised (Pearson) residuals**: Show how poorly each observation is predicted by the model; large residuals (e.g., > |2|) indicate unusual or poorly fitted cases.
+
+- **Deviance residuals**: Reflect how much each observation contributes to the model’s deviance; large values highlight observations the model struggles to accurately classify.
+
+- **DFBetas**: Measure how much each observation influences individual regression coefficients; large DFBetas indicate that removing the case would substantially change a coefficient estimate.
+
+
+```{r olmodel1}
+# 1. Cook's Distance
+cook <- cooks.distance(logmodel1)
+
+# View largest Cook's D values
+head(sort(cook, decreasing = TRUE))
+
+# Flag influential cases (common threshold: D > 1)
+which(cook > 1)
+
+
+# 2. Leverage (Hat values)
+lev <- hatvalues(logmodel1)
+
+# View highest leverage cases
+head(sort(lev, decreasing = TRUE))
+
+# Flag high leverage cases
+# Rule of thumb: h_i > 2*(k+1)/n
+k <- length(coef(logmodel1)) - 1  # number of predictors
+n <- nobs(logmodel1)
+lev_threshold <- 2*(k+1)/n
+
+#Count how many exceed threshold
+sum(lev > lev_threshold)
+
+#Count how many > .2
+sum(lev > 0.2)
+
+
+which(lev > lev_threshold)
+
+
+# 3. DFBetas (influence on individual coefficients)
+dfb <- dfbeta(logmodel1)
+
+# Identify cases with large DFBetas (|DFB| > 1 is concerning)
+which(abs(dfb) > 1, arr.ind = TRUE)
+
+
+# 4. Standardised (Pearson) residuals
+pearson_resid <- rstandard(logmodel1, type = "pearson")
+
+# Flag large residuals (|residual| > 2 or > 3)
+which(abs(pearson_resid) > 2)
+
+# Optional: look at the largest ones
+head(sort(abs(pearson_resid), decreasing = TRUE))
+
+
+# 5. Deviance residuals
+dev_resid <- residuals(logmodel1, type = "deviance")
+
+# Flag extreme deviance residuals
+which(abs(dev_resid) > 2)
+
+```
+### Your Task: Interpret the assumption checks
+
+
+
+## Step 6: Report
+### Your task: Write the report
+
+
+
+
+## Conclusion Model 1
+
+### Your Task: What can you conclude
+
+# Task 2: Build a Simple Logistic Regression with Multiple Predictors: Can trouble sleeping be predicted by whether someone is a smoker and their caffeine intake?
+
+## Step 1: Build the model
+```{r buildmodel2}
+#Make sure categorical data is used as factors
+
+logmodel2 <- glm(trubslep_num~ smoke+caffeine, data = sleepdf, na.action = na.exclude, family = binomial(link=logit))
+```
+
+## Step 2: Generate Summary Statistics to Assess Model Fit
+### Step 2a: Summary of Model
+```{r summarymodel2}
+#Full summary of the model
+summary(logmodel2)
+```
+
+### Step 2b: Omnibus Test of Model
+```{r lrtestmdl2}
+#Chi-square plus significance
+lmtest::lrtest(logmodel2)
+```
+
+### Step 2c: Pseudo R2 Statistics
+```{r pr2mdl2}
+#Pseudo Squared 
+DescTools::PseudoR2(logmodel2, which="CoxSnell")
+DescTools::PseudoR2(logmodel2, which="Nagelkerke")
+performance::r2(logmodel2) # Will return Tujur's Pseudo R2
+```
+
+## (Optional): Use Stargazer to Report
+```{r stargmdl2}
+#Summary of the model with co-efficients
+stargazer(logmodel2, type="text", star.cutoffs = c(0.05, 0.01, 0.001))
+```
+
+
+### Your task: Interpret the fit and usefulness
+
+
+
+## Step 3: Calculate Odds Ratios and Probability of Co-efficients
+```{r predictorsmdl2}
+# Odds ratios only 
+parameters::parameters(logmodel2, exponentiate = TRUE) %>%
+  as.data.frame() %>%
+  dplyr::select(Parameter, OddsRatio = Coefficient)
+
+# Predicted probabilities by smoke
+emmeans::emmeans(logmodel2, ~ smoke, type = "response")
+
+# Predicted probabilities by caffeine
+emmeans::emmeans(logmodel2, ~ caffeine, type = "response")
+
+# Full grid of predictions for ALL combinations
+
+pred_grid <- emmeans::emmeans(
+  logmodel2,
+  ~ smoke * caffeine,   # <-- interaction in predictions, even if not in model
+  type = "response"
+)
+```
+
+### Your task: Interpret the odds ratios and predicted probabilities
+
+
+## Step 4: Assess Classification Performance
+### Step 4a: Generate a ROC curve and Calculate Sensitivity, Specificity and AUC
+```{r}
+#| fig.cap: "Figure 2: ROC curve for Model 2"
+
+# Generate predicted probabilities for Model 2
+p_hat <- stats::predict(logmodel2, type = "response")
+
+# Build results2 data frame for Epi::ROC
+results2 <- sleepdf %>%
+  dplyr::mutate(
+    trubslep_num = trubslep_num,   # already created earlier
+    p_hat = p_hat                # predicted probabilities
+  ) %>%
+  dplyr::select(trubslep_num, p_hat) %>%     # only keep needed columns
+  dplyr::filter(!is.na(trubslep_num))        # remove NA cases
+
+# Generate the curve
+roc1 <-Epi::ROC(
+  form = trubslep_num ~ p_hat,
+  data = results2,
+  plot = "ROC"
+)
+
+```
+### Your Task: Interpret the ROC curve, sensitivity, specificity, AUC
+
+### Step 4b: Generate a Confusion Matrix
+```{r}
+#| tbl-cap: "Table 2: Confusion Matrix Model 1"
+results2 <- sleepdf %>%
+  dplyr::mutate(
+    actual = factor(trubslep_num, levels = c(0,1)),
+    pred_class = factor(
+      ifelse(stats::predict(logmodel2, type = "response") > 0.5, 1, 0),
+      levels = c(0,1)
+    )
+  )
+
+
+cm <- yardstick::conf_mat(
+  data = results2,
+  truth = actual,
+  estimate = pred_class
+)
+
+cm
+
+
+```
+### Your task: Interpret the Confusion Matrix
+
+
+## Step 5: Check Model Meets Assumptions of Logistic Regression
+### Step 5a: Linearity of Independent Variables and Log Odds
+```{r hlml2}
+#Check the assumption of linearity of independent variables and log odds using a Hosmer-Lemeshow test, if this is not statistically significant we are OK
+generalhoslem::logitgof(sleepdf$trubslep_num, fitted(logmodel2))
+```
+
+### Step 5b: Collinearity 
+```{r clmdl2}
+#Check collinearity
+
+vifmodel<-car::vif(logmodel2)#You can ignore the warning messages, GVIF^(1/(2*Df)) is the value of interest
+vifmodel
+#Tolerance
+1/vifmodel
+
+```
+### Step 5c: Outliers and Influential Cases
+- **Cook’s Distance**: Measures how much each individual observation influences the overall model; large values indicate cases that may disproportionately affect the results.
+
+- **Leverage (Hat values)**: Identifies observations with unusual predictor values; high-leverage cases have the potential to pull the model toward themselves.
+
+- **Standardised (Pearson) residuals**: Show how poorly each observation is predicted by the model; large residuals (e.g., > |2|) indicate unusual or poorly fitted cases.
+
+- **Deviance residuals**: Reflect how much each observation contributes to the model’s deviance; large values highlight observations the model struggles to accurately classify.
+
+- **DFBetas**: Measure how much each observation influences individual regression coefficients; large DFBetas indicate that removing the case would substantially change a coefficient estimate.
+
+
+```{r olmodel2}
+# 1. Cook's Distance
+cook <- cooks.distance(logmodel2)
+
+# View largest Cook's D values
+head(sort(cook, decreasing = TRUE))
+
+# Flag influential cases (common threshold: D > 1)
+which(cook > 1)
+
+
+# 2. Leverage (Hat values)
+lev <- hatvalues(logmodel2)
+
+# View highest leverage cases
+head(sort(lev, decreasing = TRUE))
+
+# Flag high leverage cases
+# Rule of thumb: h_i > 2*(k+1)/n
+k <- length(coef(logmodel2)) - 1  # number of predictors
+n <- nobs(logmodel2)
+lev_threshold <- 2*(k+1)/n
+
+#Count how many exceed threshold
+sum(lev > lev_threshold)
+
+#Count how many > .2
+sum(lev > 0.2)
+
+which(lev > lev_threshold)
+
+
+# 3. DFBetas (influence on individual coefficients)
+dfb <- dfbeta(logmodel2)
+
+print(paste("Threshold is: ", lev_threshold))
+
+
+
+# Identify cases with large DFBetas (|DFB| > 1 is concerning)
+which(abs(dfb) > 1, arr.ind = TRUE)
+
+
+
+# 4. Standardised (Pearson) residuals
+pearson_resid <- rstandard(logmodel2, type = "pearson")
+
+# Flag large residuals (|residual| > 2 or > 3)
+which(abs(pearson_resid) > 2)
+
+# Optional: look at the largest ones
+head(sort(abs(pearson_resid), decreasing = TRUE))
+
+
+# 5. Deviance residuals
+dev_resid <- residuals(logmodel2, type = "deviance")
+
+# Flag extreme deviance residuals
+which(abs(dev_resid) > 2)
+
+```
+
+### Your Task: Interpret the assumption checks
+
+
+
+
+## Step 6: Report
+### Your task: Write the report
+
+### Your task: Write a Conclusion about the model
+
+
+## Your task: Write a comparison between model 1 and 2
