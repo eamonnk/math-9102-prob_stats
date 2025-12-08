@@ -2,4 +2,4 @@
 math-9102-prob_stats - fundamentals of Data Anaysis
 
 
-test Test 5 update 15
+test Test 6 update 15
