@@ -1,0 +1,228 @@
+---
+title: "Multiple Linear Regression Report"
+author: "STUDENT NUMBER: DXXXXXXX, STUDENT NAME: XXXXXX, PROGRAMME CODE: XXXX"
+format: 
+  html:
+    self-contained: true
+    toc: true
+    toc-float: true
+    toc-depth: 3
+---
+
+# 1. Introduction
+
+- Provide a brief overview of your dataset
+
+- Explain the purpose of the analysis.
+
+- Describe outcome variable + relevant predictors as statistical types.
+
+- This can be taken from your Phase 1 report.
+
+- State your hypothesis for Task 1 (three predictors, must include a differential effect)
+
+- If completing a comparison model, state your hypothesis for Task 3.
+
+# 2. Methods
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+
+- Provide a concise methodology overview.
+- State your cut-off value (typically p < .05 unless otherwise specified).
+
+## 2.1 Univariate Exploration
+
+- Describe the approach used to examine variables of different types
+  - Assessment of continuous variables
+
+    - Heuristic normality checks + appropriate summary statistics based on assessment
+    
+    - Identify outliers prior to modelling
+
+    - Visualisations: histograms, density plots, boxplots
+
+  -  Assessment of categorical variables
+
+    - Frequencies and proportions
+
+    - Visualisations: barplots
+
+  - Missingness checks
+
+    - Patterns of missing data
+
+    - Decisions regarding exclusion or imputation (if relevant)
+
+  - Notes on variable suitability
+
+    - Any issues identified that may require transformation/adjustment
+
+## 2.2 Bivariate Exploration
+
+- Describe bivariate tests/visuals used to justify predictor inclusion:
+
+  - Visuals
+
+    - Scatterplots for continuous predictors vs. continuous outcome
+
+    - Boxplots for categorical predictors vs. continuous outcome
+
+
+  - Correlation tests (Pearson/Spearman/Kendall correlations for continuous variables)
+
+
+  - Group difference tests (if relevant t-tests or ANOVA for categorical × continuous combinations)
+
+# 3. Data Preparation and Exploration Results
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+- Present your univariate and bivariate analysis.
+
+- Describe preliminary patterns, direction and strength of relationships, identification of any potential nonlinear relationships
+
+
+Note: predictors can be included even if the relationship appears weak, especially as control variables. Theoretical justification is acceptable when exploratory patterns are weak.
+
+
+
+# 4. Regression Model 
+If you are going to include a comparison model then call this Baseline Model.
+
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+
+Explain:
+
+- Which predictors were included and why
+
+- Whether an interaction/differential effect is included
+
+
+
+## 4.1 Model Fit and Usefulness
+- Report your model for Task 1 as per examples provided. Report:
+
+  - Adjusted R²
+
+  - F-test
+
+  - Coefficient estimates + significance
+
+  - Interpretation of direction/effect size
+
+  - Equation
+
+  - Narrative interpretation 
+
+
+## 4.2 Examination of Assumptions
+
+- Report your model against assumptions of MLR as per examples provided:
+
+  - Non-zero variance of predictors
+
+  - Normality of Residuals
+
+  - Standardized/Studentized Residuals
+
+  - Outliers & Influential Points
+
+  - Linearity Assumption
+  
+  - Homoscedasticity (Constant Variance)
+  
+  - Multicollinearity
+  
+  - Overall Diagnostic Judgment - whether assumptions and performance indicate the model is suitable
+
+
+- Each assumption needs explicit interpretation.
+
+# 4.3 Summary
+- Draw a conclusion for the first model about the associated hypothesis.
+
+
+# 5. Comparison Model (if including)
+
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+
+Explain:
+
+- Which predictors were included and why
+
+- Whether an interaction/differential effect is included
+
+
+
+## 5.1 Model Fit and Usefulness
+- Report your model for Task 3 as per examples provided. Report:
+
+  - R² / Adjusted R²
+  
+  - F-test
+  
+  - Coefficient estimates + significance
+  
+  - Interpretation of direction/effect size
+  
+  - Equation
+  
+  - Narrative interpretation 
+
+
+## 5.2 Examination of Assumptions
+
+- Report your model against assumptions of MLR as per examples provided:
+
+  - Non-zero variance of predictors
+  
+  - Normality of Residuals
+  
+  - Standardized/Studentized Residuals
+  
+  - Outliers & Influential Points
+  
+  - Linearity Assumption
+  
+  - Homoscedasticity (Constant Variance)
+  
+  - Multicollinearity
+  
+  - Overall Diagnostic Judgment - whether assumptions and performance indicate the model is suitable
+
+- Each assumption needs explicit interpretation.
+
+## 5.3 Summary
+- Draw a conclusion for the comparison model about the associated hypothesis.
+
+# 6. Model Comparison 
+
+- Compare the model for Task 1 and Task 3 as per examples provided. Report:
+
+  - Change in adjusted R²
+  
+  - Change in model significance
+  
+  - Change in predictor significance
+  
+  - Change in prediction of the outcome
+  
+  - Improvements or deterioration in diagnostics
+  
+- Include a final judgement: Is the updated model better, worse, or equivalent?
+
+# 7. Summary
+
+- A brief (4–6 sentences) summary of what you have done and found.
+
+# 8. Appendix (Optional)
+
+- Plots
+- Descriptives
+- Tests
+- etc
+
+# 9. References
+
+

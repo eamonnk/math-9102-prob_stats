@@ -81,7 +81,7 @@ quiet_library("knitr")
 
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'raq.dat')
 
 #Read in the file

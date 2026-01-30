@@ -72,7 +72,7 @@ lapply(packages, quiet_library)
 
 
 #Amend this to reflect your folder structure 
-datalocation <- file.path("C:","Users", "deirdre.lawless", "datafiles")
+datalocation <- file.path("./")
 datapath <- file.path(datalocation,'survey.dat')
 
 #Load data

@@ -1,0 +1,735 @@
+---
+title: "Multiple Linear Regression Report"
+subtitle: "TU059 - Task 2 - Binary Logistic Rgresssion"
+author: "Student Number: D24127620, Student Name: Eamonn Kelly, Programme Code: TU059"
+format: 
+  html:
+    self-contained: true
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+editor: source
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+
+/* Center and bold table captions, force them below tables */
+.table-caption, 
+caption {
+  caption-side: bottom;  /* caption below table */
+  text-align: center;
+  color: black;
+  font-weight: bold;
+}
+</style>
+```
+
+```{r echo=FALSE, include=FALSE}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+# call the function file 
+source("MATH9102-W9-Functions.R")
+
+# Set CRAN mirror for non-interactive sessions
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+quiet_library("tidyverse") # Data manipulation and plotting (includes dplyr, ggplot2, tidyr, etc.)
+quiet_library("Epi") # Epidemiology tools, including ROC curves used in logistic regression diagnostics
+quiet_library("DescTools") # Effect size statistics, pseudo R-squared for logistic regression models
+quiet_library("stargazer") # Produces nicely formatted model output tables
+quiet_library("lmtest") # Likelihood ratio tests and other model comparison tools
+quiet_library("car") # Variance Inflation Factor (VIF) for checking multicollinearity
+quiet_library("performance")   # Regression diagnostics and model checks (check_model, check_normality)
+quiet_library("generalhoslem") # Hosmer–Lemeshow goodness-of-fit test for logistic regression
+quiet_library("regclass") # Classification diagnostics (e.g., collinearity checks, model assumptions)
+quiet_library("yardstick") # Confusion matrices and classification metrics (sensitivity, specificity, etc.)
+quiet_library("janitor") # Quick and tidy frequency tables for descriptive statistics
+quiet_library("parameters")  # Extracts tidy model coefficients, odds ratios, and confidence intervals
+quiet_library("stats")   # Core R statistical functions (cor.test, oneway.test, bartlett.test)
+quiet_library("rstatix")   # User-friendly statistical tests (Tukey HSD post-hoc)
+quiet_library("effectsize")   # Computes and interprets effect sizes (e.g., eta squared, Cohen’s d)
+quiet_library("psych")  # Descriptive statistics for grouped data (describeBy)
+quiet_library("ggplot2")   # Data visualization (histograms, QQ plots, diagnostic plots)
+quiet_library("VIM")   # Visualization of missing data patterns (aggr)
+quiet_library("kableExtra")   # Enhances tables created with knitr::kable (styling, layout)
+quiet_library("knitr")   # Generates formatted tables and report outputs (kable)
+
+
+
+# Code to load file
+datalocation <- file.path("./")
+datapath <- file.path(datalocation,"WQI Results on Dataset.csv")
+
+#Read in the csv file dataset
+wqi_df <- read.csv(datapath, header=TRUE)
+#Setting the column names to be that used in the dataset but in lowercase to make life a bit easier
+colnames(wqi_df) <- tolower(colnames(wqi_df))
+
+
+
+# Complete any manipulation/cleaning needed
+```
+
+
+```{r}
+#| label: data_subset_initial_prep
+#
+# Define variables that we want to use in or analysis
+# we'll craete a subset of the data with just those to keep our dataset as light as we can.
+varsint <- c("waterbodyname",  "years",  "sampledate",  "alkalinity.total..as.caco3.",  "bod...5.days..total.", "ammonia.total..as.n.", "chloride", "conductivity..25.c",  "dissolved.oxygen",  "ph",  "temperature",  "total.hardness..as.caco3.", "true.colour", "ccme_wqi",  "wawqi",  "horton.wqi",  "brown.wqi",  "srdd.wqi")
+
+# create data subset of variables we want to lok at
+wqi_dsubset <- wqi_df[varsint]
+
+
+#  human friendly labels
+colnames(wqi_dsubset) <- c( "waterbodyname", "years", "month", "alkalinity",  "biochem_ox_dmnd", "ammonia", "chloride", "conductivity", "dissolved.oxygen", "ph",  "temperature", "hardness", "colour", "ccme_wqi",  "wawqi",  "horton.wqi",  "brown.wqi",  "srdd.wqi")
+
+```
+
+
+# 1. Introduction
+
+This analysis will perform a  binary logistic regression to predict water quality, using historical water quality data which was taken over a period of 16 years from 2007 to 2023 across 16 locations in Ireland by the **Environmental Protection Agency (EPA)**. The data was then used to classify water quality at these locations. The data set was sourced from the following location 
+[Water Quality Monitoring Dataset (Ireland)](https://figshare.com/articles/dataset/Water_Quality_Monitoring_Dataset_Ireland_/25002131), and is a merging of multiple csv files from the **EPA** into a single source. 
+
+Water samples were taken from 160 sites within these 16 geographical areas, at various times throughout the year, tested in labs, and calculations were then carried out to determine Water Quality according to different water quality standards, a number of which exist.
+
+## 1.1 Project Overview
+
+The project will create a categorical binary variable in our dataset and build a binary logistic regression model which will evaluate the predictive power of key water quality classifying paramaters, namely **Dissolved Oxygen (DO)**, **Temperature** and **ph**. The model will be able to predict whether a sample set of data take' from a water source is of 'good' or 'poor' quality, based on the historical data in our dataset This boolean variable, indicating 'good' or 'poor water quality, **wqi_bool**, will be our **outcome** variable.
+
+**Predictor Variables**:
+
+- **dissolved oxygen (DO)**: a key water quality measurable providing the amount of oxygen present in water and therefore its ability to support life. We expect to see that the more dissolved oxygen is present, the better the water quality.
+- **temperature**: influences how soluble substances are within water, including oxygen and organic matter. This will also affect the rate of biochemical reactions at higher and lower extremes.
+- **ph**: acidity  / alkaline indicator which affects support for various processes, both chemical and organic. Similar to temperature we expect to see poorer water quality at higher and lower extremes.
+
+Note: Other predictor variables were considered, specifically Biochemical **Oxygen Demand(BOD)**, however there is strong co-linearity between it and some of the existing predictors, such as **Dissolved Oxygen (DO)**, as such to avoid potential issues in our model assumptions at a later stage,it was decided to leave it out and keep our number of variables to a minimum as much as possible. Also, we have used these as predictors in our previous assignment as they are particularly relevant in determining water quality and provide us with  level of intepretability i.e. we can mor easily understand their effects, although there are many other variables involved in determining water quality. Using them again here however may be able to provide further insight into them, their relationships and predictive value.
+
+## 1.2 Hypothesis
+
+**H3 - Hypothesis**: **dissolved oxygen**, **temperature** and **ph** combined, as water quality metrics, can provide a statistically significant binary logistic regression predictive model, allowing for the classification of water quality outcomes as 'good' or 'poor'.
+
+
+## 1.3 Statistical assumptions and Diagnostics
+
+Throughout the analysis, a significance threshold of 0.05 was used, and effect sizes were reported according to Cohen's conventions(1988).
+
+Before interpreting the binary logistic regression results, diagnostic checks were conducted to ensure compliance with the key statistical assumptions underpinning the analysis. These included tests for linearity, normality of residuals, homoscedasticity, multicollinearity, and the presence of outliers, leverage points, or influential observations (Field, Miles, & Field, 2021; Tabachnick & Fidell, 2019). Linearity and homoscedasticity were assessed through examination of residual data, where a random distribution of residuals around the zero line indicated that the assumptions were met. The normality of residuals was evaluated statistically, with small deviations tolerated given the robustness of regression to minor non-normality in larger samples (Field et al., 2021). Standardized residuals were inspected to identify potential outliers, with absolute values exceeding ±3.29 considered cause for further investigation (Tabachnick & Fidell, 2019). To assess influence, Cook’s distance statistics were applied; Cook’s distance values greater than 1.0 were regarded as indicative of influential outliers, while leverage values were examined to identify cases exerting disproportionate influence on the regression coefficients (Belsley, Kuh, & Welsch, 1980; Field et al., 2021). Multicollinearity was assessed using Variance Inflation Factor (VIF) and Tolerance values. Following Field, Miles, and Field (2021), VIF values greater than 5 or Tolerance values below 0.2 were considered indicative of potential multicollinearity, while more extreme thresholds (VIF \> 10, Tolerance \< 0.1) would indicate serious violations. Collectively, these diagnostic procedures confirmed that the data met the necessary assumptions for valid multiple regression analysis, providing confidence in the reliability of the model estimates.
+
+
+# 2. Data description and preparation
+
+## 2.1 Overview
+
+The dataset contains '29,159' rows and '18' variables typically included in water quality analysis such as **ph**, **temperature**, **biochemical oxygen demand *BOD**, **dissolved oxygen**, **alkalinity** and others. The concepts of interest, their measurement and statistical type are shown in Tables 1 and 2 below.
+
+
+| variable         | r_type  | is_factor | factor_summary                           | stat_type             |
+| ---------------- | ------- | --------- | ---------------------------------------------------------------- | 
+| waterbodyname    | factor  | TRUE      | 160 levels (e.g., ABBEYTOWN_010, Allua,) | Categorical (Nominal) |
+| years            | integer | FALSE     | NA                                       | Discrete (Ratio)      |
+| month            | factor  | TRUE      | 12 levels (e.g., Jan, Feb, …)            | Categorical (Ordinal) |
+| alkalinity       | double  | FALSE     | NA                                       | Continuous (Ratio)    |
+| biochem_ox_dmnd  | double  | FALSE     | NA                                       | Continuous (Ratio)    |
+| ammonia          | double  | FALSE     | NA                                       | Continuous (Ratio)    |
+| chloride         | double  | FALSE     | NA                                       | Continuous (Ratio)    |
+| conductivity     | double  | FALSE     | NA                                       | Continuous (Ratio)    |
+| dissolved.oxygen | double  | FALSE     | NA                                       | Continuous (Ratio)    |
+| ph               | double  | FALSE     | NA                                       | Continuous (Interval) |
+| temperature      | double  | FALSE     | NA                                       | Continuous (Interval) |
+| hardness         | double  | FALSE     | NA                                       | Continuous (Ratio) |
+| colour           | double  | FALSE     | NA                                       | Continuous (Ratio) |
+| ccme_wqi         | factor  | TRUE      | 5 levels (e.g., Excellent, Fair, …)      | Categorical (Ordinal) |
+| wawqi            | factor  | TRUE      | 6 levels (e.g., Excellent, Fair, …)      | Categorical (Ordinal) |
+| horton.wqi       | factor  | TRUE      | 6 levels (e.g., Excellent, Fair, …)      | Categorical (Ordinal) |
+| brown.wqi        | factor  | TRUE      | 5 levels (e.g., Excellent, Fair, …)      | Categorical (Ordinal) |
+| srdd.wqi         | factor  | TRUE      | 6 levels (e.g., Excellent, Fair, …)      | Categorical (Ordinal) |
+
+Table 1. Variable and Statistical Datatypes present in the data set
+
+Note the presence of several WQI categorical variables.These are water quality metrics form difference classification standards, of which there are a few. We will not use these as part of our multiple linear regression model.
+
+We will create a reduced dataset to include primarily just the variables required for our two models, namely, **month**, **dissolved.oxygen**, **ph** and **temperature**.
+
+
+| Variable | Range (Min–Max) | Mean | SD | Median | IQR (1st Qu. - 3rd Qu| 
+|-----------|-----------------|------|----|---------|--------------|
+| **Dissolved Oxygen (% sat)** | 0–198 | 58.29 | 22.5 | 54.9 | 49.4–75.0 |
+| **pH** | 4.7–9.8 | 7.55 | 0.7 | 7.7 | 7.2–8.0 | 
+| **Temperature (°C)** | 0.6–637.0* | 10.85 | 2.5 | 10.7 | 8.2–13.1 |
+
+Table 2. Continuous (Interval/Ratio) Data Descriptions
+
+Detailed analysis of our data was performed in the previous assignment  phase 1, and is available for viewing there. We will not include all of that here. Rather we will include some of the most relevant points, and any additional analysis where it is felt it is required.
+
+**Some General observations:**
+
+- **dissolved oxygen (DO)** - is % saturation level of oxygen in the water. Is a ratio of the actual amount of dissolved oxygen relative to maximum amount that could be dissolved. It can be supersaturated and have very excessive values of oxygen saturation. This is the reason for its spread in our data, as per the table above. Other water oxygen metrics have a much narrower range.
+- **ph** - mean values, a narrow spread, which is as expected.
+- **Temperature (°C)** - data ranges from just above freezing and 3rd quantile approx 13 C. There are some outliers present here.
+
+There do appear to be some outliers, particularly in temperature, with a temperature of 637 C not be a real value. This may be due to a broken thermometer, or perhaps data entry error. Conductivity, has a 3rd quantile value of 501 yet has a max value of 42000. This could be an outlier however we need to determine if extreme values are outliers or actual real data due to extreme environmental conditions
+
+Visual inspection of the histograms and Q–Q plots for all predictor and outcome variables were preformed in assignment 1. The standardized scores for skewness and kurtosis, as well as the percentages of absolute z-scores exceeding ±3.29, were inspected.
+
+## 2.2 Address temperature Outliers and BOD skewness in dataframe
+
+
+```{r}
+#| label: prepare_temp_bod_vars
+# Temperature variable -  delete these rows with temperature valeus > 40 degrees Celsius
+wqi_dsubset_clean_t <- wqi_dsubset %>% filter(temperature <= 40 | is.na(temperature))
+
+# Biochemical Oxygen Demand (BOD) variable -  transform to the 'log10' to address 
+wqi_dsubset_clean_t_bod <- wqi_dsubset_clean_t %>%
+  # add +1 to handle zeros safely and rename the variables
+  mutate(bod_log10 = log10(biochem_ox_dmnd + 1))
+summary(wqi_dsubset_clean_t_bod)
+
+```
+
+
+## 2.3 Create Binary Water Quality Variable from Existing WQI indices
+
+There is a large variety of water quality standards used internationally. Below is a table of classification systems and how the same data for our dataset is classified across each of them.
+
+
+```{r}
+#| label: wqi_clsfrs_list_all
+wqi_working_df <- wqi_dsubset_clean_t_bod
+# craete alist of unique values for the wqi classifiers to
+wqi_classifiers <- list(
+  CCME_WQI   = sort(unique(wqi_working_df$ccme_wqi)),
+  WAWQI      = sort(unique(wqi_working_df$wawqi)),
+  Horton_WQI = sort(unique(wqi_working_df$horton.wqi)),
+  Brown_WQI  = sort(unique(wqi_working_df$brown.wqi)),
+  SRDD_WQI   = sort(unique(wqi_working_df$srdd.wqi))
+)
+# display the list
+wqi_classifiers
+```
+
+Below is table of some general observations of the spread across each classifier
+
+| Observation | Classifications |Interpretation|
+|----------------|---------|--------|
+| **CCME_WQI** ||Most values classified as **“Fair”**, very few reach the criteria **Excellent**.|
+| **WAWQI**   | Most values classified as**“Good”**  and even spread for others.|
+| **Brown_WQI** | Most values classified as**“Good”** and then **Excellent**.|
+| **Horton_WQI**| Fairly even classification
+| **SRDD_WQI**  | Even distribution across top 3 to 4 categories|
+
+
+After some additional investigation, we will continue to use **CCME_WQI** from our dataset, as i is used widely as an international standard. The **ccme** defined classification standards are as outlined at [Canadian Water Quality Guidelines for the Protection of Aquatic Life](https://ccme.ca/en/res/wqimanualen.pdf). 
+
+Which is based on this WQI value, water quality is classified into one of five ranks:
+Excellent (95–100), Good (80–94), Fair (65–79), Marginal (45–64), and Poor (0–44)
+
+The following table displays the current values associated with all the **CCME WQI** classification metrics in our dataset
+
+```{r}
+#| label: wqi_ccme_values
+# value count for the existing ccme wqi classification values
+wqi_working_df %>% dplyr::count(ccme_wqi)
+
+
+```
+
+
+To create a binary categorical variable we can use in our logistic regression model, we will sub-classify these into a new variable, called **wqi_bool**, with boolean values as follows:
+
+- '1' = "Excellent" and **Good" 
+- '0' = "Fair", "Marginal", and "Poor"
+
+NOTE: We did investigate creating a new classifier based off our own data and that used in assignment task 1 linear regression model. For example, using **Biochemical Oxygen Demand*. However, due to limit of detection and observed standardized kurtosis z score for BOD of 4163, with 70% of values being the same value, i.e. raw value of 1.2 mg/L, we have a spread of values across different quality metrics. This lends weight that using a single measurable as a predictor or standard of water quality is not feasible to get accurate results. There are too many factors at play when determining water quality for any single metric to provide such a classification. Hence the decision to use a modified version of an existing wqi classifier. This will also allow us validate, or invalidate, some of our variable outcomes from those earlier tasks. 
+
+Update our working dataframe with Binary categorical variable and set them as categorical factors, to prevent any future accidentla mis-use as numerical.
+
+```{r}
+#| label: wqi_bool_create
+# create new df so nto working in original
+lr_wqi_bool_df <- wqi_dsubset_clean_t_bod
+
+# define  the ccme_wqi as ordinal with the correctly defined levels
+lr_wqi_bool_df$ccme_wqi <- factor(lr_wqi_bool_df$ccme_wqi,levels = c("Excellent", "Good", "Fair", "Moderate", "Poor"), ordered = TRUE)
+
+# create the new boolean variable for wqi
+lr_wqi_bool_df <- lr_wqi_bool_df %>%
+  mutate(
+    wqi_bool = case_when(
+      ccme_wqi %in% c("Excellent", "Good") ~ 1L,
+      ccme_wqi %in% c("Fair", "Moderate", "Poor") ~ 0L,
+      TRUE ~ NA_integer_
+    )
+  ) %>%
+  filter(!is.na(wqi_bool))
+
+
+# convert boolean variable into a two level factor for Logistic Regression, again not essential but will do so
+# as will be labelled as categorical when used, not accidental usage as continuous
+lr_wqi_bool_df$wqi_bool <- factor(lr_wqi_bool_df$wqi_bool, levels = c(0, 1))
+
+# table(wqi_dsubset$ccme_wqi)
+
+# lr_wqi_bool_df %>% dplyr::count(ccme_wqi)
+# lr_wqi_bool_df %>% dplyr::count(wqi_bool)
+```
+
+## 2.4 Verify Water Quality Binary Categorcial variable
+
+```{r}
+#| label: wqi_bool_values
+# view the new totals
+tbl_new_tots <- table(lr_wqi_bool_df$wqi_bool)
+ 
+cat(sprintf("\nNew Binary Variable Totals:\n 0 = Poor Water Quality: %d values\n 1 = Good Water Quality: %d values\n",
+  tbl_new_tots["0"],
+  tbl_new_tots["1"]
+))
+
+```
+
+```{r}
+#| label: wqi_bool_percent
+# view percentages to check for class imbalance
+pct <- prop.table(table(lr_wqi_bool_df$wqi_bool)) * 100
+
+cat(sprintf("Percentages per binary variable:\n 0 = Poor Water Quality: %.2f%%\n 1 = Good Water Quality:  %.2f%%\n",pct["0"], pct["1"]))
+
+
+```
+## 2.5 Finalise dataframe for use in model
+
+```{r}
+#| label: wqi_bool_df_final_update
+
+# craete df copy to keeo us silo'd in our working stages.
+df1 <- lr_wqi_bool_df
+
+
+# take the variables we want to use to keep working df as small as we can.
+df1 <- df1 %>%
+  dplyr::select(
+    bod_log10,
+    temperature,
+    dissolved.oxygen,
+    ph,
+    ccme_wqi,
+    wqi_bool
+  )
+
+# verify structure and contents are as we expect
+str(df1)
+summary(df1)
+
+```
+
+## 2.6 Missing Data
+
+```{r}
+#| label: df1_missing _data
+# Prepare data for missingness check
+#| fig-cap: "Missing Data for outcome and predictor variables "
+mdata <- df1 %>% select(bod_log10, dissolved.oxygen, temperature, ph, ccme_wqi, wqi_bool) %>% as.data.frame()
+
+# Reset row names (this fixes the error)
+row.names(mdata) <- NULL
+
+# Missing data inspection
+VIM::aggr(mdata,sortVar = TRUE, combined = FALSE)
+
+```
+## 2.7 Visualizations of variables
+
+```{r}
+#| label: visualisation_vars
+#| fig-cap: "Distribution plots for outcome and predictor variables"
+# Generate plots using function plot_ratio_variable
+lr_t2_df <-df1
+
+# this is called from source file, called at start of thisj .qmd file.
+plot_ratio_variable(lr_t2_df, "dissolved.oxygen","DO",2)
+plot_ratio_variable(lr_t2_df, "temperature", "temp", 3)
+plot_ratio_variable(lr_t2_df, "ph", "ph", 4)
+
+```
+
+
+
+# 3. Binary Logistic Regression
+
+## 3.1 Build the model
+```{r}
+#| label: logmodel1_build
+# Outcome must be 0/1
+# craete new df so nto workign in final clean version and can roll back  call that clean initial state as we need.
+df_mod <- df1
+logmodel1 <- glm(wqi_bool ~ dissolved.oxygen+temperature+ph, data =df_mod, na.action = na.exclude, family = binomial(link=logit))
+```
+
+## 3.2 Generate Summary Statisics to Assess model fit
+
+### 3.2a - Summary of Model
+This includes all information needed about the model but requires some calculation and additional information to fully assess the fit and usefulness. Additional tests will provide easier access to some parts, we will use elements of this when looking at the odds ratios.
+```{r}
+#| label: logmodel1_summ
+#Full summary of the model
+summary(logmodel1)
+```
+
+### 3.2b - Omnibus Test of Model
+Tells us whether the model as a whole is significant. Gives us the Chi Square statistic to report for the model as a whole.
+```{r}
+#| label: logmodel1_lrtest_chi_signif
+#Chi-square plus significance
+lmtest::lrtest(logmodel1)
+```
+
+### 3.2c - Use Stargazer to Report
+```{r stargmdl1}
+#| label: logmodel1_stargazer1
+#Summary of the model with co-efficients
+stargazer(logmodel1, type="text", star.cutoffs = c(0.05, 0.01, 0.001))
+```
+### 3.2d - Pseudo R2 Statistics
+Pseudo R2 statistics tell us how much better does the model fit the data compared to a baseline model (a model with no predictors)?
+
+```{r}
+#| label: logmodel1_pseudo2_cox_nagel
+#Pseudo R Squared 
+DescTools::PseudoR2(logmodel1, which="CoxSnell")
+DescTools::PseudoR2(logmodel1, which="Nagelkerke")
+performance::r2(logmodel1) # Will return Tujur's Pseudo R2
+```
+
+
+# 4. Calculate Odds Ratios and Probability of Co-efficients
+```{r}
+#| label: logmodel1_odds_ratio_prob_coeffs
+# Odds ratios only 
+parameters::parameters(logmodel1, exponentiate = TRUE) %>%
+  as.data.frame() %>%
+  dplyr::select(Parameter, OddsRatio = Coefficient)
+
+# Predicted probabilities by pred1
+emmeans::emmeans(logmodel1, ~ dissolved.oxygen, type = "response")
+# Predicted probabilities by pred2
+emmeans::emmeans(logmodel1, ~ temperature, type = "response")
+# Predicted probabilities by pred3
+emmeans::emmeans(logmodel1, ~ ph, type = "response")
+# Predicted probabilities by pred4
+#emmeans::emmeans(logmodel1, ~ bod_log10, type = "response")
+
+
+
+pred_grid <- emmeans::emmeans(
+  logmodel1,
+  ~ dissolved.oxygen+temperature+ph,   # <-- interaction in predictions, even if not in model
+  type = "response"
+)
+
+summary(pred_grid)
+
+```
+
+
+When interpreting the **odds ratios**, there are two things to look for:
+
+(a) Is the odds ratio greater than 1 or less than 1?
+
+OR > 1 → higher odds of sitting French compared to the reference group
+
+OR < 1 → lower odds compared to the reference group
+
+(b) Is the effect statistically significant?
+
+Look at the p-value for each coefficient
+
+p < .05 → statistically significant
+
+Remember for categorical predictors you are comparing to the reference category.
+
+Odds ratios tell us how the odds increase or decrease, but ** predicted probabilities** are easier  to understand. Calculate predicted probabilities for each value of a categorical variable
+
+The predgrid will give you the calculated predicted probabilities for each combination of the predictors. 
+
+# 5. Assess Classification Performance
+## 5.1 Generate a ROC curve and Calculate Sensitivity, Specificity and AUC
+```{r}
+#| label: logmodel1_roc
+#| fig.cap: "ROC curve for Model1"
+
+df_roc <-df1
+# Generate predicted probabilities for Model 1
+p_hat <- stats::predict(logmodel1, type = "response")
+
+# Build results1 data frame for Epi::ROC
+results1 <- df_roc %>%
+  dplyr::mutate(
+    wqi_bool = wqi_bool,   # already created earlier
+    p_hat = p_hat                # predicted probabilities
+  ) %>%
+  dplyr::select(wqi_bool, p_hat) %>%     # only keep needed columns
+  dplyr::filter(!is.na(wqi_bool))        # remove NA cases
+
+# Generate the curve
+roc1 <-Epi::ROC(
+  form = wqi_bool ~ p_hat,
+  data = results1,
+  plot = "ROC"
+)
+
+```
+A ROC curve (Receiver Operating Characteristic curve) is a way of checking how well the model can distinguish between the two outcome groups:
+
+- Sat French (1)
+
+- Did not sit French (0)
+
+The important result is the AUC (Area Under the Curve).
+
+What does AUC mean?
+
+- AUC = 0.50 → model performs no better than random guessing
+
+- AUC = 1.00 → perfect prediction
+
+- AUC between 0.5 and 0.7 → poor discrimination
+
+- AUC between 0.7 and 0.8 → acceptable
+
+In our model AUC = 0.56. The model performs only slightly better than chance.
+
+Even though parental education is statistically significant, it does not help the model separate students who took French from those who didn’t.
+
+Hey point: Statistical significance does not guarantee good prediction. A predictor can be statistically related to the outcome but still be weak at classifying individual cases.
+
+## 5.2 Generate a Confusion Matrix
+```{r}
+#| label: logmodel1_cm
+#| tbl-cap: "Table 4: Confusion Matrix Model 1"
+df_cm <- df1
+results1 <- df_cm %>%
+  dplyr::mutate(
+    actual = factor(wqi_bool, levels = c(0,1)),
+    pred_class = factor(
+      ifelse(stats::predict(logmodel1, type = "response") > 0.5, 1, 0),
+      levels = c(0,1)
+    )
+  )
+
+
+cm <- yardstick::conf_mat(
+  data = results1,
+  truth = actual,
+  estimate = pred_class
+)
+
+cm
+
+
+```
+
+A Confusion Matrix compares:
+
+- Actual values (category of interest for the outcome variable?)
+with
+
+- Predicted values (what the model says at a probability cutoff, usually 0.5)
+
+The matrix gives:
+
+- True Positives (TP): predicted Yes & actually Yes
+
+- True Negatives (TN): predicted No & actually No
+
+- False Positives (FP): predicted Yes but actually No
+
+- False Negatives (FN): predicted No actually Yes
+
+
+Sensitivity measures how well the model identifies the category of interest (1) cases: Of all the rows with the value 1, how many did the model correctly identify?
+High sensitivity means the model is good at detecting these.
+Low sensitivity means the model misses many of these.
+
+
+Specificity measures how well the model identifies the rows with 0: how many did the model correctly identify as 0?
+High specificity means the model is good at detecting cases with 0. Low specificity means the model predicts 1 too often.
+
+
+# 6. Check Model Meets Assumptions of Logistic Regression
+## 6.1 Linearity of Independent Variables and Log Odds
+```{r}
+#| label: assum_hsmrlmshw
+#Check the assumption of linearity of independent variables and log odds using a Hosmer-Lemeshow test, if this is not statistically significant we are ok
+df_assum <-df1
+generalhoslem::logitgof(df_assum$wqi_bool, fitted(logmodel1))
+```
+
+## 6.2 Collinearity 
+```{r clmdl1}
+#| label: assum_colin
+#We would check for collinearity here but as we only have one predictor it doesn't make sense - check model 2 to see how to do this
+
+## 4.7 Check multi-colinearity
+
+#| label: res_multicollin
+# Check multicollinearity
+
+performance::check_collinearity(logmodel1)
+
+```
+
+### 6.3 Outliers and Influential Cases
+Although logistic regression does not require the residuals to be normally distributed, it is still important to check for outliers and influential cases. Individual observations with unusually large residuals, high leverage, or strong influence can distort coefficient estimates, odds ratios, and overall model fit. Minimal diagnostic checks—such as Cook’s Distance, leverage values, standardised residuals, and DFBetas—help identify whether any single case is exerting undue influence on the model. These checks do not require the removal of observations but allow us to confirm that the results are not being driven by a small number of extreme or unusual cases.
+- **Cook’s Distance**: Measures how much each individual observation influences the overall model; large values indicate cases that may disproportionately affect the results.
+
+- **Leverage (Hat values)**: Identifies observations with unusual predictor values; high-leverage cases have the potential to pull the model toward themselves.
+
+- **Standardised (Pearson) residuals**: Show how poorly each observation is predicted by the model; large residuals (e.g., > |2|) indicate unusual or poorly fitted cases.
+
+- **Deviance residuals**: Reflect how much each observation contributes to the model’s deviance; large values highlight observations the model struggles to accurately classify.
+
+- **DFBetas**: Measure how much each observation influences individual regression coefficients; large DFBetas indicate that removing the case would substantially change a coefficient estimate.
+
+
+```{r}
+#| label: assum_cook_lev_dfb_dev
+# 1. Cook's Distance
+cook <- cooks.distance(logmodel1)
+
+# View largest Cook's D values
+head(sort(cook, decreasing = TRUE))
+
+# Flag influential cases (common threshold: D > 1)
+which(cook > 1)
+
+
+# 2. Leverage (Hat values)
+lev <- hatvalues(logmodel1)
+
+# View highest leverage cases
+head(sort(lev, decreasing = TRUE))
+
+# Flag high leverage cases
+# Rule of thumb: h_i > 2*(k+1)/n
+k <- length(coef(logmodel1)) - 1  # number of predictors
+n <- nobs(logmodel1)
+lev_threshold <- 2*(k+1)/n
+which(lev > lev_threshold)
+
+
+# 3. DFBetas (influence on individual coefficients)
+dfb <- dfbeta(logmodel1)
+
+# Identify cases with large DFBetas (|DFB| > 1 is concerning)
+which(abs(dfb) > 1, arr.ind = TRUE)
+
+
+# 4. Standardised (Pearson) residuals
+pearson_resid <- rstandard(logmodel1, type = "pearson")
+
+# Flag large residuals (|residual| > 2 or > 3)
+which(abs(pearson_resid) > 2)
+
+# Optional: look at the largest ones
+head(sort(abs(pearson_resid), decreasing = TRUE))
+
+
+# 5. Deviance residuals
+dev_resid <- residuals(logmodel1, type = "deviance")
+
+# Flag extreme deviance residuals
+which(abs(dev_resid) > 2)
+
+```
+
+
+
+
+## Step 6: Report
+
+Replace the content in italics with content relevant to your analysis (does not need to be italicised).
+
+
+A binary logistic regression was conducted to _explain what you are trying to investigate_. The analysis was based on a sample of _sample size_ rows. The outcome variable was coded _0 = X and 1 = X_. _Explain the predictors, possible values where relevant_.
+
+The overall model _was/was not_ statistically significant, χ²(_df1, N = ?) = ? 166.19, _p = pvalue/p < cut-off (0.05, 0.01 or .001)_, indicating _explain what this indicates_. Effect-size measures (pseudo R²) showed that the inclusion of the predictors improved model fit only slightly when compared to the baseline (intercept-only) model (Cox–Snell R² = _?_, Nagelkerke R² = _?_, Tjur’s R² = _?_), indicating that the predictors _contributed/did not contribute_ to the model’s explanatory power.  This suggests _explain what this suggests_.
+
+_Illustrate the meaning for the relevant combinations of predictors_
+
+
+Predicted probabilities followed a similar pattern:
+
+_include your predicted probabilities_.
+
+These results show _explain what this shows_.
+
+The model’s predictive performance was evaluated using a ROC curve and confusion matrix. The AUC was _?_, indicating _poor/moderate/good_ discrimination. Using a 0.5 classification threshold, the model predicted _what is it able to predict_.
+This led to:
+
+- _High/Low/Very Low_ sensitivity ( _what does this mean in terms of the outcome_), and
+
+- _High/Low/Very low_ specificity ( _what does this mean in terms of the outcome_)
+
+_If you have an explanation include it here_
+
+The Hosmer–Lemeshow goodness-of-fit test indicate _concerns/no concerns_ with linearity.  Multicollinearity _was/was not_ and issue (_VIF values and Tolerance for each predictor_). Influence diagnostics were examined to ensure that the logistic regression results _were/were not_ affected by individual cases. 
+
+To assess the presence of influential data points, Cook’s Distance values were _all extremely small / mostly small but with some larger values_, with a maximum of D = …, which is _well below / close to / above_ the conventional influence threshold of 1. This suggests that _no single observation / one or more observations_ exerted unusual influence on the model.
+
+Leverage values were _uniformly low / variable / high in a few cases_, indicating that _no / some cases_ had unusual combinations of predictor values ( _max leverage = …_).
+
+Standardised Pearson residuals and deviance residuals ranged from _…_ to _…_, meaning that _no observations / some observations_ exceeded the common cutoff of ±3, and therefore _no / some_ unusual outcome patterns were detected.
+
+Inspection of DFBETAs revealed _no / some_ instances in which the removal of a case would substantially alter any regression coefficient (_maximum DFBETA = …_).
+
+Taken together, these diagnostics indicate that the results of this logistic regression model are _stable/not stable_ and _driven/not driven_ by a small number of influential points _and may be somewhat sensitive to a few influential observations and should be interpreted with caution_.
+
+Overall, _conclude about the assumptions._
+
+
+| Reporting element                             | Where to find it in R output                             | Code chunk label            |     |                      |
+| --------------------------------------------- | -------------------------------------------------------- | --------------------------- | --- | -------------------- |
+| **Sample size (N)**                           | Output of `summary(logmodel1)` or number of rows in data | `summarymdl1`               |     |                      |
+| **Outcome coding (0 = ?, 1 = ?)**             | Data dictionary / column description in dataset          | Data preparation step       |     |                      |
+| **Overall model significance (χ², df, p)**    | Likelihood Ratio Test output                             | `chimdl1`                   |     |                      |
+| **Pseudo R² (Cox–Snell, Nagelkerke, Tjur’s)** | Pseudo R² results                                        | `pr2md1`                    |     |                      |
+| **Interpretation of significance**            | Use χ² and p-value + narrative rules                     | `chimdl1`                   |     |                      |
+| **Odds ratios (effect direction)**            | `parameters()` table → Odds Ratio column                 | `predictorsmdl1`            |     |                      |
+| **Statistical significance of predictors**    | p-values in `summary(logmodel1)` or stargazer output     | `summarymdl1` / `stargmdl1` |     |                      |
+| **Predicted probabilities statement**         | `emmeans()` predicted probabilities                      | `predictorsmdl1` pred_grid           |     |                      |
+| **AUC — discriminatory ability**              | Value labeled `AUC` under ROC output                     | Step 4a ROC curve           |     |                      |
+| **ROC interpretation**                        | Based on AUC interpretation rules                        | Step 4a narrative           |     |                      |
+| **Sensitivity & Specificity**                 | Confusion matrix (`conf_mat()` output)                   | Step 4b                     |     |                      |
+| **Linearity with log odds**                   | Hosmer–Lemeshow p-value                                  | `hlml1`                     |     |                      |
+| **Multicollinearity (VIF / Tolerance)**       | VIF and tolerance values                                 | Step 5b (Model 2 example)   |     |                      |
+| **Cook’s Distance (influence)**               | max(D) and flagged indices                               | Step 5c → `olmodel1`        |     |                      |
+| **Leverage values**                           | max leverage and flagged cases                           | Step 5c → `olmodel1`        |     |                      |
+| **Standardised Pearson residuals**            | Ranged values and flagged cases                          | Step 5c → `olmodel1`        |     |                      |
+| **Deviance residuals**                        | Ranged values and flagged cases                          | Step 5c → `olmodel1`        |     |                      |
+| **DFBETAs (influence on coefficients)**       | Flagged cases with                                       | DFB                         | > 1 | Step 5c → `olmodel1` |
+| **Final statement on assumptions**            | Based on all diagnostics above                           | Step 6 narrative            |     |                      |
+

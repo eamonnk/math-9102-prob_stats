@@ -1,0 +1,233 @@
+---
+title: "MATH9102 Paired Practical: Linear & Logistic Regression with Peer Review"
+subtitle: "In-Class Activity"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+
+---
+
+# Overview
+
+This practical is designed to help you continue to work on CA phase 2.
+
+Before this class you should have (ideally using the dataset you used in CA Phase 2):
+
+- Identified a hypothesis for your linear regression model
+- Written the code to load your data and build your linear regression model
+- Identified a hypothesis for your logistic regression model
+- Written the code to load your data and build your logistic regression model
+
+In this lab you are going to work on:
+  - Interpreting your models
+  - Writing the code to check your models against the relevant assumptions
+  - Interpreting the outcomes of your checks
+  
+You will receive a **partner review** verifying whether your interpretation is supported by relevant statistics
+  
+Code to reference:  
+  - Linear Regression: MATH9102-W8-LinearRegression.qmd, MATH9102-W9-Assumptions.qmd
+  - Logistic Regression: Math9102-W11-LogReg.qmd
+  
+Skeleton Code: 
+  - MATH9102-MLR-Skeleton.qmd
+  - MATH9102-LogReg-Skeleton.qmd
+
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+
+# Part 1 — Linear Regression (45 mins)
+
+## Activity 1.1 - Model Review (20 mins)
+
+Each partner takes 10 mins to explain their model, show the relevant statistics and discuss with their partner.
+
+Checklist for partner:
+
+- [ ] The model include three predictors
+- [ ] One of the predictors categorical
+- [ ] The fit is interpreted correctly and the interpretation makes sense
+- [ ] The usefulness (variation explained) makes sense
+- [ ] The co-efficients are interpreted correctly and the interpretation makes sense
+
+Partner should provide feedback/suggestions
+
+
+If a report has been written:
+
+- [ ] Is report of model fit and usefulness correct providing f with degrees of freedom, p, adjusted R2.
+- [ ] Are the statements about statistical significance correct?
+- [ ] Do the signs (+/–) in the interpretation match the coefficients?
+- [ ] Are the effect magnitudes described appropriately?
+- [ ] Is the interaction/differential effect interpreted correctly?
+- [ ] Is the conclusion about the hypothesis supported by the model?
+
+
+
+## Activity 1.2 — Assemble Assumption Check Code (15 min)
+
+You can use MATH9102-W12-MLR-Skeleton.qmd to structure your code. It contains information on where to find all the statistics needed for your report.
+
+**Write code** for each assumption:
+
+| Interpretation element                                          | R output to use                                                                                                      |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Whether residuals are **normally distributed**                  | Normality test: `performance::check_normality(model1)` <br> Q-Q plot & histogram                                     |
+| Whether standardized residuals fall within **acceptable range** | Standardized residual range printed in Step 2d                                                                       |
+| Whether there are **outliers or influential cases**             | `car::outlierTest(model1)` <br> Cook’s distance plot (`plot(model1)`) <br> Influence indicators from `check_model()` |
+| Whether residual variance is **constant (homoscedasticity)**    | `performance::check_heteroscedasticity(model1)` <br> Scale–Location plot (top-right of diagnostic panel)             |
+| Whether the **linearity assumption** is met                     | Residuals vs fitted plot (`plot(model1)`) <br> `check_model()` diagnostic grid                                       |
+| Whether **multicollinearity** is a concern                      | `performance::check_collinearity(model1)` <br> VIF + Tolerance statistics                                            |
+
+
+| Assumption               | How to interpret                                                                               |   |                                                                      |
+| ------------------------ | ---------------------------------------------------------------------------------------------- | - | -------------------------------------------------------------------- |
+| **Linearity**            | Residuals should show **no curve or pattern** across fitted values                             |   |                                                                      |
+| **Normality**            | Q–Q plot should be **close to a straight line** <br> Histogram should be **roughly symmetric** |   |                                                                      |
+| **Homoscedasticity**     | Points in Scale–Location plot should be **evenly spread** → No **funnel** shape                |   |                                                                      |
+| **Multicollinearity**    | VIF > **5** → potential issue <br> Tolerance < **0.20** → potential issue                      |   |                                                                      |
+| **Outliers / Influence** | Cook’s Distance > **1** → influential <br> Standardized residuals >                            | 3 | → potential outlier <br> High leverage flagged by performance checks |
+
+
+
+**Write a report on the assumptions:**
+
+- Which assumptions are met (include relevant statistics)
+
+- Which are not (include relevant statistics)
+
+- Discuss implications for the model - can it be considered reliable?
+
+
+
+## Activity 1.3 — Partner Reviews Your Assumption Interpretation (10 min)
+
+Each student interprets their own assumption checks, then explains them to their partner.
+
+Checklist:
+
+- [ ] Are conclusions consistent with the diagnostic plots/tests?
+- [ ] Are any violations misinterpreted or overlooked?
+- [ ] Are suggested remedies (could be ignoring issues) reasonable?
+- [ ] Is the conclusion on model reliability valid?
+
+
+# BREAK (5 minutes)
+
+
+# Part 2 — Logistic Regression (45 mins)
+
+## Activity 2.1 Model Review (20 mins)
+
+
+Each partner takes 10 mins to explain their model, show the relevant statistics and discuss with their partner.
+
+Checklist for partner:
+
+- [ ] The outcome variable is binary categorical (coded 0 and 1)
+- [ ] The model includes at least three predictors
+- [ ] The fit is interpreted correctly and the interpretation makes sense
+- [ ] The usefulness (Pseudo R2 explained) makes sense
+- [ ] The odds ratios are interpreted correctly and the interpretation makes sense
+- [ ] The predicted probabilities are interpreted correctly and the interpretation makes sense
+- [ ] The classification peformance is interpreted correctly
+
+Partner should provide feedback/suggestions
+
+
+If a report has been written does it address:
+
+- [ ] Model fit and usefulness statistics (e.g., χ² model test, AIC, Pseudo-R²).
+- [ ] The direction and significance of each predictor (e.g., increases/decreases in odds, p-values, predicted probabilities).
+- [ ] Interpretation of the model in plain language, focusing on what the results mean in context.
+- [ ] Interpretation of any differential effect (interaction term), if included.
+- [ ] Classification performance (accuracy, sensitivity/specificity, or confusion matrix summary).
+
+| Reporting element                             | Where to find it in R output                             | Code chunk label            |     |                      |
+| --------------------------------------------- | -------------------------------------------------------- | --------------------------- | --- | -------------------- |
+| **Sample size (N)**                           | Output of `summary(logmodel1)` or number of rows in data | `summarymdl1`               |     |                      |
+| **Outcome coding (0 = ?, 1 = ?)**             | Data dictionary / column description in dataset          | Data preparation step       |     |                      |
+| **Overall model significance (χ², df, p)**    | Likelihood Ratio Test output                             | `chimdl1`                   |     |                      |
+| **Pseudo R² (Cox–Snell, Nagelkerke, Tjur’s)** | Pseudo R² results                                        | `pr2md1`                    |     |                      |
+| **Interpretation of significance**            | Use χ² and p-value + narrative rules                     | `chimdl1`                   |     |                      |
+| **Odds ratios (effect direction)**            | `parameters()` table → Odds Ratio column                 | `predictorsmdl1`            |     |                      |
+| **Statistical significance of predictors**    | p-values in `summary(logmodel1)` or stargazer output     | `summarymdl1` / `stargmdl1` |     |                      |
+| **Predicted probabilities statement**         | `emmeans()` predicted probabilities                      | `predictorsmdl1` pred_grid            |     |                      |
+| **AUC — discriminatory ability**              | Value labeled `AUC` under ROC output                     | Step 4a ROC curve           |     |                      |
+| **ROC interpretation**                        | Based on AUC interpretation rules                        | Step 4a narrative           |     |                      |
+| **Sensitivity & Specificity**                 | Confusion matrix (`conf_mat()` output)                   | Step 4b                     |     |                      |
+
+## Activity 2.2 — Assemble Assumption Check Code (15 min)
+You can use MATH9102-W12-LogReg-Skeleton.qmd to structure your code. It contains information on where to find all the statistics needed for your report
+
+**Write code** for each assumption:
+
+- Hosmer Goodness of Fit Test
+
+- Check Collinearity
+
+- Residual Diagnostics (Cooks Distance, Leverage, DfBetas, 
+
+Guidelines:
+  - Hosmer Lemeshow, Significant p < .05 on predictor × log(predictor) → violation
+  
+  - Multicollinearity: VIF > 5 or Tolerance < 0.20 → problematic
+
+  - Influential Points:
+    
+    - Cook’s Distance > 1
+    
+    - Pearson or Deviance residuals > |2|
+    
+    - DFBetas > |1|
+    
+    - High leverage cases must be inspected - if < 0.2 and all other checks are OK then can proceed but must note, otherwise consider deleting problem case(s) and rerunning
+
+
+**Writes a summary of the assumptions:**
+
+- Which assumptions are met (include relevant statistics)
+
+- Which are not (include relevant statistics)
+
+- Discuss implications for the model - can the model be considered reliable?
+
+
+
+| Reporting element                             | Where to find it in R output                             | Code chunk label            |     |                      |
+| --------------------------------------------- | -------------------------------------------------------- | --------------------------- | --- | -------------------- |
+| **Linearity with log odds**                   | Hosmer–Lemeshow p-value                                  | `hlml1`                     |     |                      |
+| **Multicollinearity (VIF / Tolerance)**       | VIF and tolerance values                                 | Step 5b (Model 2 example)   |     |                      |
+| **Cook’s Distance (influence)**               | max(D) and flagged indices                               | Step 5c → `olmodel1`        |     |                      |
+| **Leverage values**                           | max leverage and flagged cases                           | Step 5c → `olmodel1`        |     |                      |
+| **Standardised Pearson residuals**            | Ranged values and flagged cases                          | Step 5c → `olmodel1`        |     |                      |
+| **Deviance residuals**                        | Ranged values and flagged cases                          | Step 5c → `olmodel1`        |     |                      |
+| **DFBETAs (influence on coefficients)**       | Flagged cases with                                       | DFB                         | > 1 | Step 5c → `olmodel1` |
+| **Final statement on assumptions**            | Based on all diagnostics above                           | Step 6 narrative            |     |                      |
+
+
+## Activity 2.3 — Partner Validates Assumption Interpretation (10 min)
+
+Partner evaluates whether:
+
+- [ ] Are the diagnostics interpreted diagnostics correctly
+- [ ] Are any assumption violations missed
+- [ ] Are remedies proposed  appropriate
+

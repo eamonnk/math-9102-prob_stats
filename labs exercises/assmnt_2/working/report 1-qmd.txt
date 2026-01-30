@@ -1,0 +1,40 @@
+## 7. Report
+
+Replace the content in italics with content relevant to your analysis (does not need to be italicised).
+
+
+A binary logistic regression was conducted to _explain what you are trying to investigate_. The analysis was based on a sample of _sample size_ rows. The outcome variable was coded _0 = X and 1 = X_. _Explain the predictors, possible values where relevant_.
+
+The overall model _was/was not_ statistically significant, χ²(_df1, N = ?) = ? 166.19, _p = pvalue/p < cut-off (0.05, 0.01 or .001)_, indicating _explain what this indicates_. Effect-size measures (pseudo R²) showed that the inclusion of the predictors improved model fit only slightly when compared to the baseline (intercept-only) model (Cox–Snell R² = _?_, Nagelkerke R² = _?_, Tjur’s R² = _?_), indicating that the predictors _contributed/did not contribute_ to the model’s explanatory power.  This suggests _explain what this suggests_.
+
+_Illustrate the meaning for the relevant combinations of predictors_
+
+
+Predicted probabilities followed a similar pattern:
+
+_include your predicted probabilities_.
+
+These results show _explain what this shows_.
+
+The model’s predictive performance was evaluated using a ROC curve and confusion matrix. The AUC was _?_, indicating _poor/moderate/good_ discrimination. Using a 0.5 classification threshold, the model predicted _what is it able to predict_.
+This led to:
+
+- _High/Low/Very Low_ sensitivity ( _what does this mean in terms of the outcome_), and
+
+- _High/Low/Very low_ specificity ( _what does this mean in terms of the outcome_)
+
+_If you have an explanation include it here_
+
+The Hosmer–Lemeshow goodness-of-fit test indicate _concerns/no concerns_ with linearity.  Multicollinearity _was/was not_ and issue (_VIF values and Tolerance for each predictor_). Influence diagnostics were examined to ensure that the logistic regression results _were/were not_ affected by individual cases. 
+
+To assess the presence of influential data points, Cook’s Distance values were _all extremely small / mostly small but with some larger values_, with a maximum of D = …, which is _well below / close to / above_ the conventional influence threshold of 1. This suggests that _no single observation / one or more observations_ exerted unusual influence on the model.
+
+Leverage values were _uniformly low / variable / high in a few cases_, indicating that _no / some cases_ had unusual combinations of predictor values ( _max leverage = …_).
+
+Standardised Pearson residuals and deviance residuals ranged from _…_ to _…_, meaning that _no observations / some observations_ exceeded the common cutoff of ±3, and therefore _no / some_ unusual outcome patterns were detected.
+
+Inspection of DFBETAs revealed _no / some_ instances in which the removal of a case would substantially alter any regression coefficient (_maximum DFBETA = …_).
+
+Taken together, these diagnostics indicate that the results of this logistic regression model are _stable/not stable_ and _driven/not driven_ by a small number of influential points _and may be somewhat sensitive to a few influential observations and should be interpreted with caution_.
+
+Overall, _conclude about the assumptions._

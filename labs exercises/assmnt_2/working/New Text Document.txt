@@ -1,0 +1,120 @@
+1. intro
+1.1 purpose of analysis
+1.2 MLR overview
+1.3 MLR comparison overview
+1.4 MLR Hypothesis
+1.5 MLR comparison hypothesis
+2. Data description
+2.1 Clean and prepare the data
+2.2 exploratory data analysis
+2.3 Missig Data
+2.4 Visualizations of variables
+2.5 Collinearity of variables
+2.6 Linearity between otucome and predictor variables
+2.7 Homogeneity of variance check
+3. Predicting BOD: the impact of Dissolved Ocygen, temperature and ph.
+3.1 Build baseline model
+3.2 Generate analysis of variance table
+3.3 Generate summary statistics needed to asses model fit
+3.4 Generate Standardized Co-efficients
+3.5 Use Stargazer to produce a tidy output of ANOVA and Summary
+3.6 Report the results
+4. residual analysis
+4.1 Generate Summary Statistics/Non-Zero Variance
+4.2 Conduct a Normality Test
+4.3 Visualize residual distribution
+4.4 Check outliers or influential points
+4.5 Examine the residuals
+4.6 Check homoscedasticity (equal variance)
+4.7 Check multi-colinearity
+4.8 Summary Diagnostic Plots
+4.9 Report
+6. Generate summary Diagnostic plots
+
+
+=========================================
+
+
+1. Introduction
+
+1.1 Purpose of Analysis
+1.2 Multiple Linear Regression (MLR) Overview
+1.3 MLR Comparison Overview
+1.4 Task 1 Hypothesis
+1.5 Task 3 (Comparison) Hypothesis
+
+2. Data Description
+
+2.1 Data Source and Variables
+2.2 Data Cleaning and Preparation
+2.3 Missing Data Assessment
+2.4 Univariate Exploration (Distributions & Plots)
+2.5 Bivariate Exploration (Correlations & Scatterplots)
+2.6 Linearity Between Outcome and Predictors
+2.7 Homogeneity of Variance (Pre-model checks)
+
+(This section justifies model choice — no models yet)
+
+3. Task 1: Predicting BOD Using Dissolved Oxygen, Temperature, and pH
+
+3.1 Baseline Model Specification
+3.2 Analysis of Variance (ANOVA)
+3.3 Model Fit Statistics (R², Adjusted R², F-test)
+3.4 Standardized Coefficients
+3.5 Tidy Output (Stargazer Table)
+3.6 Results Interpretation (Task 1)
+
+4. Task 1: Model Diagnostics and Assumption Checking
+
+4.1 Non-Zero Variance Checks
+4.2 Normality of Residuals (Tests + Plots)
+4.3 Residual Distribution Visualisation
+4.4 Outliers and Influential Observations
+4.5 Residuals vs Fitted Values
+4.6 Homoscedasticity Checks
+4.7 Multicollinearity Checks
+4.8 Summary Diagnostic Plots
+4.9 Diagnostic Interpretation / Report
+
+✔ This is where your excellent 4.9 Report text belongs
+
+5. Task 3: Comparison Model (Month Added)
+
+5.1 Comparison Model Specification
+5.2 ANOVA and Model Fit Statistics
+5.3 Month Effects Interpretation
+5.4 Interaction Effect Re-assessment
+5.5 Comparison Model Diagnostics (brief — not full repeat)
+5.6 Task 3 Results Interpretation
+
+(Shorter than Task 1 — you’ve already proven assumptions once)
+
+6. Model Comparison (Task 1 vs Task 3)
+
+6.1 Change in Adjusted R²
+6.2 Change in Predictor Significance
+6.3 Seasonal Interpretation Gained
+6.4 Final Model Judgement (Better / Worse / Equivalent)
+
+This is where you explicitly justify why Task 3 improves the analysis.
+
+7. Overall Summary
+4–6 concise sentences
+What you did
+What you found
+Why it matters
+
+8. Appendix (Optional)
+Extra plots
+Supplementary tables
+Full diagnostic outputs
+
+
+Refernces
+
+[Multicollinearity in Regression Analysis: Problems, Detection, and Solutions](https://statisticsbyjim.com/regression/multicollinearity-in-regression-analysis/)
+
+h[Multicollinearity: Why Ocvur and Hoe to remove] ttps://www.statisticalaid.com/multicollinearity-why-occur-and-how-to-remove/
+Variance Inflation Factors (VIFs)[https://statisticsbyjim.com/regression/variance-inflation-factors/]
+(Check for multicollinearity of model terms)[https://easystats.github.io/performance/reference/check_collinearity.html]
+(Multicollinearity in Regression Analysis: Problems, Detection, and Solutions](https://statisticsbyjim.com/regression/multicollinearity-in-regression-analysis/)

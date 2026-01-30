@@ -1,0 +1,36 @@
+7. Report
+
+A binary logistic regression was conducted to predict water quality status (good vs poor). The analysis was based on a sample of 29,154 rows. The outcome variable was coded 0 = poor water quality and 1 = good water quality. The predictors were dissolved oxygen (mg/L), temperature (°C), and pH, all measured as continuous variables.
+
+The overall model was statistically significant, χ²(3, N = 29,154) = 7,129.9, p < .001, indicating that the set of predictors reliably distinguishes between good and poor water quality outcomes. Effect-size measures (pseudo R²) showed that the inclusion of the predictors improved model fit only slightly when compared to the baseline (intercept-only) model (Cox–Snell R² = 0.21, Nagelkerke R² = 0.35, Tjur’s R² = 0.27), indicating that the predictors contributed meaningfully but incompletely to the model’s explanatory power. This suggests that while dissolved oxygen, temperature, and pH are important determinants of water quality, a substantial proportion of variance is explained by factors not included in the model.
+
+For example, increases in dissolved oxygen and pH were associated with lower odds of good water quality, while higher temperatures were associated with increased odds, holding other variables constant.
+
+Predicted probabilities followed a similar pattern:
+
+At average conditions (dissolved oxygen = 58.3, temperature = 10.8°C, pH = 7.55), the predicted probability of good water quality was 0.109 (95% CI: 0.105–0.113).
+
+These results show that even under average environmental conditions, the probability of good water quality remains relatively low, reflecting the conservative nature of the model.
+
+The model’s predictive performance was evaluated using a ROC curve and confusion matrix. The AUC was 0.820, indicating good discrimination. Using a 0.5 classification threshold, the model predicted poor water quality substantially more accurately than good water quality.
+This led to:
+
+Low sensitivity (40.2%, meaning the model correctly identifies only about 40% of truly good water quality cases), and
+
+High specificity (95.9%, meaning the model correctly identifies over 95% of poor water quality cases).
+
+This imbalance suggests the model is conservative, prioritising avoidance of false classification of poor water as good, which may be appropriate in environmental and public health contexts.
+
+The Hosmer–Lemeshow goodness-of-fit test indicate concerns with linearity. Multicollinearity was not an issue (all VIF values were below common thresholds). Influence diagnostics were examined to ensure that the logistic regression results were not affected by individual cases.
+
+To assess the presence of influential data points, Cook’s Distance values were all extremely small, with a maximum of D ≈ 0.001, which is well below the conventional influence threshold of 1. This suggests that no single observation exerted unusual influence on the model.
+
+Leverage values were variable, indicating that some cases had unusual combinations of predictor values (maximum leverage ≈ 0.0024).
+
+Standardised Pearson residuals and deviance residuals ranged from near 0 to greater than ±2, meaning that some observations exceeded the common cutoff of ±2, and therefore some unusual outcome patterns were detected.
+
+Inspection of DFBETAs revealed one instance in which the removal of a case would substantially alter a regression coefficient (maximum |DFBETA| > 1).
+
+Taken together, these diagnostics indicate that the results of this logistic regression model are generally stable and not driven by a small number of influential points but may be somewhat sensitive to a small number of unusual observations and should be interpreted with caution.
+
+Overall, most model assumptions were reasonably met, though goodness-of-fit results suggest that the relationship between predictors and water quality is more complex than can be fully captured by the current model.

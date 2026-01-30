@@ -1,0 +1,230 @@
+---
+title: "Binary Logistic Regression Report"
+author: "STUDENT NUMBER: DXXXXXXX, STUDENT NAME: XXXXXX, PROGRAMME CODE: XXXX"
+format: 
+  html:
+    self-contained: true
+    toc: true
+    toc-float: true
+    toc-depth: 3
+---
+
+# 1. Introduction
+
+-   Provide a brief overview of your dataset
+
+-   Explain the purpose of the analysis.
+
+-   Describe outcome variable + relevant predictors as statistical types.
+
+-   This can be taken from your Phase 1 report.
+
+-   State your hypothesis for Task 2 (three predictors, must include a differential effect)
+
+-   If completing a comparison model, state your hypothesis for Task 3.
+
+# 2. Methods
+
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+-   Provide a concise methodology overview.
+-   State your cut-off value (typically p \< .05 unless otherwise specified).
+
+## 2.1 Univariate Exploration
+
+-   Describe how you examined each variable:
+
+    -   Heuristic normality assessment of continuous variables to derive appropriate summary statistics
+
+    -   Frequencies / proportions for the binary outcome
+
+    -   Visuals appropriate for each type (histograms, barplots, density curves)
+    
+    - Missingness checks
+
+      - Patterns of missing data
+
+      - Decisions regarding exclusion or imputation (if relevant)
+
+    - Notes on variable suitability
+
+      - Any issues identified that may require transformation
+
+
+## 2.2 Bivariate Exploration
+
+-   Describe how you justified predictor inclusion:
+
+    -   Visuals
+
+        -   Boxplots for continuous × binary outcome
+
+        -   Barplots for categorical × binary outcome
+
+    -   Correlation-type tests (Pearson/Spearman/Kendall chi-square, etc., as appropriate)
+
+    -   Group difference tests (t-tests, non-parametric alternatives)
+
+-   Describe any patterns suggesting predictor relevance. If there are none you can still include them as control.
+
+# 3. Data Preparation and Exploration Results
+
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+-   Present your univariate and bivariate analysis.
+
+- Describe preliminary patterns, direction and strength of relationships, differences, identification of any potential nonlinear relationships
+
+
+Note: predictors can be included even if the relationship appears weak, especially as control variables. Theoretical justification is acceptable when exploratory patterns are weak.
+
+# 4. Regression Model
+
+If you are going to include a comparison model then call this Baseline Model.
+
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+Explain:
+
+-   Which predictors were included and why
+
+-   Whether an interaction/differential effect is included
+
+## 4.1 Model Fit and Usefulness
+
+-   Report your model for Task 2 as per examples provided. Report:
+
+-   Report your Task 2 model as per examples provided:
+
+    -   Likelihood Ratio Test
+
+    -   Pseudo R2 values
+
+    -   Coefficient estimates + p-values
+
+    -   Odds ratios (required)
+
+    -   Interpretation of direction/effect size
+
+    -   Predicted probabilities
+
+    -   Classification metrics (confusion matrix; accuracy, sensitivity, specificity)
+
+    -   ROC curve & AUC
+
+    -   A narrative interpretation
+
+
+
+## 4.2 Examination of Assumptions
+
+-   Report your model against assumptions of logistic regression as per examples provided:
+
+  - Hosmer–Lemeshow 
+  
+  - Multicollinearity
+  
+  - Outliers & Influential Points
+  
+  - Residual Deviance (DFBetas, Pearson, Deviance)
+
+  - Overall Diagnostic Judgment - whether assumptions and performance indicate the model is suitable
+
+
+
+-   Each assumption needs explicit interpretation.
+
+## 4.3 Summary
+-   Draw a conclusion for the first model about the associaed hypothesis.
+
+# 5. Comparison Model (if including)
+
+Follow the approaches and reporting conventions used in the module and required in the CA Phase 2 rubric.
+
+Explain:
+
+- Which predictors were included and why
+
+- Whether an interaction/differential effect is included
+
+
+
+## 5.1 Model Fit and Usefulness
+
+-   Report your model for Task 2 as per examples provided. Report:
+
+-   Report your Task 2 model as per examples provided:
+
+    -   Likelihood Ratio Test
+
+    -   Pseudo R2 values
+
+    -   Coefficient estimates + p-values
+
+    -   Odds ratios (required)
+
+    -   Interpretation of direction/effect size
+
+    -   Predicted probabilities
+
+    -   Classification metrics (confusion matrix; accuracy, sensitivity, specificity)
+
+    -   ROC curve & AUC
+
+    -   A narrative interpretation
+
+
+
+## 5.2 Examination of Assumptions
+
+-   Report your model against assumptions of logistic regression as per examples provided:
+
+  - Hosmer–Lemeshow 
+  
+  - Multicollinearity
+  
+  - Outliers & Influential Points
+  
+  - Residual Deviance (DFBetas, Pearson, Deviance)
+
+  - Overall Diagnostic Judgment - whether assumptions and performance indicate the model is suitable
+
+
+
+-   Each assumption needs explicit interpretation.
+
+## 5.3 Summary
+-   Draw a conclusion for the comparison model about the associated hypothesis.
+
+# 6. Model Comparison
+
+-   Compare the model for Task 1 and Task 3 as per examples provided. Report:
+
+  - Change in AIC
+  
+  - Change in Likelihood Ratio test
+  
+  - Change in predictor significance
+  
+  - Change in prediction of the outcome
+
+  - Change in classification accuracy
+  
+  - Change in ROC/AUC
+  
+  - Improvements or deterioration in diagnostics
+  
+- Include a final judgement: Is the updated model better, worse, or equivalent?
+
+# 7. Summary
+
+-   A brief (4–6 sentences) summary of what you have done and found.
+
+# 8. Appendix (Optional)
+
+-   Plots
+-   Descriptives
+-   Tests
+-   etc
+
+# 9. References

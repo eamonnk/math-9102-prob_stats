@@ -1,0 +1,26 @@
+Just because we find a statistically significant difference/effect does not
+necessarily indicate there is a causal relationship.
+Because the hypothesis test relies on sample data, and because sample
+data are not completely reliable, there is always the risk that misleading data will cause the hypothesis test to reach a wrong conclusion.
+
+
+Power of a Hypothesis Test
+The
+power β of a hypothesis test is defined is the probability that the test will reject the null hypothesis when there is no effect.
+The power of a test depends on a variety of factors including the size of
+the effect and the size of the sample.
+
+
+Logistic Regression
+
+H₀: BMI does not predict disease status
+H₁: BMI does predict disease status
+
+H₀: BMI does not predict disease status controlling for age
+H₁: BMI does predict disease status controlling for age
+
+H₀: Disease odds do not differ by gender controlling for BMI
+H₁: Disease odds do differ by gender controlling for BMI
+
+H₀: Disease odds do not differ by gender controlling for BMI
+H₁: Disease odds do differ by gender controlling for BMI

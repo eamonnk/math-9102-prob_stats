@@ -1,0 +1,1590 @@
+MATH9102
+
+DIMENSION REDUCTION
+
+Reference: Field, Miles and Field Discovering Statistics Discovering 
+Statistics with R
+
+Dimension Reduction
+
+Process of reducing the number of variables (or features) in a dataset 
+while retaining as much of the important information as possible. 
+
+This is often done to simplify analysis, improve computational efficiency, 
+or prevent overfitting in predictive models.
+
+Why are we looking at dimension 
+reduction?
+The statistical researcher strives to avoid two major obstacles:
+ Using a single score/measure from a multi-item measure in which there is 
+
+great heterogeneity; 
+
+OR
+ Using several scores/measures that are highly correlated or unreliable.
+
+The goal is to obtain the right number of scores (and it might be one).
+
+Collinearity
+
+Occurs when two or more independent variables contain strongly 
+redundant information
+ If variables are collinear,  they are essentially measuring the same thing
+
+ There is not enough distinct information in these variables for inferential statistics to operate
+
+Why is this a problem?
+ You are introducing bias
+ Over-representing a concept
+
+ Increasing possibility of a Type I error
+
+If we conduct inferential statistics with collinear variables, then the 
+model will produce unreliable results
+
+Collinearity
+
+Need to check for collinearity by examining a correlation matrix that 
+compares your independent variables with each other.
+
+A correlation coefficient above 0.8 suggests collinearity might be 
+present 
+
+Collinearity  What can we do 
+about it?
+
+1. Delete all but one of the collinear variables from the model
+
+ You could choose which variables you feel are most representative of the 
+
+concept you are interested in 
+
+ It will act as a surrogate or proxy for the concept
+
+ E.g. number of previous criminal offences as a predictor of reoffending
+
+ May weaken the fit of your model
+
+2. Combine them into an index mathematically (e.g. multiplying, 
+
+adding etc.) 
+
+ This must make sense theoretically
+ E.g. Select a range of items
+
+ The Retail Price Index is calculated by taking a sample of goods and services a typical household 
+
+buys and items weighted according to the amount spent on them
+
+Collinearity  What can we do 
+about it?
+
+3.
+
+Estimate a latent variable using an appropriate data reduction 
+technique
+ Latent variable: a variable that is not directly observed but is inferred from other variables that 
+
+are observed (measured)
+
+ How do we estimate?
+
+ Factor analysis (FA)/Principal Component Analysis (PCA)
+
+ Construct indices by methodologically assessing contributions of a range of variables  so 
+
+that a combined measure can be extracted and used.
+
+Why dimension reduction?
+We know 
+ We are using variables as proxy measures for real world concepts
+ Multicollinearity can cause problems when building predictive models
+
+We aim 
+ For parsimony in our models (fewest number of predictor variables)
+ To avoid two major obstacles:
+
+ Using a single variable created from a multi-item measure in which there is great heterogeneity; 
+
+or
+
+ Using several variables that are highly correlated or unreliable.
+
+Our Goal is To 
+
+ Obtain the right number of variables to represent a concept
+
+  (and it might be one).
+
+Everything that you need to know 
+about Dimension Reduction
+
+The basic issue is the degree of correlation among a set of items. 
+
+We want to test for clusters of variables or measures.
+ That is: 
+
+ To see whether different measures are tapping aspects of a common dimension.
+
+ For example, people may respond similarly to questions about income, education, and 
+occupation, which are all associated with the latent variable socioeconomic status.
+
+We expect to find clumps of items sometimes
+ These are called factors (if doing factor analysis) or components (if doing 
+
+principal components analysis).
+
+Everything that you need to know 
+about Dimension Reduction
+
+In every dimension redution:
+ The number of factors/components will be the same as the number of 
+
+variables used in the dimension reduction.  
+
+ Each factor/component captures a certain amount of the overall variance in 
+
+the observed variables.
+
+ The factors/components are always listed in order of how much variation 
+
+they explain.
+
+ We make decisions about which factors/components are useful to us
+
+ By examining the amount of variance in the observed variables each factor/component can be 
+
+considered to explain.
+
+What are we doing?
+
+We are theorizing that there is a single individual latent concept, or a 
+small number of concepts, which manifests through several different 
+aspects 
+ These manifestations are collected in variables in the dataset
+
+We are trying to distil the underlying concept(s) from its manifestations
+ But how many dimensions does a concept have? 
+ How should they be represented?
+
+Why dimension reduction?
+
+Many phenomena cannot be measured directly
+ No measurement scale exists
+
+ E.g. social deprivation, cost of living, consumer confidence etc. 
+
+ These are latent concepts
+
+ They are inferred through observable indicators which can be measured
+
+ Constructs like "intelligence" or "satisfaction" are latent because they cannot 
+
+be measured directly. 
+ Instead, they are inferred through observable (manifest) indicators, like test scores or survey 
+
+responses.
+
+Why dimension reduction?
+
+To derive/expose these latent concepts
+ We use manifest variables which store the observable indicators which 
+
+measure aspects of the latent variable
+
+We construct a measurement scale from the manifest variables
+ E.g. 
+
+ To construct a measure of intelligence we could use the following manifest variables:
+
+ Result on an IQ test as an indicator of ability to perform particular types of problem solving 
+
+and related cognitive skills
+
+ Scores from tests measuring verbal reasoning, mathematical ability, spatial reasoning, or 
+
+logical reasoning.
+
+ Academic grades  in subjects like mathematics, science, or language.
+
+ Scores on creativity assessments like Torrance Tests of Creative Thinking (TTCT).
+
+ Scores on tasks or questionnaires evaluating emotional intelligence or social reasoning.
+
+When do we use it?
+
+We may be: 
+ Interested in creating an agreed measure that will allow us to track changes 
+
+over time
+
+ Interested in exploring particular dimensions of a concept
+ Pragmatically, be interested in reducing the number of variables we need to 
+
+work with in an analysis
+
+All the above are not mutually exclusive
+
+Approaches?
+
+Factor Analysis
+ Exploratory 
+
+ Used in early stages of research to gather information about interrelationships between 
+
+variables 
+
+ e.g. you have created an instrument with multiple questions, and you want to test how well 
+
+they measure concepts of interest
+
+ Confirmatory
+
+ Used later in research to confirm hypotheses about the structure underlying a set of variables
+
+Principal Components Analysis
+ Used when working with a set of uncorrelated variables which it has been 
+well established that they measure the same underlying component (s).
+
+What are we 
+looking at?
+
+Goal of the Process
+
+ Start with a large set of variables.
+ Reduce them to a smaller set of new variables.
+ These new variables should still capture most of the 
+
+information in the original dataset.
+
+How We Measure Information
+
+ Variability within variables
+
+ Variance: how much each variables values differ 
+
+from its mean.
+
+ Co-variation across variables
+
+ Covariance / Correlation: how strongly two 
+
+variables change together.
+
+Key Idea
+
+ If variables share patterns of variability or move 
+together (high covariance), the information they 
+contain overlaps.
+
+ Techniques like PCA summarise these shared 
+
+patterns into fewer, more informative components.
+
+Factors/Components?
+
+Factors / Components = Latent Variables
+
+ In this context, a factor or component is the same as 
+
+a latent variable
+(also called a construct).
+
+Terminology (All Mean the Same Thing)
+
+ Construct = Latent Variable = Factor / Component
+
+Getting started
+
+Need to be working with interval/ratio  or ordinal data
+ Produce basic descriptive statistics look for missing or outlier values and take 
+
+appropriate action. 
+
+All the variables should measure the construct in the same direction. 
+ The direction does not matter the important thing is that all the questions score in 
+
+the same direction. 
+
+ If they differ, then recode to ensure that the scales are the same. 
+
+ E.g. 
+ "I find it easy to stay motivated when working on long-term projects. (Positive)
+
+Responses:
+1 = Strongly Disagree, 2 = Disagree, 3 = Neutral, 4 = Agree, 5 = Strongly Agree
+(Higher scores indicate higher motivation.)
+
+ "I often feel overwhelmed and give up easily when tasks seem too complex. (Negative)
+
+Responses:
+1 = Strongly Disagree, 2 = Disagree, 3 = Neutral, 4 = Agree, 5 = Strongly Agree
+(Higher scores indicate higher difficulty managing complexity, which reflects lower motivation.)
+The negative-direction question needs to be reverse-coded so that higher scores consistently indicate 
+higher motivation.
+
+Recoding Example
+
+"I find it easy to stay motivated when 
+working on long-term projects. (Positive)
+Responses:
+1 = Strongly Disagree, 2 = Disagree, 3 = 
+Neutral, 4 = Agree, 5 = Strongly Agree
+(Higher scores indicate higher motivation.)
+
+"I often feel overwhelmed and give up 
+easily when tasks seem too complex. 
+(Negative)
+Responses:
+1 = Strongly Disagree, 2 = Disagree, 3 = 
+Neutral, 4 = Agree, 5 = Strongly Agree
+(Higher scores indicate higher difficulty 
+managing complexity, which reflects lower 
+motivation.)
+
+# Create dataframe
+
+responses <- data.frame(
+motivation_positive = c(4, 5, 3, 2, 
+1), 
+overwhelmed_negative = c(5, 4, 3, 2, 
+1))
+
+# Reverse-coding the negative-
+direction question
+
+responses$overwhelmed_reversed <- 6 
+- responses$overwhelmed_negative
+
+# Check the recoded data
+print(responses)
+
+Example (From Andy Field)
+
+Factor analysis could be used to identify the core characteristics (out 
+of a potentially large number of characteristics) that make a person 
+popular.
+
+Candidate characteristics: 
+ Time spent talking about the other person (Talk 1  a relatively positive trait)
+ Level of social skills (Social Skills)
+ How interesting a person is to others (Interest)
+ Time spent talking about themselves (Talk 2  a relatively negative trait)
+ Selfishness (Selfish)
+ The persons propensity to lie about themselves (Liar).
+
+Example
+
+Looking at how the 
+concepts relate to each 
+other.
+
+Look for correlations in the Correlation matrix.
+
+In Factor Analysis and PCA we look to reduce the R-matrix into smaller set 
+of uncorrelated dimensions.
+
+Looking for correlations above 0.3. 
+
+We seem to have 2 clusters.
+
+Example
+
+Looking at what concepts 
+relate to sociability and 
+consideration traits in 
+people
+
+Social Skills is strongly correlated with Time spent talking about the other 
+person
+
+How interesting a person is to others  is highly correlated with both of 
+these. 
+
+These are positive traits.
+
+Example
+
+Looking at what concepts 
+relate to sociability and 
+consideration traits in 
+people
+
+Selfishness is moderately correlated with Time spent talking about themselves. 
+
+Propensity to Lie is also moderately correlated with Time spent talking about 
+themselves. 
+
+The correlation between propensity to lie and selfishness is a weak correlation but it 
+is approaching moderate. 
+
+These are negative traits.
+
+What is a Factor/Component?
+
+Factors/Component can be viewed as classification axes along which the 
+individual variables can be plotted.
+
+The greater the loading of variables onto a factor/component, the more 
+the factor/component explains relationships among those variables. 
+ Loading can be viewed as the correlation between the latent variable and 
+
+the manifest variable.
+
+Ideally, variables should be strongly related to (or load onto) only one 
+factor/component.
+
+Graphical Representation 
+of a factor plot
+
+Note that each variable 
+loads primarily on only 
+one factor.
+
+Loadings tell use about the 
+relative contribution that a 
+variable makes to a factor
+
+Assumptions
+
+A linear relationship exists between the latent variable and the manifest 
+variables
+
+niniiiiininiVariablebVariablebVariableborFactorComponentXbXbXbFii+++=++++=22112211iiiiiiiiiiiiiininibbbbbbbbbbbbXbXbXbFiiLiarSelfishTalk2InterestSkills SocialTalk1ionConsideratLiarSelfishTalk2InterestSkills SocialTalk1ySociabilit6543216543212211+++++=+++++=+++=Mathematical Equation
+
+Note that there is no b0
+
+The b values are called factor loadings
+ They can be interpreted as the correlation between the manifest variable 
+
+and the factor
+
+ As with all correlations they range from -1 to +1
+
+We should standardise our Xs so that our interpretation of the levels of 
+correlation make sense
+
+niniiiiininiVariablebVariablebVariablebFactororComponentXbXbXbFii+++=++++=22112211Mathematical Equation
+
+For every case in our dataset, we have the values of X but not of F
+ Therefore, we cannot fit a regression line as we have done previously
+
+But we can transform the relationships between the variables using a 
+method of extraction to retrieve factors from the data
+
+niniiiiininiVariablebVariablebVariablebFactororComponentXbXbXbFii+++=++++=22112211Loadings
+
+Both FA and PCA are linear models in which loadings are used as 
+weights.
+ These loadings represent the correlation between a specific observed 
+
+variable and a specific factor. 
+
+ Can be expressed as a matrix called the factor matrix or component matrix 
+
+(if doing PCA).
+
+ The assumption of FA(but not PCA) is that these algebraic factors represent 
+
+real-world dimensions.
+
+Variables
+
+Talk 1
+
+Social Skills
+
+Interest
+
+Talk 2
+
+Selfish
+
+Liar
+
+Factors
+
+Sociability
+
+Consideration
+
+0.87
+
+0.96
+
+0.92
+
+0.00
+
+-0.10
+
+0.09
+
+0.01
+
+-0.03
+
+0.04
+
+0.82
+
+0.75
+
+0.70
+
+Loadings
+
+Loading=correlation between a specific observed variable and a specific 
+factor. 
+
+Higher values mean a closer relationship. They are equivalent to 
+standardised regression coefficients ( weights) in multiple regression. 
+
+Higher the value the better. 
+
+Variables
+
+Talk 1
+
+Social Skills
+
+Interest
+
+Talk 2
+
+Selfish
+
+Liar
+
+Factors
+
+Sociability
+
+Consideration
+
+0.87
+
+0.96
+
+0.92
+
+0.00
+
+-0.10
+
+0.09
+
+0.01
+
+-0.03
+
+0.04
+
+0.82
+
+0.75
+
+0.70
+
+There is no definition of 
+what constitutes a high or 
+low factor loading. 
+The convention is that a 
+loading of magnitude 
+above 0.3 (irrespective of 
+sign) are considered high.
+
+Example
+
+In our example there are two factors underlying the popularity 
+construct: general sociability and (lack of ) consideration.
+ We come up with the names
+
+We can construct equations that describe each factor in terms of the 
+variables that have been measured.
+
+Sociabilityi = b1Talk 1i +b2Social Skillsi + b3interesti + b4Talk 2 + b5Selfishi + 
+b6Liari  + i
+
+(lack of) Considerationi = b1Talk 1i +b2Social Skillsi + b3interesti + b4Talk 2 
++ b5Selfishi + b6Liari  + i
+
+Example
+
+The values of the bs in the two equations differ, 
+depending on the relative importance of each variable 
+to a particular factor.   
+
+Sociabilityi = 0.87Talk 1i +0.96Social Skillsi + 0.92Interesti + 
+0.00Talk 2 - 0.10Selfishi + 0.09Liari  + i
+
+(lack of) Considerationi = 0.01Talk 1i - 0.03Social Skillsi + 
+0.04interesti + 0.82Talk 2 + 0.75Selfishi + 0.70Liari  + i
+
+Replace values of b with the co-ordinate of each variable on the graph.  
+
+Ideally, variables should have very high b-values for one factor and very low b-
+values for all other factors.
+
+Principal Component Analysis 
+(PCA)
+
+A transformation of the data that estimates as many components as 
+there are manifest variables
+
+PCA reduces 
+ A set of highly correlated manifest variables 
+ To a set of unrelated components 
+ Arranged in descending order of importance
+
+If PCA results in the first few components explaining a large amount of 
+the variation we can without losing much information replace our 
+manifest variables with our components.
+
+Factor Analysis V Principal 
+Components Analysis
+
+FA attempts to achieve parsimony by explaining the maximum amount 
+of common variance in a correlation matrix using the smallest number 
+of explanatory constructs.
+ These explanatory constructs are called factors.
+
+PCA tries to explain the maximum amount of total variance in a 
+correlation matrix. 
+ It does this by transforming the original variables into a set of linear 
+
+components.
+
+What is the 
+difference 
+between a 
+factor and a 
+component?
+
+Factor:
+
+ A factor is a latent variable that is inferred to explain the underlying 
+structure in the observed variables. It represents shared variance 
+among variables, assumed to arise from common causes.
+
+Purpose: 
+
+ Factors aim to uncover the hidden relationships or constructs that are 
+
+not directly observable.
+
+Interpretation: 
+
+ Factors are often interpreted as the theoretical constructs (e.g., 
+
+intelligence, socioeconomic status) influencing the data.
+
+Technique: 
+
+ Factor Analysis (Exploratory or Confirmatory)
+
+Mathematical Basis: 
+
+ Factor analysis models the observed variables as linear combinations 
+
+of a smaller number of factors plus unique error terms.
+
+ =+X
+ where:X = observed data,   = loading matrix, F = factors,  = unique 
+
+variances (errors).
+
+Common Uses: 
+
+ Psychology, social sciences, and any field where theoretical constructs 
+
+are sought.
+
+What is the 
+difference 
+between a 
+factor and a 
+component?
+
+Component:
+
+ A component is a linear combination of the original variables 
+designed to maximize the variance explained in the dataset. 
+Components are purely mathematical constructs.
+
+Purpose: 
+
+ PCA aims to reduce dimensionality while preserving as much 
+
+variance in the data as possible.
+
+Interpretation: 
+
+ Components are linear transformations of the original variables 
+
+without any assumption of underlying latent constructs.
+
+Mathematical Basis: 
+
+ PCA identifies orthogonal (uncorrelated) axes that capture the 
+maximum variance in the data sequentially. Technique: PCA
+
+ =
+ where:Z = principal components, W = weight matrix or 
+
+eigenvectors of the covariance matrix, X = observed data.
+
+Common Uses: 
+
+ Data preprocessing, exploratory data analysis, and visualization.
+
+Conducting a dimension 
+reduction:  An Example (Andy 
+Field) 
+
+Students often become stressed about statistics (RAQ) and the use of 
+computers and/or R to analyze data. 
+
+A questionnaire has been developed to measure levels of stress about 
+statistics, using computers and R 
+ see sample items on the following slides; the data can be found in RAQ.dat.
+
+We want to investigate:
+ Does the questionnaire measure a single construct? 
+ Or is it possible that there are multiple aspects comprising students 
+
+anxiety?
+
+Companion File: MATH9102-W10-DimRed.qmd
+
+RAQ 
+Questionnaire
+
+TWENTY THREE QUESTIONS - 
+SOME OF THE QUESTIONS
+
+Initial Considerations
+
+The quality of the data (GIGO). 
+
+Sample size is important!  
+  A sample of 300 or more will likely provide a stable factor solution but 
+
+depends on the number of variables and factors identified.
+
+ Sample to variable ratio N:p where N is no of cases and p is no of variables 
+
+aim for 10:1 
+
+The quality of analysis depends upon the quality of the data (GIGO).
+
+Test variables should correlate quite well
+ r > .3.
+
+Avoid multicollinearity:
+ several variables highly correlated, r > .80.
+
+Avoid singularity:
+ some variables perfectly correlated, r = 1 (other than with themselves)
+
+Generate and Screen the correlation matrix, eliminate any variables that 
+obviously cause concern.
+
+Then Visualize the correlation matrix.
+
+Step 1 : Screen Correlation Matrix
+
+Check that there is enough variance of the right kind
+
+Generate statistics to:
+1. Check that your variables are sufficiently correlated for dimension 
+
+reduction (Barletts Test of Sphericity)
+
+2. Check that there is enough variance in your variables that could be caused 
+
+by an underlying factor/dimension (Kaiser-Meyer Olsen)
+
+3. Check for collinearity and redundancy (Determinant)
+
+Step 2: Check if the data is suitable for dimension 
+reduction
+
+Step 2a: 
+Check that 
+your variables 
+are 
+sufficiently 
+correlated for 
+dimension 
+reduction.
+
+Use The Bartlett Test of Sphericity.
+ Compares the correlation matrix with a matrix 
+
+of zero correlations 
+ technically called the identity matrix, which consists of all 
+
+zeros except the 1s along the diagonal
+
+ If Bartlett's test is  statistically significant  it 
+
+suggests that the variables are correlated and a 
+PCA/FA would be useful
+ i.e. You are highly unlikely to have obtained the observed 
+
+correlation matrix from a population with zero correlation. 
+ Bartlett, M. S. (1950). Tests of significance in factor 
+
+analysis. British journal of psychology.
+
+Step 2b:
+Check that 
+there is 
+enough 
+variance in 
+your variables 
+that could be 
+caused by an 
+underlying 
+factor/dimen
+sion.
+
+Use the Kaiser-Meyer-Olkin Measure of Sampling 
+Adequacy (MSA) test.
+
+ Doesnt produce a p value
+ High values close to 1 suggest that PCA/FA might be 
+
+useful
+
+ Values over 0.8 or over are considered strong
+ Anything less than 0.5 suggests that PCA/FA wont be 
+
+useful
+
+Kaiser put together the following descriptors:
+
+ 0.00 to 0.49 unacceptable.
+ 0.50 to 0.59 miserable.
+ 0.60 to 0.69 mediocre.
+ 0.70 to 0.79 middling.
+ 0.80 to 0.89 meritorious.
+ 0.90 to 1.00 marvellous.
+ Source: Kaiser, Henry F., and John Rice. "Little jiffy, mark 
+IV." Educational and psychological measurement 34.1 
+(1974): 111-117.
+
+Step 2c: 
+Check for 
+collinearity 
+and 
+redundancy
+
+Check if it will be difficult to extract factors as 
+they will not be distinct enough.
+
+Calculate the determinant of the matrix 
+(correlation or covariance)
+ A measure of the spread or volume of the data 
+
+in the original space.
+
+ A zero or near-zero determinant indicates that 
+the data lie on a lower-dimensional subspace 
+(with little or no variance in certain directions).
+
+ A larger determinant suggests that the data 
+
+have significant variance across many 
+dimensions, which can be reduced in the 
+dimension reduction process (e.g., PCA) to 
+retain the most important features.
+
+ Inspect determinant and check to see if it is 
+
+greater than 0.00001.
+
+ Important for factor analysis not for PCA
+ Field, Miles and Field (2016)
+
+Considerations  Is 
+dimension reduction 
+possible?
+
+Check the Determinant:
+
+
+
+Indicator of multicollinearity
+
+ Should be greater than 0.00001
+
+Check KaiserMeyerOlkin (KMO):
+
+ Measures sampling adequacy (how well suited is your data to the 
+
+dimension reduction)
+
+ Should be greater than .5
+
+
+
+Indicates the proportion of variance in your variables that might be 
+caused by an underlying factor. 
+
+Check Bartletts test of Sphericity:
+
+ Tests whether the R-matrix is an identity matrix 
+
+ Should be significant at p < .05
+
+ We can see the correlations ourselves, this just confirms that it is 
+possible to combine the variables because they are correlated.
+
+Step 2d: Report
+
+Bartlett's test of sphericity revealed a significant 
+result, (253) = 19107.61, p < .001, indicating that 
+the correlation matrix is not an identity matrix and 
+thus suitable for factor analysis.
+
+Kaiser-Meyer-Olkin (KMO) Measure of Sampling 
+Adequacy was 0.93, indicating that the data is 
+highly suitable for factor analysis (values above 
+0.90 are considered excellent).
+
+Determinant of the correlation matrix was 
+0.00057, suggesting that the data is suitable for 
+factor analysis
+
+Reporting the Results
+
+See example MATH9102-W10-DimRed.html
+
+Time to get started
+
+Download the code and data  for this week  MATH9102-W10-
+DimRed.qmd and the .html output. 
+
+You are going to work with the dataset wine.csv
+
+Download the Quarto file MATH9102-W10-DimRedExercise.qmd
+ This sets up the data and includes instructions for all steps  you just need to 
+
+write the code.
+
+ At this point just do TASK ONE
+
+Refer to MATH9102-W10-DimRed.qmd for sample code.
+
+Step 3: Do The Dimension 
+Reduction
+
+RAQ
+ In this case we are using all the variables, and we expect components 
+ We are going to use Principal Component Analysis first
+ We also create a Scree plot which we will use later
+
+FA/PCA
+
+Principal Components Analysis (PCA) 
+ This is a data reduction method, not a true factor analysis (as it analyses all 
+of the variance of the variables) so attempts to extract same number of 
+components as there are variables.
+
+Factor Analysis
+ Need to choose a method of factor extraction 
+ There are six extraction methods : unweighted least squares, generalized 
+
+least squares, maximum likelihood, principal axis factoring, alpha factoring 
+and image factoring
+
+ The general rule of thumb is: 
+
+ If your data are normally distributed then use Maximum Likelihood (ML) 
+
+ If your data are not normally distributed then use Principal Axis Factoring (PAF) 
+
+Step 3: Do the Dimension 
+Reduction
+
+#Principal Component Analysis
+
+#On raw data using principal components analysis, 
+nfactors is set to the number of variables we expect to 
+get out which, in this case, is equal to the number 
+going in.
+
+pc1 <-  principal(raqData, nfactors = length(raqData), 
+rotate = "none")
+
+pc1 # Output all the details 
+
+plot(pc1$values, type = "b") # Generate a scree plot
+
+Step 4: Decide how many 
+factors/components to retain
+
+How many latent variables do we want to keep (retain)?
+  The common method is to select factors with Eigenvalues greater than 1 
+
+option 
+
+Eigenvalue = the variance of a component or factor
+ Eigenvalues shows variance explained by that particular factor out of the 
+
+total variance
+
+Kaiser (1960) recommends retaining all factors with eigenvalues greater 
+than 1.  
+ Based on the idea that eigenvalues represent the amount of variance 
+
+explained by a factor and that an eigenvalue of 1 represents a substantial 
+amount of variation.
+
+ Jolliffe (1972; 1986) reported that Kaisers criterion is too strict and 
+recommended retaining factors with eigenvalues more than 0.7.
+
+Extracting the components
+
+If we have n manifest variables in our analysis, PCA transforms the data 
+such that the total variance of the components n will be redistributed 
+among the components
+ The first will have the largest eigenvalue
+ The next the next highest etc.
+
+If the eigenvalue is divided by n the result is the proportion of variance 
+explained by that factor
+
+A rule of thumb is to retain in the final solution all factors with an 
+Eigenvalue greater than one
+
+Retrieving our eigenvalues
+
+pc1$values #output eigenvalues
+
+#Another way to look at Eigen values plus 
+variance explained
+
+pcf=princomp(raqData)
+
+factoextra::get_eigenvalue(pcf)
+
+Our example
+
+Finding 
+Factors
+
+Cattell (1966) suggests using 
+the point of inflexion of the 
+scree plot to decide how 
+many factors to extract
+
+Scree Plot
+
+Look for change in shape of the plot  points of inflexion, only 
+factors/components above this point are retained
+
+Our Example
+
+Factor/Component Extraction
+
+Which Rule?
+ Use Kaisers Extraction when
+
+ less than 30 variables, communalities after extraction > 0.7.
+
+ sample size > 250 and mean communality  0.6.
+ Scree plot is good if sample size is > 200.
+
+Total Variance Explained
+
+Indicates how much of the variability in the data has been modelled by 
+the extracted factors 
+
+Variance Explained
+
+Calculated by 
+dividing Eigenvalue 
+by the number of 
+factors/components
+
+Indicates how much of the 
+variability in the data has been 
+modelled by the extracted 
+factors. 
+Factor/Component 11 explains 
+31.69%,
+Factor/Component  1+2 
+explain 39.26% etc.
+Together the 4 uncorrelated 
+factors summarise 50.32% of 
+the information in the original 
+inter-related variables
+
+In R
+pc1$Vaccounted#Variance accounted 
+for
+
+Step 4b: Examine the 
+Communalities
+
+b  is the correlation between the manifest variable and the factor or 
+component
+
+The square of the correlation is the proportion of variance in the 
+manifest variable that can be explained by the factor
+
+If we square and sum all the factor loadings for a manifest variable 
+across the factor equations we have the communality
+ How much of the variance in the manifest variable is accounted for by the 
+
+combination of factors
+
+Deciding on 
+Factors/Components to Retain
+
+Need to look at both loadings and communalities
+
+Strong data
+ Uniformly high communalities (>0.8 is strong but it is more likely to be in the 
+
+region of 0.4-0.7). 
+ Item loadings above 0.3 is acceptable.
+
+ None, or few, cross loadings (a variable loads higher than 0.32 on two or 
+
+more factors) 
+
+ Several variables loading on to each factor/component (factor loadings of 0.3 
+
+or greater). 
+
+ A factor/component with fewer than 3 items is typically weak. 
+
+Loadings (PA1=Dim1=Component 1)
+
+Communalities
+
+In the initial PCA because we have as many components/factors as 
+manifest variables this will be 1
+
+If we drop components it will be less than 1 
+ This will then provide an indication of how much each manifest variable 
+
+contributes to our reduced solution.
+
+Factor/Component Matrix - 
+Loadings
+
+Correlation between a 
+specific 
+manifest/observed 
+variable and a specific 
+factor 
+These are the bs for 
+the factor equations
+
+Called 
+component 
+matrix for PCA
+
+Communalities 
+
+Communality = sum of the square of 
+the loading of a variable across a 
+component/factor
+
+How much variance 
+in the 
+manifest/observed 
+variables is 
+accounted for by the 
+factors found
+
+Communalities 
+
+I wake up  under my duvet thinking that I am trapped under a normal 
+distribution
+
+0.594 0.264 0.149
+
+0.15
+
+1
+
+2
+
+3
+
+4
+
+Extraction
+
+. 467
+
+I wake up  under my 
+duvet thinking that I 
+am trapped under a 
+normal distribution
+
+I wake up under my duvet thinking I 
+am trapped under a normal 
+distribution=.5942+.2642 +.1492 +.15 
+2=.467
+
+Step 5:  Rotation
+
+Given the communalities, there are multiple solutions for  loadings that  
+result in the same communality and correlation
+ Correct answer is dependent upon interpretability
+
+To aid interpretation it is possible to maximise the loading of a variable on 
+one factor while minimising its loading on all other factors
+
+The aim of rotation is to clarify the data structure 
+ You cannot apply a rotation if only one factor emerges
+ Aim to have non-zero loadings on each factor for only some of the variables
+
+Rotation reallocates the variable variance among the factors
+ Shifts variance from earlier factors to later ones
+ Interpretation shifts from unrotated factors delineating the most comprehensive 
+
+data patterns to factors delineating the distinct groups of interrelated data.
+
+Rotation  Why?
+
+The factor patterns define decreasing amounts of variation in the data. 
+
+Each pattern may involve all or most of the variables and the variables 
+may have moderate or high loadings for several factor patterns
+
+To uncover the first pattern, a factor is fitted to the data to account for 
+the greatest regularity; 
+ Each successive factor is fitted to best define the remaining regularity.
+ The result of this is that the first unrotated factor may be located between 
+
+independent clusters of interrelated variables.
+
+ These clusters cannot be distinguished in terms of their loadings on the first 
+factor, although they will have loadings different in sign on the second and 
+subsequent factors
+
+ Each factor is rotated until it defines a distinct cluster of interrelated 
+
+variables. 
+
+Geometric Rotation
+
+Factor extraction equivalent to coordinate planes
+
+Factors are the axes
+
+Length of the line from the origin to the variable coordinates is equal to 
+the communality for that variable
+
+Orthogonal Factors are at right angles
+
+Factor loadings are found by dropping a line from the variable 
+coordinates to the factor at a right angle
+
+Repositioning the axes changes the loadings on the factor but keeps the 
+relative positioning of the points the same
+
+Geometric
+Rotation
+
+Orthogonal Rotation
+
+Oblique Rotation
+
+Rotating the axes - Aim is to make the location of the axes fit the actual data 
+points better. Move to a position that encompasses the actual data points 
+better overall. This will hopefully make them more interpretable.
+
+Rotation
+#Rotation PCA
+
+pc2 <-  principal(raqData, nfactors 
+= 4, rotate = "varimax")#Extracting 
+4 factors
+
+print.psych(pc2, cut = 0.3, sort = 
+TRUE)
+
+#Get the output as you would for 
+initial solution
+
+Rotated Factor Matrix(FA)
+Check the factor loadings after rotation
+
+Need to consider rotated 
+factor loadings before making 
+a final decision
+
+Reporting the Results PCA
+
+See example MATH9102-W10-DimRed.html
+
+Step 3: Factor analysis
+
+#Factor Analysis
+
+#Principal Axis Factoring fm=ml for normally 
+distributed data, pa for non normally distributed
+
+factsol <- fa(raqMatrix, nfactors=4, obs=NA, n.iter=1, 
+rotate="varimax", fm=ml")
+
+psych::print.psych(factsol,cut=0.3, sort=TRUE)
+
+fa.graph(factsol)
+
+fa.sort(factsol$loading)
+
+fa.diagram(factsol)#create a diagram showing the 
+factors and how the manifest variables load
+
+plot(factsol$values, type = "b") #scree plot
+
+Time for you to try
+
+Refer to MATH9102-W10-DimRed.qmd for sample code and the .html for 
+output
+
+Using MATH9102-W10-DimRedExercise.qmd:
+
+Do Task TWO  Conduct a PCA
+
+Time for you to try
+
+Refer to MATH9102-W10-DimRed.qmd for sample code and the .html for 
+output
+
+Using MATH9102-W10-DimRedExercise.qmd:
+
+Do Task THREE  Conduct an EFA
+
+Step 6: Reliability Analysis (For 
+Both)
+
+A Cronbachs alpha measurement of consistency tells you how 
+consistently the variables behave as a scale. 
+ Internal consistency refers to the general agreement between multiple items 
+
+(often Likert scale items) that make-up a composite score of a survey 
+measurement of a given construct. 
+
+ This agreement is generally measured by the correlation between items.
+
+If its high (say .80 or .90), then we probably have one 
+factor/component
+
+Interpreting Cronbachs Alpha
+
+Depends on the number of items
+ More questions = bigger 
+ Low numbers of items (<10) can result in low levels of alpha
+
+Treat Subscales separately
+
+Remember to reverse score reverse phrased items!
+ If not,  is reduced and can even be negative
+
+Reliability: 
+
+Cronbachs Alpha 
+ Ranges from 0 (no reliability) to 1 (complete reliability)
+ Should be .7 or greater to be considered reliable.
+ The closer Cronbachs alpha coefficient is to 1.0 the greater the internal 
+
+consistency of the items in the scale.
+
+ George and Mallery provide the following rules of thumb: 
+
+  > .9  Excellent
+
+ > .8  Good
+
+ > .7  Acceptable
+
+ > .6  Questionable 
+
+ > .5  Poor and 
+
+ < .5  Unacceptable
+
+George and Mallery, SPSS for Windows step by step: A simple guide and reference. 11.0 update 
+(4th ed.) (2011)
+
+Item-Total Statistics:  
+Fear of Computers sub-scale
+
+Alpha above .7 is 
+strong, .6 is 
+acceptable
+
+Item-Total Statistics:  
+Fear of Statistics sub-scale
+
+Look for items that 
+would improve 
+alpha if removed
+
+In R
+
+#Reliability analysis
+
+computerFear<-raqData[,c(6, 7, 10, 13, 14, 15, 18)]
+
+statisticsFear <- raqData[, c(1, 3, 4, 5, 12, 16, 20, 21)]
+
+mathFear <- raqData[, c(8, 11, 17)]
+
+peerEvaluation <- raqData[, c(2, 9, 19, 22, 23)]
+
+alpha(computerFear)
+
+#If some items are to be reversed keyed, then either specify the direction of all items or just a vector of 
+which items to reverse 
+
+alpha(statisticsFear, keys = c(1, -1, 1, 1, 1, 1, 1, 1))
+
+alpha(mathFear)
+
+alpha(peerEvaluation)
+
+alpha(statisticsFear) #for illustrative purposes
+
+Time for you to try
+
+Refer to MATH9102-W10-DimRed.qmd for sample code and the 
+companion .html for the output.
+
+Using MATH9102-W10-DimRedExercise.qmd
+
+Do Task FOUR  Reliability Analysis  for both PCA and EFA (code is 
+included just interpret it)
+
+The End?
+
+Describe Factor Structure/Reliability
+
+What items should be retained?
+ What items did you eliminate and why?
+
+Application
+ How does it fit in with your theory?
+ Where will your questionnaire be used? (if you are this is your research 
+
+focus)
+
+Exploratory Factor Analysis 
+(EFA)
+
+Is a variable reduction technique which identifies the number of latent 
+constructs and the underlying factor structure of a set of variables  
+
+Hypothesizes an underlying construct, a variable not measured directly  
+
+Estimates factors which influence responses on observed variables  
+
+Allows you to describe and identify the number of latent constructs 
+(factors) 
+
+Includes unique factors, error due to unreliability in measurement  
+
+Exploratory Factor Analysis 
+(EFA)
+
+Traditionally has been used to explore the possible underlying factor 
+structure of a set of measured variables without imposing any 
+preconceived structure on the outcome  
+
+Factor loadings (parameter estimates) help interpret factors. 
+
+Loadings are the correlation between observed variables and factors
+ are standardized regression weights if variables are standardized (weights 
+used to predict variables from factor) and are path coefficients in path 
+analysis. 
+
+Standardized linear weights represent the effect size of the factor on 
+variability of observed variables. 
+
+Principal  Component Analysis 
+(PCA)
+
+Is a large sample procedure
+
+Is a variable reduction technique  
+
+Is used when variables are highly correlated  
+
+Reduces the number of observed variables to a smaller number of 
+principal components which account for most of the variance of the 
+observed variables 
+
+The total amount of variance in PCA is equal to the number of observed 
+variables being analyzed. 
+
+In PCA, observed variables are standardized, 
+ e.g., mean=0, standard deviation=1, diagonals of the matrix are equal to 1. 
+
+PCA
+
+Not based on any causative relationship between the components and 
+the manifest variables.
+
+It is not proposing that the components are latent variables 
+
+It is simply rearranging the data under the given constraints.
+
+PCA and EFA Requirements
+
+Measurement scale is interval or ratio level (or ordinal)
+
+Random sample 
+ At least 5 observations per observed variable and at least 100 observations 
+
+in total required.  
+
+Larger sample sizes are recommended for more stable estimates, 10-20 
+observations per observed variable  
+
+Over sample to compensate for missing values  
+
+Linear relationship between observed variables   
+
+Factor Analysis v Principal 
+Component Analysis
+
+Both attempt to produce a smaller number of linear combinations of 
+original variables that captures or accounts for most of the variability in 
+the pattern of correlations
+
+In PCA
+ Assumes all the variance is common
+ There is little unique or error variance  it is a very small part of the total
+ Objective is to identify minimum number of factors to capture the total 
+
+amount of variation
+
+In FA
+ Factors are estimated using a mathematical model
+ Only the shared/common variance is used
+ Objective is to identify latent constructs represented in the original variables
+
+Factor Analysis v Principal 
+Component Analysis
+
+Results from PCA and EFA may be similar
+ When number of variables exceeds 30 or
+ Communalities exceed .6 for most variables
+
+Confirmatory  factor analysis
+ Not an exploratory technique
+ Requires hypotheses regarding factors and variables
+
+Procedure for factor analysis & PCA
+

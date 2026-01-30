@@ -1,0 +1,100 @@
+[Dicovering Statistics](https://discoveringstatistics.com/repository/exploringdata.pdf)
+
+
+future wrk
+compare our predictive results against the WQI categorical metrics present in oru oroginal dataset. Due t tine constraints did nto ahve time to complete here, but woudl eb a godo next steps to see how our predictive model matches with those WQI classification standards.
+Put categorical values on outcome values - by creating categories off specific category ranges we can create an excellent, good, poor, very poor categorization of water quality
+increase predictive power >> lok for other values that oredict valeu, onyl 1.5% accounted for here >>> farmgin practices, nutrients (phosphates/nitrogen), weather patterns (rain etc), 
+
+
+- **Dissolved Oxygen**: Dissolved oxygen is a statistically significant positive predictor of **BOD** (b = 0.00039, p < 0.001). However, because the model includes a **DO × temperature interaction**, this main effect represents the effect of dissolved oxygen on BOD when temperature is held at zero degrees Celsius. Consequently, the positive coefficient should not be interpreted as a simple unconditional relationship. The counter-intuitive direction of this coefficient, whereby higher dissolved oxygen is associated with higher BOD, may reflect the conditional nature of the effect and the role of dissolved oxygen in moderating the impact of temperature on microbial activity rather than acting as an independent linear predictor of water quality.
+
+
+
+LOGREG
+
+DO + BOD...
+2. Adding BOD to DO provides "Diminishing Returns"
+Comparing Model 1 to Model 2, you'll see the numbers barely move.
+
+Interpretation: This confirms my previous suspicion—DO and BOD are redundant. Because DO is likely "Saturation" (as you suspected), it already carries the "signal" of the organic load. Adding BOD on top of it doesn't help the model learn anything new; it just adds noise.
+
+
+
+Does this help with your HL/Cook's concerns?Yes. These $R^2$ values provide the "defense" you need for your model:High Explanatory Power: If the HL test is significant (p < 0.05), you can point to these $R^2$ values to show that the model is still capturing a massive amount of the underlying logic of the data.Validation: In a dataset of 29,000 observations, achieving a 0.35 Nagelkerke $R^2$ suggests that your predictors (DO, Temp, pH) are genuinely influential and not just "statistically significant" by accident of sample size.
+
+
+3. Addressing your Diagnostic ConcernsNow that we see the final numbers, we can answer your earlier questions about whether the model is "invalidated":Cook's Distance/Residuals: Your Odds Ratios are very "clean" (none are astronomical or near zero). This suggests that no single outlier (high Cook's distance) is forcing the model to give nonsensical results.Hosmer-Lemeshow: With a Nagelkerke $R^2$ of 0.354 and these precise Odds Ratios, your model is statistically "useful" even if the HL test is significant. It is successfully distinguishing between Good and Poor water based on the chemical drivers.
+
+>> addign or removihf BOD >>>
+
+This matches what you already discovered:
+
+BOD has high overlap across good and poor classes
+
+BOD is weakly discriminative in this dataset
+
+=========================
+Your models all show:
+
+High specificity
+
+Moderate–low sensitivity
+
+That means:
+
+The model is good at identifying poor water quality but struggles to confidently classify good water quality.
+
+This is not a flaw — it reflects:
+
+Strong class imbalance (≈18% good)
+
+Overlapping environmental conditions
+============================
+
+
+REFERENCES
+
+ [Canadian Water Quality Guidelines for the Protection of Aquatic Life](https://ccme.ca/en/res/wqimanualen.pdf). 
+
+----final conclusion-=---
+Interpretation: Since the p-value is extremely small (virtually zero), you reject the null hypothesis.
+
+DO has proven to be a ricky variable...."Interestingly, DO showed a negative relationship with good water quality in this specific dataset, which may warrant further investigation into the local environmental context."
+
+The negative DO coefficient may seem counterintuitive biologically. You handled it correctly by:
+
+Reporting it as observed / Not forcing causal interpretation / Leaving room to discuss this later (excellent practice) / 
+You can safely flag this in Discussion or Limitations, not here.
+
+
+future investigation 65% of data missing explaigin good water  >> Future models might benefit from including variables like phosphate levels or fecal coliform counts")
+
+
+
+You should highlight that the model is better at ruling out good water quality (high specificity) than it is at finding it (low sensitivity). This is a critical distinction for the "General Text" part of your report.
+
+
+------
+3️⃣ Why you see “multiple raw alphas”
+
+Because psych::alpha() shows:
+
+Alpha type	Meaning	Use it?
+$total$raw_alpha	Overall scale reliability	✅ YES
+Item-dropped alphas	Reliability without each item	❌ No
+std.alpha	Standardised alpha	❌ Usually no
+G6(smc)	Alternative estimator	❌ No
+
+D24127620.zip > cotains 9 files
+D24127620MLR.qmd > code - multiple linear regression - contains task 1 + task 3
+D24127620LOGR.qmd > code -logistic regression - contains task 2
+D24127620DIMR.qmd > code -dimensino reduction- contains task 4
+D24127620MLR.html > MLR report
+D24127620LOGR.html > Logreg report
+D24127620DIMR.html > Dim Red report
+WebSatisfaction.csv > dataset required for Task 4 
+WQI Results on Dataset.csv > dataset required for Tasks 1, 2 and 3 
+MATH9102-W9-Functions.R > function file, required in Tasks 1, 2, and 3 
+
+

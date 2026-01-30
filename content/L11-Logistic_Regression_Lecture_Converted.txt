@@ -1,0 +1,1803 @@
+MATH9102
+
+LOGISTIC REGRESSION
+
+Sources used in creation of  this lecture: 
+Statistics and Data Analysis, Peck, Olsen and Devore; Discovering Statistics Using R, Field, 
+Miles and Field; Understanding Basic Statistics, Brase and Brase;SPSS Survival Manual, 
+Julie Pallant
+
+A method used when the outcome is 
+categorical, usually binary
+
+Used to estimate the probability of belonging 
+to a class
+
+Works with categorical or continuous 
+predictors
+
+Output is always between 0 and 1
+
+What is 
+logistic 
+regression?
+
+What does 
+logistic 
+regression try 
+to do?
+
+Model the probability of an event occurring 
+depending on the values of the independent 
+variables
+
+Estimate the probability that an event occurs 
+vs the probability that the event does not 
+occur
+
+Predict the effect of a series of variables on a 
+binary response variable
+
+Classify observations by estimating the 
+probability that an observation is in a 
+particular category or not.
+
+Starting 
+Equation
+
+In logistic regression, we first build an 
+ordinary linear equation:
+
+
+ = 0 + 11 + 22 + 
+
+This looks just like a linear regression
+ t can take any value from  to +
+
+Logistic regression does not model 
+probability directly
+
+It models t, which is later transformed into a 
+probability
+
+   This is the input to the logistic function.
+
+Log Odds
+
+
+1
+
+ This is the logit function
+ = log
+ It transforms probability (01) into log-odds ( 
+
+ +)
+
+If t = 0
+
+  odds = 1  p = 0.5
+ The model is uncertain (50/50 chance).
+
+If t > 0
+ The odds of the event increase
+
+ p > 0.5
+
+ The model leans toward Yes, the event 
+
+happens.
+
+If t < 0
+ The odds of the event decrease
+
+ p < 0.5
+
+ The model leans toward No, the event does not 
+
+happen.
+
+To remove the log, we exponentiate:
+ odds
+
+
+
+Meaning of odds:
+= 
+ odds
+
+
+1
+
+=
+
+ odds = 1  50/50 
+ odds > 1  event more likely
+ odds < 1  event less likely
+
+From Log 
+Odds to Odds
+
+From Odds to 
+Probability
+
+Content:
+
+odds
+odds
+
+Substituting odds = 
+ =
+
+1+
+
+:
+
+
+
+
+
+
+
+
+1+
+
+
+
+This produces a value between 0 and 1.
+ =
+
+This is how logistic regression turns any linear 
+equation into a valid probability.
+
+Linear equation (t)
+
+         
+
+    Log-odds = logit(p)
+
+         
+
+        Odds = e^t
+
+         
+
+Probability = odds / (1 + odds)
+
+Concept
+
+Range
+
+Meaning
+
+Probability
+
+0  1
+
+Odds
+
+0  
+
+Log-odds
+
+-  
+
+Chance 
+something 
+happens
+
+Ratio of 
+happening vs 
+not happening
+
+Linear scale 
+used by model
+
+Simple Example
+
+Binary 
+Logistic 
+Regression 
+Example
+Predicting 
+Exam Success 
+from Study 
+Hours
+
+Research question:
+
+Does the number of hours a student studies 
+predict whether they pass an exam?
+
+Outcome (dependent variable):
+ pass_exam
+ 1 = pass
+
+ 0 = fail
+
+Predictor (independent variable):
+ study_hours (continuous) 
+
+This is a classic situation for logistic 
+regression because the outcome is binary.
+
+Example  
+what logistic 
+regression 
+does?
+
+Logistic regression estimates how the 
+probability of passing changes with each 
+extra hour studied:
+
+study_hours
+
+
+1 = 0 + 1
+Where:
+log
+
+ :baseline log-odds of passing
+
+ :change in log-odds for each additional 
+
+0
+hour of study
+1
+
+Example  
+Interpreting 
+the 
+coefficient
+
+If the model estimates 
+
+This means:
+ For each extra hour studied, the log-odds of 
+
+1 = 0.25
+
+passing increase by 0.25
+
+ We can get the odds ratio by exponentiating 
+
+the log-odds
+ The odds ratio = 
+
+Interpretation:
+ Each additional hour of study increases the 
+
+= 1.28
+
+
+
+0.25
+
+odds of passing by 28%.
+
+logit
+
+Logistic regression predicts probabilities, which must stay between: 
+
+But a linear equation can take any value from: 
+ 1
+So we transform probability into something a linear model can handle.
+That transformation is the logit, which converts probabilities into log-odds.
+
+  + 
+
+ 
+
+to
+
+0  
+
+= probability of the event happening
+
+Where:
+
+
+ logit(p) = log-odds
+
+
+
+1
+
+ =odds of the event
+
+Research question:
+
+Do study hours and class attendance together 
+predict whether a student passes an exam?
+
+Example - 
+Predicting 
+Exam Success 
+from Study 
+Hours and 
+Attendance
+
+Outcome (binary):
+ pass_exam
+ 1 = pass
+
+ 0 = fail
+
+Predictors:
+ study_hours (continuous)
+ attendance (categorical)
+ 0 = low attendance (<70%)
+
+ 1 = high attendance (70%)
+
+ one continuous predictor
+ one categorical predictor
+
+Example- 
+Logistic 
+Regression 
+Model
+
+The model becomes:
+
+
+attendance
+1 = 0 + 1
+
+log
+Interpretation:
++ 2
+
+study_hours
+
+ :effect of each additional hour studied
+
+ :effect of being in the high-attendance 
+
+1
+group (compared to low attendance)
+2
+
+Predictor
+
+Coefficient
+
+Interpretation
+
+(b_0)
+
+2.0
+
+(b_1)
+
+0.20
+
+(b_2)
+
+1.10
+
+baseline log-odds 
+of passing when 
+hours = 0 and 
+attendance = low
+
+each hour studied 
+increases log-
+odds by 0.20
+
+high attendance 
+increases log-
+odds by 1.10
+
+Suppose we get this output.
+
+Convert to odds ratios:
+
+OR for study_hours = 
+
+ each extra hour increases 
+
+odds of passing by 22%
+= 1.22
+
+0.20
+
+OR for attendance = 
+
+1.10
+
+ high-attendance students 
+have 3 times the odds of 
+= 3.00
+passing compared to low-
+attendance students
+
+
+
+   
+Example  Predicted 
+Probabilities
+
+Lets compare predicted probabilities for different scenarios.
+
+Low attendance (0), 5 hours of study:
+ "logit"=2+0.2(5)=1
+
+ 27% chance of passing
+
+=0.27 
+
+High attendance (1), 5 hours of study:
+ "logit"=2+0.2(5)+1.1=0.1
+
+ 52% chance of passing
+
+=0.525
+
+High attendance, 10 hours of study:
+ logit=2+0.2(10)+1.1=1.1
+
+ 75% chance of passing
+
+=0.75
+
+
+
+
+
+
+
+Logistic regression
+
+Odds ratios are used to calculate probabilities in a logistic regression.
+
+Predictor variables can be either continuous or categorical.
+
+Logistic regression does not require the predictors to have a linear 
+relationship with the outcome.
+ BUT it does require each predictor to be linearly related to the logit of the 
+
+probability.
+
+It is  sensitive to high correlation between predictor variables 
+(multicollinearity).
+
+Full Worked 
+Example
+
+YOUT HCO HO RT  DATA SET PAU L  CON N OL LY
+MATH9102- W11- LOGREG.QMD
+
+Plus accompanying html output
+
+Example - Youthcohort Dataset
+
+Taken from Quantitative Data Analysis in Education, Paul Connolly
+
+Dataset: youthcohort.sav
+
+Research question: 
+ What factors predict the likelihood that a student will answer yes when 
+
+asked if they sat French at GCSE?
+
+ Note: 
+
+ We will not build a model to fully explore this question  we will use only selected predictors to 
+
+illustrate how logistic regression can be interpreted
+
+Example
+
+This model explores whether parental educational achievement helps 
+predict a young persons likelihood of answering yes to whether they sat 
+French at GCSE level.
+  satfren is the binary outcome 
+
+ Yes = sat GCSE French
+
+ No = did not 
+
+ Converted to a factor satfren_num 1 = sat GCSE French, 0 = No did not
+
+ s1pared is the sole predictor 
+ At least one parent with degree
+
+ At least one parent with A-level
+
+  Neither parent with A-level
+
+ This will allow us to estimate how differences in parental education are associated with the 
+
+probability that a student sat GCSE French.
+
+ This has been relevelled to make Neither Parent with an A-level as the reference category
+
+Dummy 
+Coding
+
+Dummy coding is a method used to include 
+categorical variables in statistical models
+ It converts a categorical variable with k 
+
+categories into k1 binary (0/1) variables.
+
+Why k1?
+ Because one category is chosen as a reference 
+
+category, and the others represent 
+comparisons against that reference.
+
+Any categorical predictors included in the 
+logistic regression model must be dummy 
+coded 
+ R will automatically do this, but if you want to 
+choose your reference category you need to 
+recode yourself.
+
+Education
+
+High school
+
+Undergraduate
+
+Postgraduate
+
+Undergrad 
+(D1)
+
+Postgrad 
+(D2)
+
+0
+
+1
+
+0
+
+0
+
+0
+
+1
+
+Dummy Coding - 
+Example
+
+Suppose you have a categorical predictor Education level:
+
+ High school
+ Undergraduate
+ Postgraduate
+
+Choose High school as the reference category.
+
+The logistic regression model becomes:
+
+
+1 = 0 + 11 + 22
+log
+Interpretation:
+
+ = log-odds for the reference group (High school)
+
+ = difference in log-odds between Undergrad and High school
+
+ = difference in log-odds between Postgrad and High school
+
+Exponentiating coefficients gives odds ratios.
+
+Education
+
+High school
+
+Undergraduate
+
+Postgraduate
+
+Undergrad 
+(D1)
+
+Postgrad 
+(D2)
+
+0
+
+1
+
+0
+
+0
+
+0
+
+1
+
+Dummy Coding - 
+Example
+
+The logistic regression model becomes:
+
+
+
+
+1 = 0 + 11 + 22
+
+log
+
+Interpretation:
+ = log-odds for the reference group (High school)
+ = difference in log-odds between Undergrad and High school
+ = difference in log-odds between Postgrad and High school
+Say:
+
+ = 0.80  exp(0.80)  2.22
+
+This means:
+Participants with an undergraduate degree have 2.22 times higher 
+odds of the outcome compared to the high school group, holding 
+other variables constant.
+
+Step 1: Build the Model
+logmodel1 <- glm(satfren_num ~ 
+s1pared, data =youthdf, na.action = 
+na.exclude, family = 
+binomial(link=logit))
+
+ binomial(link=logit) specifies the type of regression model being used within 
+
+the glm (generalized linear model) function
+
+ family = binomial(link=logit): This argument specifies that the model is a 
+
+logistic regression model. 
+ The binomial family is used when the dependent variable (in this case, satFrench) is binary 
+
+(0 or 1, yes or no, etc.).
+
+ binomial: Indicates that the dependent variable follows a binomial distribution, which is 
+
+common for binary outcome variables.
+
+ link=logit: Specifies the link function as logit, which is the standard choice for logistic 
+
+regression.
+
+  This function models the log odds of the dependent variable.
+
+Step 2: 
+Generate 
+Statistics to 
+Assess Model 
+Fit and 
+usefulness
+(a) Summary
+
+summary(logmodel1)
+An omnibus test of model is used to check 
+that the new model (with explanatory 
+variables included) is an improvement over 
+the baseline model (no predictors). 
+
+It uses chi-square tests to see if there is a 
+significant difference between the baseline 
+model (null) and the model created 
+
+Step 2: 
+Generate 
+Statistics to 
+Assess Model 
+Fit and 
+usefulness
+(b) Omnibus 
+test
+
+Likelihood Ratio (LR) Test
+
+ Does the fitted model significantly improve fit over the 
+
+null model?
+
+Use lrtest from lmtest package
+
+The Chi-square statistic is 166.19 df=2, 
+N=13201, and the p value is is statistically 
+significant (p <0.001)
+
+Step 2: 
+Generate 
+Statistics to 
+Assess Model 
+Fit and 
+usefulness
+(c) Psuedo R2
+
+In linear regression:
+
+
+
+
+
+
+
+R = proportion of variance in the outcome explained by the model
+
+Outcome is continuous  variance is well-defined
+
+A linear R of 0.30 = 30% of variance explained
+
+In logistic regression:
+
+Outcome is 0/1
+
+Variance is fixed by the binomial distribution
+
+So "variance explained" is not meaningful
+
+ordinary R cannot be computed
+
+Logistic regression uses likelihoods instead of sums of squares.
+
+Pseudo R measures are built from:
+
+
+
+
+
+
+
+
+
+The likelihood of the null model (no predictors)
+
+The likelihood of the fitted model
+
+They tell us:
+
+How much better does the model fit the data compared to a baseline 
+
+model?
+
+A logistic pseudo R of 0.30 = not 30% of variance explained
+
+
+
+Instead, it indicates that the model fits substantially better than the 
+
+null model.
+
+
+
+
+
+
+
+
+
+
+
+
+
+.
+
+Step 2: Generate 
+Statistics to 
+Assess Model Fit 
+and usefulness
+(c) Psuedo R2
+
+Cox and Snell R2  Nagelkerke R2  and Tijur R2 are pseudo R2 
+statistics 
+
+They are an effect size measurement  in this case between 
+1.3% and 1.7%
+
+They tell us how much this model fit has improved in 
+comparison to the baseline model (one with no predictors).
+
+Model fit: how well the model represents the data
+
+Step 3: 
+Calculate 
+Odds and 
+Predicted 
+Probabilities
+
+The Estimate column  from the 
+output in  Step 2a shows the 
+coefficients in log-odds form.  
+
+Students whose parent(s) have 
+at least one A-level have log-
+odds of sitting French that are 
+0.25 higher than students 
+whose parents have no A-level 
+(the reference group).
+
+Students whose parent(s) have a 
+degree have log-odds of sitting 
+French that are 0.53 higher than 
+students whose parents have no 
+A-level.
+
+Getting the odds
+
+We have the log odds at this point, but we need to calculate the actual 
+odds to be able to calculate the odds ratios.
+
+Odds Ratio: Indicates the change in odds resulting from a unit change in 
+the predictor.
+ OR > 1: Predictor , Probability of outcome occurring .
+ OR < 1: Predictor , Probability of outcome occurring .
+
+For continuous predictors, a unit change means +1 in the predictor.
+
+For categorical predictors, the unit change means:
+  Moving from the reference category (0)
+  to the category that dummy variable represents (1)
+ Each dummy variable compares:
+
+ Odds of outcome in category 
+
+vs.Odds of outcome in reference category
+
+ 
+
+Continuous Predictor:
+
+Odds(after 1 unit change in the predictor)
+
+Odds Ratio
+
+Original Odds
+
+Categorical Predictor:
+
+Odds(category of interest)
+Odds(reference category)
+
+Getting the 
+odds
+
+When interpreting the odds 
+ratios, there are two things 
+to look for:
+
+Is the odds ratio greater 
+than 1 or less than 1?
+
+OR > 1  higher odds of 
+sitting French compared to 
+the reference group
+
+OR < 1  lower odds 
+compared to the reference 
+group
+
+Getting the 
+odds
+
+Students with at least one 
+parent who has an A-level 
+have 1.28 times the odds of 
+sitting French compared to 
+students whose parents have 
+no A-level.
+
+In percentage terms:
+
+1.28 = 28% higher odds
+
+So we can say the odds of 
+sitting French are 28% higher 
+for a student with at least one 
+parent with an A level 
+compared to the reference 
+category.
+
+Getting the 
+odds
+
+Students with at least one 
+parent who has a degree 
+have 1.70 times the odds of 
+sitting French compared to 
+students whose parents 
+have no A-level.
+
+In percentage terms:
+
+1.70 = 70% higher odds
+
+The odds of sitting French 
+are 70% higher for a student 
+with at least one parent 
+with a degree than the 
+reference category.
+
+Getting the 
+odds
+
+Intercept 
+
+You usually dont interpret 
+the intercept in logistic 
+regression because it 
+represents:
+
+The odds of sitting French 
+for a student in the 
+reference category with all 
+predictors equal to zero
+
+Since the predictor here is 
+categorical, the intercept is 
+not meaningful on its own 
+and can be ignored for 
+interpretation.
+
+Interpreting the output
+
+Reporting odds ratios for categorical predictors we must remember that 
+we are comparing the odds for two categories.
+
+For more than two we are comparing each category to the reference 
+category (value 0)  which we specify in the regression.
+
+For odds ratios less than 1 we can invert these and report the inversion 
+to help interpretation. 
+
+Getting the  
+Odds
+
+Is the effect statistically 
+significant?
+
+Look at the p-value for each 
+coefficient
+
+p < .05  statistically 
+significant
+
+The z statistic or Wald statistic 
+is calculated to get the 
+significance of the predictor. 
+
+What you get from this column 
+is whether the effect of the 
+predictors is positive or 
+negative.
+
+Getting the 
+Odds
+
+The Pr(>|z|) column shows 
+the two-tailed p-values 
+testing the null hypothesis 
+that the coefficient is equal 
+to zero (i.e. no significant 
+effect). 
+
+The usual cut-off value is 
+0.05. 
+
+From this model it appears 
+that parental education 
+does  have a significant 
+effect on the log-odds ratio 
+of the dependent variable. 
+
+P(Y)
+
+1
+
+(0+11+22)
+
+=
+
+1+
+
+We  have the coefficients so we can calculate the predicted 
+probability
+
+We can use a function from the emmeans package 
+(emmeans) to get the predicted probabilities for each 
+predictor:
+
+Getting the 
+predicted 
+probability
+
+Neither parent has an A-
+level  Probability = 0.506
+
+This is the baseline 
+probability.
+
+Confidence interval: 49.4% 
+to 51.9%
+
+Students whose parents 
+have no A-levels have a 
+50.6% chance of saying 
+they sat French.
+
+Getting the 
+predicted 
+probability
+
+At least one parent has an A-
+level  Probability = 0.568
+
+Students with a parent who 
+has at least one A-level have a 
+56.8% chance of saying they 
+sat French.
+
+This means:
+
+Probability increases by ~6 
+percentage points compared 
+to the baseline
+
+Confidence interval: 54.9% to 
+58.6%
+
+Getting the 
+predicted 
+probability
+
+At least one parent has a 
+degree  Probability = 
+0.635
+
+Students with a parent who 
+has a degree have a 63.5% 
+chance of saying they sat 
+French.
+
+This means:
+
+Probability increases by ~13 
+percentage points 
+compared to the baseline
+
+Confidence interval: 62.0% 
+to 65.0%
+
+Interpreting 
+the output
+
+The AIC loss function 
+(2k-2*log(L)) tries handle 
+the bias when fitting a 
+model.  When you fit a 
+model  if you increase 
+the number of 
+parameters you will 
+improve the log 
+likelihood but will run 
+into the danger of over 
+fitting. Use for the AIC 
+comparing models.
+
+Step 4: Assess 
+the 
+Classification 
+Performance
+
+We've predicted probabilities but are they 
+any good?
+ A logistic regression gives us numbers between 0 
+
+and 1.
+But that does not tell us:
+ How often the model is right
+ How often it is wrong
+
+ Whether it predicts yes better than no
+ Or whether it is just doing something close to 
+
+chance
+
+To answer that, we need a way to evaluate the 
+quality of the predictions.
+
+That brings us to the ROC curve, confusion 
+matrix, sensitivity and specificity
+
+Step 4a: ROC 
+Curve
+
+Used to see how any predictive model can distinguish 
+between the true positives and negatives by:
+
+ plotting
+
+ Sensitivity, the probability of predicting a real positive 
+
+will be a positive, 
+
+ against
+
+ 1-specificity, the probability of predicting a real 
+
+negative will be a positive.
+
+The ROC curve plots out the sensitivity and specificity for 
+every possible decision rule cutoff between 0 and 1 for a 
+model Receiver Operating Characteristic. 
+
+Why do we need it:
+
+ Visualize the classification of whether a student as sat 
+
+French or did not sit French
+ We pick a cut-off (e.g., 0.5)  but:
+
+ Changing the cut-off changes the models accuracy
+ Sensitivity and specificity depend on the cut-off
+ We need a way to evaluate the model across all 
+
+possible cut-offs
+
+ The ROC curve does exactly that.
+
+Interpreting the ROC 
+
+-Epi::ROC( form = satfren_num ~ 
+p_hat, data = results1, plot = "ROC )
+
+A model that predicts at chance will 
+have an ROC curve that looks like the  
+lower diagonal line.
+
+The further the curve is from the 
+lower diagonal line, the better the 
+model is at discriminating between 
+positives and negatives in general.
+
+Step 4a: AUC 
+To use the ROC curve 
+to quantify the 
+performance of a 
+classifier use the Area 
+Under the Curve.  
+AUC is literally just the 
+percentage of this graph 
+that is under this curve. 
+This AUC here is 0.56 (.5 
+is considered weak, 0.8 
+strong)
+
+Step 4b: Confusion Matrix
+
+A confusion matrix is a table that shows how well a classification model 
+(like logistic regression) performed when predicting outcomes.
+
+It compares:
+
+ What the model predicted
+
+vs.
+
+ What actually happened
+
+This lets us see where the model is getting things right and where it is 
+making mistakes
+
+ 
+Confusion Matrix
+
+Positive = student sat French (1)
+
+Negative = student did not sit French (0)
+
+True Positive (TP)
+
+ The model predicted Yes and the student actually did sit French.
+
+(Correct positive prediction)
+
+False Negative (FN)
+
+ The model predicted No, but the student actually did sit French.
+
+(Missed positive)
+
+False Positive (FP)
+
+ The model predicted Yes, but the student actually did not sit 
+
+French.
+(False alarm)
+
+True Negative (TN)
+
+ The model predicted No, and the student really did not sit French.
+
+(Correct negative prediction)
+
+Sensitivity (true positive rate)
+
+Tells us how good the model is at correctly identifying the people who 
+did sit French.
+
+It is the proportion of actual yes cases that the model correctly predicts 
+as yes.
+
+Formula:
+
+Sensitivity
+
+=
+
+True Positives
+True Positives + False Negatives
+
+Specificity (true negative rate)
+
+Tells us how good the model is at correctly identifying the people who 
+did not sit French.
+
+It is the proportion of actual no cases that the model correctly predicts 
+as no.
+
+Formula:
+
+Specificity
+
+=
+
+True Negatives
+True Negatives + False Positives
+
+Sensitivity and Specificity
+
+A model that is so bad its worthless would have a lot of bs and cs and 
+possibly both.
+
+A simple way of measuring model accuracy is simply the proportion of 
+individuals who were correctly classifiedthe proportions of True 
+Positives and True Negatives.
+
+We look at the accuracy of positives and negatives separately 
+
+Sensitivity
+The sensitivity of the 
+model is the 
+percentage of the 
+group with the 
+characteristic of 
+interest that has 
+been accurately 
+identified by the 
+model
+
+Sensitivity
+Those with "yes" 
+for sitting French 
+correctly predicted 
+by the model (i.e., 
+true positives).
+
+In this case the 
+model was able to 
+identify 56% of the 
+people who said 
+they sat French.
+
+Specificity
+The specificity of the 
+model is the 
+percentage of the 
+group without the 
+characteristic of 
+interest 
+
+Specificity
+Those with "no" 
+for sitting French 
+and were also 
+correctly predicted 
+as not having the 
+observed 
+characteristic (i.e., 
+true negatives).
+
+In this case 54.5%.
+
+Step 5a: Checking 
+Assumptions- Linearity
+
+Step 5b: Checking 
+Assumptions- Collinearity
+
+Step 5c: Checking Assumptions- 
+Outliers and Influential Cases
+
+Cooks Distance: Measures how much each individual observation influences the overall model 
+
+Large values indicate cases that may disproportionately affect the results.
+
+No rows with Cooks distance > 1, no problems
+
+Step 5c: Checking Assumptions- 
+Outliers and Influential Cases
+
+Leverage (Hat values): Identifies observations 
+with unusual predictor values
+
+High-leverage cases have the potential to 
+pull the model toward themselves.
+
+None found
+
+Leverage 
+Cases  What 
+to 
+Check/What 
+to do?
+
+Threshold: hi>2(k+1) /n
+
+ Where: 
+
+ =leverage for case I, 
+
+= number of predictors. 
+
+= 
+
+sample size
+
+Low leverage (< threshold)
+
+
+
+
+
+ Case has typical predictor values
+
+ Does not strongly affect the model
+
+ No action needed
+
+Moderate leverage (near threshold)
+
+ Case has somewhat unusual predictor values
+
+ Worth keeping an eye on
+
+ Check Cooks Distance and DFBetas to confirm no problems
+
+High leverage (> threshold, but < 0.2)
+
+ Predictor pattern is unusual
+
+ Case has potential to influence coefficients
+
+
+
+If Cooks Distance is low and DFBetas are small  not a problem
+
+Very high leverage (> 0.2)
+
+ Unusual case with strong potential to distort model
+
+ Requires investigation
+
+ Check raw data for entry errors, miscoding, or whether it 
+
+represents a real subgroup
+
+Step 5c: Checking Assumptions- 
+Outliers and Influential Cases
+
+DFBetas: Measure how much each observation influences individual regression 
+coefficients; 
+
+Large DFBetas indicate that removing the case would substantially change a 
+coefficient estimate.
+
+None found
+
+Step 5c: Checking Assumptions- 
+Outliers and Influential Cases
+
+Standardised (Pearson) residuals: 
+
+Show how poorly each observation is predicted by the model
+
+Large residuals (e.g., > |2|) indicate unusual or poorly fitted cases.
+
+None found
+
+Step 5c: Checking Assumptions- 
+Outliers and Influential Cases
+
+   Deviance residuals: Reflect how much each observation contributes to the models 
+deviance
+
+Large values highlight observations the model struggles to accurately classify.
+
+None found.
+
+Interpreting 
+the output
+
+The AIC loss function 
+(2k-2*log(L)) tries handle 
+the bias when fitting a 
+model.  When you fit a 
+model  if you increase 
+the number of 
+parameters you will 
+improve the log 
+likelihood but will run 
+into the danger of over 
+fitting. Use for the AIC 
+comparing models.
+
+Reporting
+
+See the report in MATH9102-W11-LogReg.html
+
+Time to try it out yourself
+
+Download the files from Brightspace.
+
+Open MATH9102-W11-LogReg-Exercise.qmd
+
+TASK 1: 
+
+Using the Sleep dataset build a logistic regression model to predict the 
+probability of being in the category of having trouble sleeping (variable 
+trubslep 1 = yes; 2 = no) with the predictors of smoking (variable smoke 
+1 = yes; 2 = no) 
+
+Review the output and interpret.
+
+Extending the youthcohort model 
+to include Secondary School Type 
+as a predictor
+
+Categorical variable
+ pcschtype
+ Values
+
+ Comprehensive 16
+ Comprehensive 18 
+ CTC/Other maintained 
+ Grammar
+ Independent 
+ Modern 
+
+Model 
+Including 
+s1pared
+
+logmodel2 <- glm(  
+satfren_num ~ s1pared + 
+pcschtype,  data = 
+youthdf,  family = 
+stats::binomial(link = 
+"logit"),  na.action = 
+stats::na.exclude)
+
+How useful is the model?
+
+M O D E L   I S   S I G N I F I C A N T  C H I   S Q =3 8 7 . 8 8  P < 0 . 0 1 ,  E X P L A I N I N G  B E T W E E N  
+1 . 3   A N D   3 . 9 %   O F   T H E   VA R I AT I O N
+
+Interpreting 
+the 
+coefficients
+
+Odds Ratios
+
+.
+
+Predicted 
+Probabilities
+
+.
+
+ROC Curve
+
+Confusion  
+matrix
+
+Checking Assumptions- 
+Linearity
+
+Checking 
+Assumptions 
+- Collinearity
+
+Tolerance < 0.1  Serious 
+multicollinearity
+
+Tolerance < 0.2  Potential 
+multicollinearity problem
+
+VIF > 10  Serious 
+multicollinearity (widely used 
+rule of thumb)
+
+VIF > 5  Concerning / needs 
+investigation
+
+VIF between 1 and 5  
+Acceptable
+
+Outliers and Influential Cases
+
+Outliers and Influential Cases
+
+This is a problem!
+
+We need to check the 
+other diagnostics 
+
+Outliers and Influential Cases
+
+Outliers and Influential Cases
+
+Outliers and Influential Cases
+
+Because there are no 
+other issues  we can 
+assume the leverage 
+cases are not a problem
+
+High leverage (> threshold, but < 0.2)
+
+ Predictor pattern is unusual
+
+ Case has potential to influence 
+
+coefficients
+
+
+
+If Cooks Distance is low and 
+DFBetas are small  not a problem
+
+Interpreting 
+the output
+
+The AIC loss function (2k-
+2*log(L)) tries handle the 
+bias when fitting a model.  
+When you fit a model  if you 
+increase the number of 
+parameters you will 
+improve the log likelihood 
+but will run into the danger 
+of over fitting. 
+
+Use for the AIC comparing 
+models.
+
+Lower AIC values represent 
+preferable models, so this 
+reduction provides strong 
+evidence that adding school 
+type improves model 
+quality in comparison to 
+model1
+
+Comparing Models
+
+Model Fit (Overall Performance)
+ Likelihood Ratio (LR) Test
+
+ Does the fitted model significantly improve fit over the previous model?
+
+ Compare  values between models.
+ Akaike Information Criterion (AIC)
+
+ Lower values indicate better balance of fit and complexity.
+
+Pseudo R Measures
+ CoxSnell R
+ Nagelkerke R
+ Tjurs R
+ Higher values indicate better explanatory power (but not variance explained 
+
+like linear R).
+
+Comparing Models
+
+Coefficient Significance and Effect Sizes
+ Are predictors statistically significant? Does this change across models?
+ Do odds ratios increase or decrease across models?
+ Do effect sizes change (e.g., become smaller after adding new predictors)?
+
+Predicted Probabilities
+ Are predicted probabilities more distinct across categories?
+ Does a more complex model capture more meaningful differences between 
+
+groups?
+
+Interpretation and Theoretical Meaning
+ Do added predictors make sense?
+ Does the model with more predictors tell a clearer or more informative 
+
+story?
+
+Comparing Models
+
+Classification Performance
+ ROC curve
+ Area Under the Curve (AUC)
+ Sensitivity (true positive rate)
+ Specificity (true negative rate)
+ Confusion matrix patterns
+ Does one model classify cases more accurately?
+
+Model Parsimony (Simplicity vs Usefulness)
+ Does adding predictors meaningfully improve fit and interpretation?
+ Is the added complexity justified?
+
+Comparing Models
+
+Assumptions and Diagnostics
+ HosmerLemeshow goodness-of-fit
+ Multicollinearity (VIF/tolerance)
+ Outliers or influential cases
+ Does one model meet assumptions better than another?
+
+Time to try for yourself
+MATH 9102-W11-LogReg-Exercise.qmd
+
+TASK 2  : Extend your model including total number of 
+caffeine drinks as a predictor.
+
+What does logistic regression 
+try to do?
+
+Model the probability of an event occurring depending on the values of 
+the independent variables
+
+Estimate the probability that an event occurs vs the probability that the 
+event does not occur
+
+Predict the effect of a series of variables on a binary response variable
+
+Classify observations by estimating the probability that an observation 
+is in a particular category or not.
+
+Assumptions
+
+Requires the dependent variable to be 
+binary/nominal with multiple categories
+ ordinal  logistic regression requires the 
+
+dependent variable to be ordinal.
+
+Requires the observations to be independent 
+of each other.  
+ Observations should not come from repeated 
+
+measurements or matched data.
+
+Requires there to be little or no 
+multicollinearity among the independent 
+variables.  
+ Independent variables should not be too highly 
+
+correlated with each other.
+
+ Check Post-hoc
+
+Requires linear relationship between the log 
+odds and the predictors.
+ Check Post-hoc
+
+Assumptions
+
+Typically requires a large sample size. 
+  A general guideline is that you need at 
+
+minimum of 10 cases with the least frequent 
+outcome for each independent variable in your 
+model. 
+ For example, if you have 5 independent variables and the 
+
+expected probability of your least frequent outcome is .10, 
+then you would need a minimum sample size of 500 (10*5 
+/ .10).
+
+Multinomial logistic regression
+
+Logistic regression to predict membership of more than two categories.
+
+It (basically) works in the same way as binary logistic regression.
+
+The analysis breaks the outcome variable down into a series of 
+comparisons between two categories.
+ E.g., if you have three outcome categories (A, B and C), then the analysis will 
+
+consist of two comparisons that you choose:
+ Compare everything against your first category (e.g. A vs. B and A vs. C),
+
+ Or your last category (e.g. A vs. C and B vs. C),
+
+ Or a custom category (e.g. B vs. A and B vs. C).
+
+The important parts of the analysis and output are much the same as 
+we have just seen for binary logistic regression
+
+How to report Logistic 
+Regression   Example
+
+study  as 
+
+A multinomial logistic regression analysis was conducted with a students 
+level 
+taught 
+postgraduate,  research  postgraduate)  with  student  well-being,  mature 
+student  status  and  the  type  of  educational  institute  being  attended  as 
+predictors. 
+
+the  outcome  variable 
+
+(undergraduate, 
+
+for 
+
+the  assumption 
+
+The  data  met 
+independent  observations. 
+Examination for multicollinearity showed that the tolerance and variance 
+influence factor measures were within acceptable levels (tolerance >0.4, 
+VIF <2.5 ) as outlined in Tarling (2008). The Hosmer Lemeshow goodness 
+of fit statistic did not indicate any issues with the assumption of linearity 
+between  the  independent  variables  and  the  log  odds  of  the  model 
+(2(n=8)= =11.09, p =0.2). 
+
+*we are not doing this.
+
+==================================
+
+log𝑝𝑝1−𝑝𝑝=𝑏𝑏0+𝑏𝑏1study_hours
+
+Logistic regression predicts probabilities, which must stay between: 0≤𝑝𝑝≤1
+But a linear equation can take any value from: −∞ to +∞
+So we transform probability into something a linear model can handle.That transformation is the logit, which converts probabilities into log-odds.
+Where:
+◦𝑝𝑝= probability of the event happening
+◦𝑝𝑝1−𝑝𝑝 =odds of the event
+◦logit(p) = log-odds
+A multinomial logistic regression analysis was conducted with a student’s level study as the outcome variable (undergraduate, taught postgraduate, research postgraduate) with student well-being, mature student status and the type of educational institute being attended as predictors.
+The data met the assumption for independent observations. Examination for multicollinearity showed that the tolerance and variance influence factor measures were within acceptable levels (tolerance >0.4, VIF <2.5 ) as outlined in Tarling (2008). The Hosmer Lemeshow goodness of fit statistic did not indicate any issues with the assumption of linearity between the independent variables and the log odds of the model (χ2(n=8)= =11.09, p =0.2).
+*we are not doing this.
+`
+Logistic regression model creation - rough steps
+add in datasaet...
+-- create mdoel
+Summary stats (Estimate / z-value / Pr (> z) (summary(model3))
+Onnibus Likelihood ratio Test (lmtest::lrtest(model3) >> get chosquared vakue form it
+ - chi-squared (DoF / n value / p value ( < 0.01)
+Descriptive statistics - effect
+ - Pseudo R squared (raneg of explainablilty in model i.e. 1.5% to 1.7% for eg)
+stargazer report (optional)
+>>> Report  -- do a report of description and effect here
+-- Calculate ratios and probabilities
+Odds Ratios (Cox-Snell / Nagelkerke / Tjur 0
+ROC Curve (AUC  / Specificity / sensitivity  - take odds ration and convert to something more meanignful)
+Confusin matrix
+--- Check assumptions
+- Multi-linearity  (Check VIF (threshold is usually < 5 or 10).
+-Co Linearity (add VIF???? )
+- Hosmer - Lemeshow - this is a goodness if FIt check - It checks if your observed event rates match your predicted event rates. A non-significant p-value (> 0.05) is actually a good thing here!)
+-- Outliers
+ - Cooks Distance (< 1)
+ - Leverage
+DF Beta
+Standardized residuals
+Deviance residuals
+AIC value (how explainable is model (if adding predictor comparison value  - lower value means improvment in explainability / higher valeu  = worse explainability)0
+>>>> Report

@@ -1,0 +1,282 @@
+---
+title: "MATH9102-W12-MLR Skeleton"
+author: "Deirdre Lawless"
+format: 
+  html:
+    self-contained: true
+    toc: true      # Enables table of contents
+    toc_float: true # Makes the TOC float on the side
+    toc_depth: 3   # Specifies the depth of headers to include in TOC
+editor: source
+
+---
+
+
+```{=html}
+<style>
+/* Center figure captions in Quarto HTML, make them black and bold */
+.quarto-figure .figure-caption, 
+figure > figcaption { 
+  text-align: center; 
+  color: black; 
+  font-weight: bold; 
+}
+</style>
+```
+
+```{r}
+#| label: install-and-load
+#| message: false
+#| warning: false
+
+quiet_library <- function(pkg) {
+  suppressMessages(suppressWarnings({
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      install.packages(pkg, quiet = TRUE)
+    }
+    library(pkg, character.only = TRUE)
+  }))
+}
+
+
+quiet_library("tidyverse")  # Collection of R packages (dplyr, ggplot2, tidyr, etc.) for data wrangling, visualization, and analysis
+quiet_library("lm.beta")   # For extracting standardized co-efficients from regression model
+quiet_library("stargazer") # For formatting output of regression
+
+
+quiet_library("performance")    # Loads tools for checking model assumptions and diagnostics (e.g., normality, collinearity)
+quiet_library("car")            # Companion to Applied Regression – includes functions for influence tests and outlier detection
+quiet_library("see")            # Needed for plots
+
+quiet_library("ggResidpanel")   # Alternative for generating diagnostic plots for 4.5.x
+
+# Code to load file
+datalocation <- file.path("C:","Path", "to", "yourfiles")
+datapath <- file.path(datalocation,'filename')
+dataframename <- read.table(datapath) # change .table to .csv etc as needed
+
+
+# Complete any manipulation/cleaning needed
+```
+
+
+# Step 1: Build the model
+```{r}
+#label: model1
+#Create the model
+model1<-lm(outcomevar~pred1+pred2+pred3, data=dataframname)
+```
+
+##  Step 2: Generate the Analysis of Variance Table
+This provides the information needed to calculate the F statistic.
+```{r}
+#| label: anovam1
+anova(model1)
+```
+
+## Step 3: Generate the summary statistics needed to assess model fit
+```{r}
+#| label: summm1
+summary(model1)
+```
+
+## Step 4: Generate Standardized Co-efficients
+In this example as the data is standardized these will not be different to the co-efficients produced by the summary.
+```{r}
+#| label: betam1
+lm.beta::lm.beta(model1)
+```
+
+## Step 5 (optional): Use Stargazer to produce a tidy output of ANOVA and Summary
+```{r stargazer}
+stargazer(model1, type="text") #Tidy output of all the required stats
+```
+
+## Step 6: Report the results
+Replace the content in italics with content relevant to your analysis (does not need to be italicised). 
+
+
+A multiple linear regression model was created to _explain what the model was created for_.  A _statistically/non statitsically_ significant regression equation was found (F(_df1,df2_)=_FRatio_, p = _pvalue (if not significant)/p < relevant cut-of (if significant < 0.5, 0.1 or 0.001)_ with an adjusted R^2^ of _adjusted R2 from summary_. The regression equation is therefore:
+
+  _Outcome Concept = intercept + b1 * pred1 + b2 * pred2 + b3 * pred3_
+  
+This indicates _explain what increases/changes in each predictor mean for the outcome_. _Write a statement about what this means for the hypothesis_.
+ 
+ 
+Remember for categorical predictors you are comparing to the reference category.
+
+
+
+| Statistic needed in written report                      | Where to find it in R output                                                    | Code chunk label |     |          |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------- | --- | -------- |
+| **F-statistic**                                         | In the **ANOVA table** (`F value` column)                                       | `anovam1`        |     |          |
+| **Model degrees of freedom (df1, df2)**                 | In **ANOVA** output (`Df`) <br> *df1 = model predictors* <br> *df2 = residuals* | `anovam1`        |     |          |
+| **p-value for the model (overall test)**                | In **ANOVA** (`Pr(>F)`) — same row as F-statistic                               | `anovam1`        |     |          |
+| **Adjusted R²**                                         | In the **Regression Summary** (`Adjusted R-squared`)                            | `summm1`         |     |          |
+| **Unstandardized coefficients** (Intercept, b1, b2, b3) | In **Regression Summary** (`Estimate`)                                          | `summm1`         |     |          |
+| **p-values for predictors**                             | In **Regression Summary** (`Pr(>|t| )`) | `summm1` |
+| **Standardized coefficients** (β values)                | In standardized regression output                                               | `betam1`         |     |          |
+| **Optional formatted version of the above**             | Stargazer formatted summary output                                              | `stargazer`      |     |          |
+
+
+
+# Residual Analysis
+
+## Step 1: Generate Summary Statistics/Non-Zero Variance
+
+```{r}
+#Generate summary statistics
+#If using   pastecs::stat.desc for continous variables - make sure you include the basic switch=F to ensure you don't get scienfitic notation
+
+
+```
+
+## Step 2: Residual Analysis
+
+### Step 2a: Conduct a Normality Test
+
+```{r}
+# Check normality - conducts a Shapiro-Wilks test and checks the standardized residuals for normal distribution
+# A p-value < 0.05 indicates a significant deviation from normal distribution.
+
+performance::check_normality(model1)
+
+```
+
+### Step 2b: Visualize residual distribution
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Residual Distribution Plots for Model 1"
+# Visualize residual distribution
+
+
+# Histogram of Residuals
+ggplot(data.frame(residuals = resid(model1)), aes(x = residuals)) +
+  geom_histogram(aes(y = ..density..), 
+                 bins = 20, 
+                 fill = "skyblue", 
+                 color = "white") +
+  stat_function(fun = dnorm, 
+                args = list(mean = mean(resid(model1)), sd = sd(resid(model1))), 
+                color = "red", 
+                linewidth = 1) +
+  labs(title = "Histogram of Residuals",
+       x = "Residuals",
+       y = "Density") +
+  theme_minimal()
+
+# A transformed version of a Q–Q plot displayed horizontally
+plot(check_normality(model1))
+
+# Q-Q plot of standardized residuals
+qqnorm(rstandard(model1))
+qqline(rstandard(model1), col = "red")
+
+```
+
+### Step 2c: Check outliers or influential points
+
+```{r}
+# Check for outliers or influential points
+
+performance::check_outliers(model1)
+
+```
+
+### Step 2d: Examine the residuals
+
+```{r}
+# Extract residuals
+residuals <- resid(model1)
+
+# Standardize the residuals
+std_residuals <- residuals / sd(residuals)
+
+# Calculate max and min of the standardized residuals
+max_std_residual <- max(std_residuals)
+min_std_residual <- min(std_residuals)
+
+# Print the results
+cat("Max standardized residual:", max_std_residual, "\n")
+cat("Min standardized residual:", min_std_residual, "\n")
+
+#Identify potential outliers in the dataset based on the studentized residuals of the model.
+car::outlierTest(model1) # Bonferonni p-value for most extreme observations - observations with a p value lower than the threshold are consider outliers.
+# In this case there is only one row 
+
+```
+
+## Step 3: Check homoscedasticity (equal variance)
+
+```{r}
+performance::check_heteroscedasticity(model1)
+
+```
+
+## Step 4: Check multi-colinearity
+
+```{r}
+# Check multicollinearity
+
+performance::check_collinearity(model1)
+
+```
+
+## Step 5: Report
+Replace the content in italics with content relevant to your analysis (does not need to be italicised).
+
+The data met the assumption of non-zero variances _report the variance for your continous predictors_. Examination of diagnostic plots indicated that the residuals were _approximately normally distributed/not normally distributed_, with a density plot _resembling normality/deviating from normality_, although the formal test suggested _what the test suggested)_ _(p=?)_. The standardized residuals ranged from _report max and min_  with _x/no_ observations exceeding ±3 standard deviations. The Bonferroni-adjusted outlier test (p = ?) indicated that _what this meant_, as Cook’s distance _remained below/exceeded_ the conservative threshold of 1.0. The residuals-versus-fitted values plot displayed _describe the scatter_  around the zero line, with _some/no_ evidence of heteroscedasticity _(p = ?)_, _supporting/deviating from_ the assumption of constant variance. Collinearity statistics showed _low/moderate/hig_ intercorrelations between predictors _(VIF and Tolerance for each predictor)_, confirming that multicollinearity _was/was not_ a concern. Overall, the model _met/did not meet_ the key assumptions of multiple linear regression—linearity, independence, homoscedasticity, and low multicollinearity—with only a minor departure from normality and a single non-influential outlier. The model can therefore be considered _to/not to_ provide a reliable estimate of the relationship between _list the outcome and the predictor concepts_.
+
+
+| Assumption / Statistic required in report     | What to look for                                             | Where to find it                                                          | Code chunk label             |
+| --------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------- | ---------------------------- |
+| **Normality of residuals**                    | p-value from Shapiro–Wilk or check_normality result          | Output of `performance::check_normality(model1)`                          | first in Step 2a |
+|                                               | Visual inspection: *distribution resembles normality or not* | Histogram + Q-Q plots                                                     | Step 2b plots                |
+| **Standardized residuals range**              | Max and min standardized residual values                     | Printed result of `cat(...)`                                              | Step 2d                      |
+| **Outlier test**                              | Bonferroni p-value for most extreme case                     | Output of `car::outlierTest(model1)`                                      | Step 2d                      |
+| **Influence**                                 | Cook’s Distance < 1.0                                        | In diagnostic plots (`plot(model1)` → Cook’s) or within `check_model()`   | Step 6                       |
+| **Homoscedasticity (Equal variance)**         | p-value from heteroscedasticity test                         | `performance::check_heteroscedasticity(model1)` Scale-Location Plot                           | Step 3                       |
+| **Linearity**                                 | Evidence of non-random scatter around fitted line            | Residuals vs Fitted plot in `plot(model1, which = 1)` or `check_model()`  | Step 6                       |
+| **Multicollinearity**                         | VIF and Tolerance values                                     | `performance::check_collinearity(model1)`                                 | Step 4                       |
+
+
+
+## Step 6: Generate Summary Diagnostic Plots
+
+```{r}
+#| fig.width: 12
+#| fig.height: 10
+#| fig.cap: "Diagnostic plots for Model 1"
+# Overall diagnostic plots
+
+# If using R 4.4.x use
+performance::check_model(model1,
+  check = c(
+    "linearity",
+    "homoscedasticity",
+    "outliers",
+    "collinearity",
+    "normality"
+  )
+)
+
+# If using R 4.5.x Show all 4 diagnostic plots in one figure using R basic plots
+par(mfrow = c(2, 2))   # 2x2 grid layout
+plot(model1)            # Generates: Residuals vs Fitted, Normal Q-Q, Scale-Location, Cook’s distance
+par(mfrow = c(1, 1))    # Reset layout
+
+```
+
+```{r}
+#| fig.cap: " Diagnostic plots for Model - Alternative approaches"
+# Alternative for 4.5.x
+car::residualPlots(model1)
+
+
+
+ggResidpanel::resid_panel(model1)
+
+
+```
